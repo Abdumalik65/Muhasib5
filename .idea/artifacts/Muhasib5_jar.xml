@@ -1,0 +1,31 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Muhasib5:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Muhasib5_jar</output-path>
+    <root id="archive" name="Muhasib5.jar">
+      <element id="module-output" name="Muhasib5" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/ooxml-lib/curvesapi-1.06.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/ooxml-lib/xmlbeans-3.1.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/controlsfx-8.40.11.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/jfoenix-8.0.10.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/itextpdf-5.5.6.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/poi-4.1.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/poi-excelant-4.1.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/poi-ooxml-4.1.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/poi-ooxml-schemas-4.1.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/poi-scratchpad-4.1.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/activation-1.1.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/commons-codec-1.13.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/commons-collections4-4.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/commons-compress-1.19.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/commons-logging-1.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/commons-math3-3.6.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/jaxb-api-2.3.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/jaxb-core-2.3.0.1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/jaxb-impl-2.3.2.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/junit-4.12.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/poi-4.1.1/lib/log4j-1.2.17.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/mysql-connector-java-8.0.19/mysql-connector-java-8.0.19.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/../LIBS/sqlite-jdbc-3.30.1.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>
