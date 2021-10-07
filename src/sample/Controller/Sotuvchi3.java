@@ -145,7 +145,7 @@ public class Sotuvchi3 extends Application {
     }
 
     public Sotuvchi3() {
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBLocal().getDbConnection();
         GetDbData.initData(connection);
     }
 

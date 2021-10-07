@@ -45,8 +45,9 @@ public class MainController extends Application {
 // AnKho
 // 3897 3866
 // 98 300 5979
+    // b-39
     public MainController() throws SQLException {
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBLocal().getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         login();

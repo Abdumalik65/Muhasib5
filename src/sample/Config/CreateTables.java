@@ -71,6 +71,7 @@ public class CreateTables {
             HisobKitob(connection, "Sanoq");
             NarhTable(connection);
             GuruhNarhiTable(connection);
+            SerialNumbersTable(connection, "SerialNumbers");
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -179,4 +180,9 @@ public class CreateTables {
         prSt.executeUpdate();
     }
 
+    private void SerialNumbersTable(Connection connection, String fileName) throws SQLException {
+        String structure = "CREATE TABLE IF NOT EXISTS " + fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, hisob INT, tovar int, serialNumber varchar(60), userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
+        PreparedStatement prSt = connection.prepareStatement(structure);
+        prSt.executeUpdate();
+    }
 }
