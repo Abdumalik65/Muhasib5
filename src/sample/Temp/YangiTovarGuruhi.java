@@ -15,8 +15,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.GuruhNarhModels;
 import sample.Model.Standart6Models;
 import sample.Tools.SetHVGrow;
@@ -49,7 +50,7 @@ public class YangiTovarGuruhi extends Application {
     }
 
     public YangiTovarGuruhi() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         ibtido();
     }
 

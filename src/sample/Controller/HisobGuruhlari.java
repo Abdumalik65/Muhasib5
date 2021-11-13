@@ -13,18 +13,20 @@ import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
 import sample.Data.*;
 import sample.Model.HisobKitobModels;
 import sample.Model.HisobModels;
 import sample.Model.Standart3Models;
 import sample.Model.StandartModels;
-import sample.Tools.MyChart;
 import sample.Tools.*;
 
 import java.sql.Connection;
@@ -115,6 +117,7 @@ public class HisobGuruhlari extends Application {
     public void display() {
         stage = new Stage();
         initStage(stage);
+        stage.initModality(Modality.APPLICATION_MODAL);
         ibtido();
         stage.showAndWait();
     }
@@ -128,7 +131,6 @@ public class HisobGuruhlari extends Application {
             standart3Models.setTABLENAME("HisobGuruhTarkibi");
             hisobObservableList = hisobModels.get_data1(connection);
             for (Hisob h: hisobObservableList) {
-//                hisobBalans2(h);
                 hisobTableList.add(h);
             }
             guruhTarkibi = standart3Models.getAnyData(connection, "id2 = " + standart.getId(), "");
@@ -235,9 +237,11 @@ public class HisobGuruhlari extends Application {
             LocalDate newDate = datePicker.getValue();
             if (newDate != null) {
                 localDate = newDate;
-                for (Hisob h: hisobObservableList) {
-                    hisobBalans2(h);
-                }
+                Date date = null;
+                LocalDateTime localDateTime = LocalDateTime.of(localDate, LocalTime.of(23,59,59));
+                Instant instant = Instant.from(localDateTime.atZone(ZoneId.systemDefault()));
+                date = Date.from(instant);
+                hisobObservableList = hisobModels.get_data1(connection, date);
                 refreshBalance();
                 rightTableView.refresh();
                 leftTableView.refresh();
@@ -465,7 +469,7 @@ public class HisobGuruhlari extends Application {
                         setText(null);
                     }
                     else {
-                        setText(GetDbData.getHisob(item).getText());
+                        setText(GetDbData.hisobniTop(item, hisobObservableList).getText());
                     }
                 }
             };
@@ -482,7 +486,7 @@ public class HisobGuruhlari extends Application {
             @Override
             public ObservableValue<Hisob> call(TableColumn.CellDataFeatures<Standart3, Hisob> param) {
                 Standart3 standart3 = param.getValue();
-                Hisob hisob = GetDbData.getHisob(standart3.getId3());
+                Hisob hisob = GetDbData.hisobniTop(standart3.getId3(), hisobObservableList);
                 return new SimpleObjectProperty<Hisob>(hisob);
             }
         });
@@ -516,7 +520,7 @@ public class HisobGuruhlari extends Application {
             @Override
             public ObservableValue<Hisob> call(TableColumn.CellDataFeatures<Standart3, Hisob> param) {
                 Standart3 standart3 = param.getValue();
-                Hisob h = GetDbData.getHisob(standart3.getId3());
+                Hisob h = GetDbData.hisobniTop(standart3.getId3(), hisobObservableList);
                 return new SimpleObjectProperty<Hisob>(h);
             }
         };
@@ -651,7 +655,7 @@ public class HisobGuruhlari extends Application {
         hisobTableList.removeAll(hisobTableList);
         hisobTableList.addAll(hisobObservableList);
         for (Standart3 s3: guruhTarkibi) {
-            Hisob h = GetDbData.getHisob(s3.getId3());
+            Hisob h = GetDbData.hisobniTop(s3.getId3(), hisobObservableList);
             hisobTableList.remove(h);
         }
     }

@@ -1,10 +1,11 @@
 package sample.Temp;
 
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.BarCode;
 import sample.Data.HisobKitob;
 import sample.Data.Standart;
+import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.HisobKitobModels;
 
@@ -15,7 +16,7 @@ public class barcodeqidir {
     static ObservableList<BarCode> barCodeList;
 
     public static void main(String[] args) {
-        Connection connection = new MySqlDBLocal().getDbConnection();
+        Connection connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         BarCodeModels barCodeModels = new BarCodeModels();
 
         barCodeList = barCodeModels.get_data(connection);

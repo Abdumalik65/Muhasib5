@@ -23,8 +23,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.HisobModels;
 import sample.Model.KassaModels;
 import sample.Model.StandartModels;
@@ -65,7 +66,7 @@ public class Kassalarim extends Application {
     }
 
     public Kassalarim() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     public Kassalarim(Connection connection, User user) {

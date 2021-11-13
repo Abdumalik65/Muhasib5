@@ -2,11 +2,12 @@ package sample.Temp;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.BarCode;
 import sample.Data.HisobKitob;
 import sample.Data.QaydnomaData;
 import sample.Data.Standart3;
+import sample.Enums.ServerType;
 import sample.Excel.FoydaExcel;
 import sample.Model.HisobKitobModels;
 import sample.Model.QaydnomaModel;
@@ -34,7 +35,7 @@ public class tempFoyda {
         Double chegirmaDouble = 0d;
         int amalTuri = 4;
         Date sana = null;
-        Connection connection = new MySqlDBLocal().getDbConnection();
+        Connection connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         QaydnomaModel qaydnomaModel = new QaydnomaModel();
         HisobKitobModels hisobKitobModels = new HisobKitobModels();

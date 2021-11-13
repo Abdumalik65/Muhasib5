@@ -18,12 +18,13 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Controller.TovarController1;
 import sample.Data.BarCode;
 import sample.Data.HisobKitob;
 import sample.Data.Standart;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Tools.*;
 
 import java.sql.Connection;
@@ -55,7 +56,7 @@ public class Tizimlar extends Application {
     }
 
     public Tizimlar() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -97,10 +98,10 @@ public class Tizimlar extends Application {
         Rectangle2D bounds = screen.getVisualBounds();
         stage = primaryStage;
         stage.setTitle("Ishlab-chiqarish tizimlari");
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
 //        stage.initStyle(StageStyle.UNDECORATED);
         stage.setOnCloseRequest(event -> {
             Platform.exit();

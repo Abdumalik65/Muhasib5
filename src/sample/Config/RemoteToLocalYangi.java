@@ -3,6 +3,7 @@ package sample.Config;
 import com.mysql.cj.jdbc.DatabaseMetaData;
 import javafx.collections.ObservableList;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 
 import java.sql.Connection;
@@ -12,8 +13,8 @@ import java.sql.Statement;
 
 public class RemoteToLocalYangi {
     public static void main(String[] args) {
-        Connection sourceCconnection = new MySqlDB().getDbConnection();
-        Connection targetConnection = new MySqlDBLocal().getDbConnection();
+        Connection sourceCconnection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
+        Connection targetConnection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         TruncateTables(targetConnection);
         copyStandartData(sourceCconnection, targetConnection, "Amal");
         copyStandartData(sourceCconnection, targetConnection, "Tovar");

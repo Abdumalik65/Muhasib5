@@ -23,8 +23,9 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.Alerts;
 import sample.Tools.GetDbData;
@@ -75,7 +76,7 @@ public class TartibController extends Application {
     String IkkinchiUstunNomi = "Sotish tartibi";
 
     public TartibController() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     public TartibController(Connection connection, User user) {

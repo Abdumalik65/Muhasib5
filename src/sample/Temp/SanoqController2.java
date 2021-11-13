@@ -11,9 +11,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.QaydnomaData;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Tools.GetDbData;
 import sample.Tools.Tugmachalar;
 
@@ -40,7 +41,7 @@ public class SanoqController2 extends Application {
     }
 
     public SanoqController2() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         ibtido();
     }

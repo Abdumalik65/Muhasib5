@@ -14,8 +14,9 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Model.UserModels;
 import sample.Tools.Tugmachalar;
 import java.io.File;
@@ -51,7 +52,7 @@ public class UsersController extends Application {
     }
 
     public UsersController() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     public UsersController(Connection connection, User user) {

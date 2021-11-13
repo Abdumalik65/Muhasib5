@@ -15,7 +15,7 @@ import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.HisobKitob;
 import sample.Data.Standart;
 import sample.Data.Standart3;

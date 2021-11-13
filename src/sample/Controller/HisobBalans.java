@@ -20,7 +20,7 @@ import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.Hisob;
 import sample.Data.HisobKitob;
 import sample.Data.QaydnomaData;
@@ -82,6 +82,7 @@ public class HisobBalans extends Application {
     private void initData() {
         GetDbData.initData(connection);
         hisobObservableList = GetDbData.getHisobObservableList();
+        hisobObservableList = GetDbData.cheklovlarniOlibTashla(hisobObservableList, user);
         QaydnomaModel qaydnomaModel = new QaydnomaModel();
         qaydnomaDataObservableList = qaydnomaModel.get_data(connection);
     }

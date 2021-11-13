@@ -17,8 +17,9 @@ import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -98,7 +99,7 @@ public class ConvertController extends Application {
     }
 
     public ConvertController() {
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }
@@ -115,7 +116,7 @@ public class ConvertController extends Application {
         yagonaHisob = true;
         chiqimHisobKitob.setHisob1(hisob1.getId());
         kirimHisobKitob.setHisob2(hisob1.getId());
-        Integer yordamchiHisob = hisobKitobModels.yordamchiHisob(connection, chiqimHisobKitob, "TranzitHisobGuruhi");
+        Integer yordamchiHisob = hisobKitobModels.yordamchiHisob(connection, hisob1.getId(), "TranzitHisobGuruhi", "TranzitHisob");
         hisob2 = hisobModels.getHisob(connection, yordamchiHisob);
         chiqimHisobKitob.setHisob2(yordamchiHisob);
         kirimHisobKitob.setHisob1(yordamchiHisob);
@@ -201,7 +202,7 @@ public class ConvertController extends Application {
             hisob1 = autoCompletionEvent.getCompletion();
             chiqimHisobKitob.setHisob1(hisob1.getId());
             kirimHisobKitob.setHisob2(hisob1.getId());
-            Integer yordamchiHisob = hisobKitobModels.yordamchiHisob(connection, chiqimHisobKitob, "TranzitHisobGuruhi");
+            Integer yordamchiHisob = hisobKitobModels.yordamchiHisob(connection, hisob1.getId(), "TranzitHisobGuruhi", "TranzitHisob");
             hisob2 = hisobModels.getHisob(connection, yordamchiHisob);
             chiqimHisobKitob.setHisob2(yordamchiHisob);
             kirimHisobKitob.setHisob1(yordamchiHisob);
@@ -214,7 +215,7 @@ public class ConvertController extends Application {
                 hisob1TextField.setText(hisob1.getText());
                 chiqimHisobKitob.setHisob1(hisob1.getId());
                 kirimHisobKitob.setHisob2(hisob1.getId());
-                Integer yordamchiHisob = hisobKitobModels.yordamchiHisob(connection, chiqimHisobKitob, "TranzitHisobGuruhi");
+                Integer yordamchiHisob = hisobKitobModels.yordamchiHisob(connection, hisob1.getId(), "TranzitHisobGuruhi", "TranzitHisob");
                 hisob2 = hisobModels.getHisob(connection, yordamchiHisob);
                 chiqimHisobKitob.setHisob2(yordamchiHisob);
                 kirimHisobKitob.setHisob1(yordamchiHisob);

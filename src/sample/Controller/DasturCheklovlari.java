@@ -21,12 +21,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDB;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
-import sample.Model.HisobKitobModels;
-import sample.Model.HisobModels;
-import sample.Model.Standart3Models;
-import sample.Model.StandartModels;
+import sample.Enums.ServerType;
+import sample.Model.*;
 import sample.Tools.*;
 
 import java.sql.Connection;
@@ -36,12 +34,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Optional;
 
-public class HisobGuruhlari2 extends Application {
+public class DasturCheklovlari extends Application {
     Stage stage;
     BorderPane borderpane = new BorderPane();
     MenuBar mainMenu;
     SplitPane centerPane = new SplitPane();
-    Tugmachalar leftButtons = new Tugmachalar();
     Tugmachalar rightButtons = new Tugmachalar();
     TextField textField = new TextField();
 
@@ -82,20 +79,19 @@ public class HisobGuruhlari2 extends Application {
         launch(args);
     }
 
-    public HisobGuruhlari2() {
-        connection = new MySqlDB().getDbConnection();
+    public DasturCheklovlari() {
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }
 
-    public HisobGuruhlari2(Connection connection, User user) {
+    public DasturCheklovlari(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
     }
 
     private void ibtido() {
         initData();
-        initLeftButtons();
         initLeftTableView();
         initLeftPane();
         initRightButtons();
@@ -117,17 +113,28 @@ public class HisobGuruhlari2 extends Application {
     public void display() {
         stage = new Stage();
         initStage(stage);
+        stage.initModality(Modality.APPLICATION_MODAL);
         ibtido();
         stage.showAndWait();
+    }
+
+    private ObservableList<Standart> userList() {
+        UserModels userModels = new UserModels();
+        ObservableList<User> userObservableList = userModels.getData(connection);
+        ObservableList<Standart> userList = FXCollections.observableArrayList();
+        for (User u: userObservableList) {
+            userList.add(new Standart(u.getId(), u.getIsm(), user.getId(), new Date()));
+        }
+        return userList;
     }
 
     private void initData() {
         initDatePicker();
         standartModels.setTABLENAME("HisobGuruhlarNomi");
-        guruhlarNomi = standartModels.get_data(connection);
+        guruhlarNomi = userList();
         if (guruhlarNomi.size()>0) {
             Standart standart = guruhlarNomi.get(0);
-            standart3Models.setTABLENAME("HisobGuruhTarkibi");
+            standart3Models.setTABLENAME("CheklanganHisobTarkibi");
             hisobObservableList = hisobModels.get_data1(connection);
             for (Hisob h: hisobObservableList) {
                 hisobTableList.add(h);
@@ -157,49 +164,6 @@ public class HisobGuruhlari2 extends Application {
             }
         }
         return hisob;
-    }
-
-    private void initLeftButtons() {
-        leftButtons.getChildren().remove(leftButtons.getEdit());
-        leftButtons.getAdd().setOnAction(event -> {
-            standartModels.setTABLENAME("HisobGuruhlarNomi");
-            Standart standart = new Standart(null, "Yangi guruh", user.getId(), null);
-            guruhlarNomi.add(standart);
-            standartModels.insert_data(connection, standart);
-            leftTableView.scrollTo(standart);
-            leftTableView.refresh();
-        });
-
-        leftButtons.getDelete().setOnAction(event -> {
-            Standart standart = leftTableView.getSelectionModel().getSelectedItem();
-            if (standart != null) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.getButtonTypes().removeAll(alert.getButtonTypes());
-                ButtonType okButton = new ButtonType("Ha");
-                ButtonType noButton = new ButtonType("Yo`q");
-                alert.getButtonTypes().addAll(okButton, noButton);
-                alert.setTitle("Diqqat !!!");
-                alert.setHeaderText(standart.getText() + " guruhi va unga taalluqli hamma hisobllar jadvaldan o`chirilladi");
-                alert.setContentText("Rozimisiz");
-                Optional<ButtonType> option = alert.showAndWait();
-                ButtonType buttonType = option.get();
-                if (okButton.equals(buttonType)) {
-                    standart3Models.deleteBatch(connection, guruhTarkibi);
-                    guruhTarkibi.removeAll(guruhTarkibi);
-                    rightTableView.setItems(guruhTarkibi);
-                    rightTableView.refresh();
-
-                    standartModels.delete_data(connection, standart);
-                    guruhlarNomi.remove(standart);
-                    leftTableView.setItems(guruhlarNomi);
-                    leftTableView.refresh();
-                }
-            }
-        });
-
-        leftButtons.getEdit().setOnAction(event -> {});
-
-        leftButtons.getChildren().add(datePicker);
     }
 
     private void initDatePicker() {
@@ -271,9 +235,8 @@ public class HisobGuruhlari2 extends Application {
         HBox.setHgrow(leftTableView, Priority.ALWAYS);
         VBox.setVgrow(leftTableView, Priority.ALWAYS);
         ContextMenu contextMenu = initContextMenu();
-        leftTableView.getColumns().addAll(getGuruhColumn(), getBalansColumn());
+        leftTableView.getColumns().addAll(getGuruhColumn());
         leftTableView.setItems(guruhlarNomi);
-        leftTableView.setEditable(true);
         leftTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 guruhCursor = newValue;
@@ -293,7 +256,7 @@ public class HisobGuruhlari2 extends Application {
     }
 
     private TableColumn<Standart, String> getGuruhColumn() {
-        TableColumn<Standart, String> textColumn = new TableColumn<>("Guruh nomi");
+        TableColumn<Standart, String> textColumn = new TableColumn<>("Xodim nomi");
         textColumn.setMinWidth(180);
         textColumn.setCellValueFactory(new PropertyValueFactory<>("text"));
         textColumn.setCellFactory(TextFieldTableCell.<Standart> forTableColumn());
@@ -359,7 +322,7 @@ public class HisobGuruhlari2 extends Application {
         leftPane.setPadding(new Insets(padding));
         HBox.setHgrow(leftPane, Priority.ALWAYS);
         VBox.setVgrow(leftPane, Priority.ALWAYS);
-        leftPane.getChildren().addAll(leftButtons, leftTableView);
+        leftPane.getChildren().addAll(leftTableView);
     }
 
     private void initCenterPane() {
@@ -452,7 +415,7 @@ public class HisobGuruhlari2 extends Application {
         HBox.setHgrow(rightTableView, Priority.ALWAYS);
         VBox.setVgrow(rightTableView, Priority.ALWAYS);
         rightTableView.setItems(guruhTarkibi);
-        rightTableView.getColumns().addAll(getHisobColumn(), getHisobBalansColumn());
+        rightTableView.getColumns().addAll(getHisobColumn());
     }
 
     private TableColumn<Standart3, Integer> getHisobIdColumn() {
@@ -587,7 +550,6 @@ public class HisobGuruhlari2 extends Application {
 
     private void initStage(Stage primaryStage) {
         stage = primaryStage;
-        stage.initModality(Modality.APPLICATION_MODAL);
         stage.setTitle("Hisob guruhlari");
         Scene scene = new Scene(borderpane, 700, 400);
         stage.setScene(scene);
@@ -663,7 +625,7 @@ public class HisobGuruhlari2 extends Application {
     private ObservableList<Standart3> hisobToGuruh() {
         ObservableList<Hisob> hList = hisobTableView.getSelectionModel().getSelectedItems();
         ObservableList<Standart3> guruh = FXCollections.observableArrayList();
-        standart3Models.setTABLENAME("HisobGuruhTarkibi");
+        standart3Models.setTABLENAME("CheklanganHisobTarkibi");
         for (Hisob h: hList) {
             if (!getGuruh(h.getId())) {
                 Standart3 s3 = new Standart3(null, guruhCursor.getId(), h.getId(), h.getText(), user.getId(), null);

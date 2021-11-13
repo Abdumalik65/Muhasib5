@@ -2,8 +2,9 @@ package sample.Temp;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Tools.GetDbData;
 import sample.Tools.MoneyShow;
@@ -30,7 +31,7 @@ public class Hisobot2 {
     Hisob hisob;
 
     public Hisobot2() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }

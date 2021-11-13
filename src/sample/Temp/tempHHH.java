@@ -2,7 +2,7 @@ package sample.Temp;
 
 import javafx.collections.ObservableList;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.HisobKitob;
 import sample.Data.QaydnomaData;
 import sample.Model.HisobKitobModels;
@@ -18,18 +18,26 @@ public class tempHHH {
         Double jami = 0d;
         ObservableList<HisobKitob> hisobKitobObservableList = hisobKitobModels.get_data(connection);
         ObservableList<QaydnomaData> qaydObservableList = qaydnomaModel.get_data(connection);
+/*
         for (HisobKitob hk: hisobKitobObservableList) {
             Boolean topdim = false;
             for (QaydnomaData q: qaydObservableList) {
                 if (hk.getHujjatId().equals(q.getHujjat())) {
-                    hk.setDateTime(q.getSana());
+//                    hk.setDateTime(q.getSana());
 //                    hisobKitobModels.update_data(connection, hk);
                     topdim = true;
                     break;
                 }
             }
             if (!topdim) {
-                System.out.println(hk.getHujjatId());
+                System.out.println("Topmadim" + "| " + hk.getHujjatId()+ " |");
+            }
+        }
+*/
+        for (QaydnomaData q: qaydObservableList) {
+            hisobKitobObservableList = hisobKitobModels.getAnyData(connection, "qaydId = " + q.getId(), "");
+            if (hisobKitobObservableList.size()==0) {
+                System.out.println("Topmadim" + "| " + q.getId()+ " |");
             }
         }
     }

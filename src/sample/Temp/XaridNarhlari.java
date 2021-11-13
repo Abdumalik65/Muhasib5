@@ -14,8 +14,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.QaydnomaModel;
 import sample.Tools.GetDbData;
 import sample.Tools.TreeTableViewSample;
@@ -81,7 +82,7 @@ public class XaridNarhlari extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         ibtido();
         initStage(primaryStage);
         stage.show();

@@ -22,11 +22,12 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.Hisob;
 import sample.Data.HisobKitob;
 import sample.Data.QaydnomaData;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Model.HisobModels;
 import sample.Model.QaydnomaModel;
@@ -34,6 +35,8 @@ import sample.Tools.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -85,7 +88,7 @@ public class HisobotSochma extends Application {
     }
 
     public HisobotSochma() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -112,6 +115,30 @@ public class HisobotSochma extends Application {
     }
 
     private void initDataYangi() {
+        initDatePicker();
+        hisobObservableList  = hisobModels.get_data1(connection);
+        if (hisobObservableList.size()>0) {
+            hisob = hisobObservableList.get(0);
+            Date date = null;
+            LocalDateTime localDateTime = LocalDateTime.of(localDate, LocalTime.of(23,59,59));
+            String select1 = "dateTime <= '" + localDateTime + "' and hisob1 = " + hisob.getId();
+            String select2 = "dateTime <= '" + localDateTime + "' and hisob2 = " + hisob.getId();
+            ObservableList<HisobKitob> hisob1List = hisobKitobModels.getAnyData(connection, select1, "dateTime");
+            if (hisob1List.size()>0) {
+                hisobKitobObservableList.addAll(hisob1List);
+            }
+            ObservableList<HisobKitob> hisob2List = hisobKitobModels.getAnyData(connection, select2, "dateTime");
+            if (hisob2List.size()>0) {
+                hisobKitobObservableList.addAll(hisob2List);
+            }
+            if (hisobKitobObservableList.size()>0) {
+                Collections.sort(hisobKitobObservableList, Comparator.comparingInt(HisobKitob::getId));
+            }
+        }
+        qaydnomaDataObservableList = qaydnomaModel.get_data(connection);
+    }
+
+    private void initDataYangi2() {
         initDatePicker();
         hisobObservableList  = hisobModels.get_data1(connection);
         if (hisobObservableList.size()>0) {
@@ -395,10 +422,10 @@ public class HisobotSochma extends Application {
         scene = new Scene(borderpane);
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.setResizable(false);
         stage.setScene(scene);
     }
@@ -527,6 +554,54 @@ public class HisobotSochma extends Application {
         }
         jamiLabel.setText(jamiString);
         jamiHBox.getChildren().addAll(label, pane, jamiLabel);
+    }
+
+    private ObservableList<Hisob> hisoblarList(LocalDate localDate) {
+        DecimalFormat decimalFormat = new MoneyShow();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String localDateString = localDate.format(formatter);
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        ObservableList<HisobKitob> hisobKitobObservableList = FXCollections.observableArrayList();
+        ObservableList<Hisob> hisobObservableList = FXCollections.observableArrayList();
+        String kirimHisoblari =
+                "Select hisob2, sum(narh*dona/kurs) from HisobKitob where tovar=0 and valuta>0 and dateTime<='" + localDateString + " 23:59:59' group by hisob2 order by hisob2";
+        ResultSet rs1 = hisobKitobModels.getResultSet(connection, kirimHisoblari);
+        try {
+            while (rs1.next()) {
+                Integer id = rs1.getInt(1);
+                Double balance = rs1.getDouble(2);
+                Hisob hisob = GetDbData.getHisob(id);
+                hisobObservableList.add(new Hisob(id, hisob.getText(), 0d, 0d, balance));
+            }
+            rs1.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        String chiqimHisoblari =
+                "Select hisob1, sum(narh/kurs) from HisobKitob where tovar=0 and valuta>0 and dateTime<='" + localDateString + " 23:59:59' group by hisob1 order by hisob1";
+        ResultSet rs2 = hisobKitobModels.getResultSet(connection, chiqimHisoblari);
+        try {
+            while (rs2.next()) {
+                Integer id = rs2.getInt(1);
+                Double balance = rs2.getDouble(2);
+                Hisob hisob = GetDbData.hisobniTop(id, hisobObservableList);
+                if (hisob != null) {
+                    hisob.setBalans(hisob.getBalans() - balance);
+                } else {
+                    Hisob h = GetDbData.getHisob(id);
+                    hisobObservableList.add(new Hisob(id, h.getText(), 0d, 0d, balance));
+                }
+            }
+            rs2.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        if (hisobObservableList.size()>0) {
+            Comparator<Hisob> comparator = Comparator.comparing(Hisob::getId);
+            Collections.sort(hisobObservableList, comparator);
+        }
+        hisobObservableList.removeIf(hisob -> decimalFormat.format(hisob.getBalans()).equals(0));
+        return hisobObservableList;
     }
 
 }

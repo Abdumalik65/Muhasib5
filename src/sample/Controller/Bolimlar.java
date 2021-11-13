@@ -24,8 +24,9 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -79,7 +80,7 @@ public class Bolimlar extends Application {
     }
 
     public Bolimlar() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         ibtido();
     }
 
@@ -223,7 +224,7 @@ public class Bolimlar extends Application {
 
         leftButtons.getExcel().setOnAction(event -> {
             ExportToExcel exportToExcel = new ExportToExcel();
-            exportToExcel.priceList(s6List);
+            exportToExcel.priceList(s6List, user);
         });
         leftTextField.textProperty().addListener((observable, oldValue, newValue) -> {
             leftTaftish(oldValue, newValue);

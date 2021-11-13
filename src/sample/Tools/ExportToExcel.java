@@ -760,6 +760,9 @@ public class ExportToExcel {
     }
 
     private void dataSanaCell(int hisobId, HisobKitob hk, int rowIndex, int cellIndex) {
+        if (hk==null) {
+            System.out.println("Null");
+        }
         CellStyle rowStyle = hk.getHisob1().equals(hisobId) ? chiqimCenterStyle : kirimCenterStyle;
         cell = row.createCell(cellIndex, CellType.STRING);
         SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
@@ -861,7 +864,7 @@ public class ExportToExcel {
         rowIndex = 0;
         row = sheet.createRow(rowIndex);
         cellIndex = 0;
-        headerShirkatCell(rowIndex, cellIndex, sheet, qaydnomaData);
+        headerShirkatCell(rowIndex, cellIndex, sheet, qaydnomaData, user);
 
         rowIndex++;
         header1Row(rowIndex, sheet, qaydnomaData, user);
@@ -957,17 +960,13 @@ public class ExportToExcel {
         }
     }
 
-    private void headerShirkatCell(int rowIndex, int cellIndex, Sheet sheet, QaydnomaData qaydnomaData) {
+    private void headerShirkatCell(int rowIndex, int cellIndex, Sheet sheet, QaydnomaData qaydnomaData, User user) {
         CellStyle headerStyle = wb.createCellStyle();
         setBorderStyle(headerStyle, BorderStyle.THIN, IndexedColors.WHITE.getIndex(),
                 FillPatternType.SOLID_FOREGROUND, chiptaFont, VerticalAlignment.CENTER, HorizontalAlignment.CENTER);
         Cell cell = row.createCell(cellIndex, CellType.STRING);
         cell.setCellStyle(headerStyle);
-        if (printerim.contains("XP-80C")) {
-            cell.setCellValue("1/40");
-        } else {
-            cell.setCellValue("BEST PERFUMERY");
-        }
+        cell.setCellValue(GetDbData.getHisob(user.getTovarHisobi()).getText());
         Cell cell2 = row.createCell(1, CellType.STRING);
         cell2.setCellValue(qaydnomaData.getKirimNomi());
         cell2.setCellStyle(headerStyle);
@@ -1064,13 +1063,13 @@ public class ExportToExcel {
         RegionUtil.setBorderBottom(borderStyle, rangeAddress, sheet);
     }
 
-    public void priceList(ObservableList<Standart6> observableList) {
+    public void priceList(ObservableList<Standart6> observableList, User user) {
         sheet = wb.createSheet("Price");
         rowIndex = 0;
         row = sheet.createRow(rowIndex);
 
         cellIndex = 0;
-        headerRow1(rowIndex, cellIndex);
+        headerRow1(rowIndex, cellIndex, user);
 
         rowIndex++;
         headerRow2(rowIndex, cellIndex);
@@ -1094,18 +1093,14 @@ public class ExportToExcel {
         }
     }
 
-    private void headerRow1(int rowIndex, int cellIndex) {
+    private void headerRow1(int rowIndex, int cellIndex, User user) {
         row = sheet.createRow(rowIndex);
         CellStyle cellStyle = wb.createCellStyle();
         setBorderStyle(cellStyle, BorderStyle.THIN, IndexedColors.GREY_25_PERCENT.getIndex(),
                 FillPatternType.SOLID_FOREGROUND, headerFont, VerticalAlignment.CENTER, HorizontalAlignment.CENTER);
         Cell cell = row.createCell(0, CellType.STRING);
-        if (printerim.contains("XP-80C")) {
-            cell.setCellValue("1/40");
-        } else {
-            cell.setCellValue("BEST PERFUMERY");
-        }
-
+        String shirkatNomi = GetDbData.getHisob(user.getTovarHisobi()).getText();
+        cell.setCellValue(shirkatNomi);
         cell.setCellStyle(cellStyle);
         SimpleDateFormat sanaFormat = new SimpleDateFormat("dd.MM.yyyy  HH:mm:ss");
         Date sana = new Date();

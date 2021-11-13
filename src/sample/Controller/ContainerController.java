@@ -2,26 +2,35 @@ package sample.Controller;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
+import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
+import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
 import java.sql.Connection;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -51,6 +60,7 @@ public class ContainerController extends Application {
     ObservableList<HisobKitob> tovarTableList = FXCollections.observableArrayList();
     ObservableList<HisobKitob> valutaTableList = FXCollections.observableArrayList();
     ObservableList<HisobKitob> natijaTableList = FXCollections.observableArrayList();
+    ObservableList<Standart> narhList = FXCollections.observableArrayList();
 
     HBoxTextFieldPlusButton hisob1Hbox;
     HBoxTextFieldPlusButton hisob2Hbox;
@@ -120,7 +130,7 @@ public class ContainerController extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         ibtido();
         initStage(primaryStage);
         stage.show();
@@ -147,12 +157,8 @@ public class ContainerController extends Application {
         standart3Models.setTABLENAME("hisobGuruhTarkibi");
         ObservableList<Standart3> containers = standart3Models.getAnyData(connection, "id2 = " + containersId, "");
         hisobObservableList = GetDbData.getHisobObservableList();
-/*
-        for (Standart3 s3: containers) {
-            hisobObservableList.add(GetDbData.getHisob(s3.getId3()));
-        }
-        hisob2ObservableList = hisobModels.get_data(connection);
-*/
+        standartModels.setTABLENAME("NarhTuri");
+        narhList = standartModels.get_data(connection);
     }
 
     private void initCenterPane() {
@@ -266,7 +272,15 @@ public class ContainerController extends Application {
         TableColumn<HisobKitob, String> izohColumn = getTableView2.getIzoh2Column();
         izohColumn.setMinWidth(250);
         izohColumn.setText("Tovarlar");
-        tovarTableView.getColumns().addAll(izohColumn, getTableView2.getAdadColumn(), getTableView2.getNarhColumn(), getTableView2.getSummaColumn(), getTableView2.getHajmColumn(), getTableView2.getVaznColumn());
+        tovarTableView.getColumns().addAll(
+                izohColumn,
+                getTableView2.getAdadColumn(),
+                getNarhColumn(),
+                getSotishNarhiColumn(),
+                getHajmColumn(),
+                getVaznColumn()
+        );
+        tovarTableView.setEditable(true);
         HBox.setHgrow(tovarTableView, Priority.ALWAYS);
         VBox.setVgrow(tovarTableView, Priority.ALWAYS);
         tovarTableView.setItems(tovarTableList);
@@ -276,17 +290,21 @@ public class ContainerController extends Application {
         TableColumn<HisobKitob, String> izohColumn = getTableView2.getIzoh2Column();
         izohColumn.setMinWidth(350);
         izohColumn.setText("Xarajatlar");
-        valutaTableView.getColumns().addAll(izohColumn, getTableView2.getNarhColumn());
+        valutaTableView.getColumns().addAll(
+                izohColumn,
+                getTableView2.getNarhColumn()
+        );
         HBox.setHgrow(valutaTableView, Priority.ALWAYS);
         VBox.setVgrow(valutaTableView, Priority.ALWAYS);
         valutaTableView.setItems(valutaTableList);
     }
 
-    private void initComboBox() {
+    private ObservableList<Standart> initComboBox() {
         ObservableList<Standart> comboBoxItems = FXCollections.observableArrayList();
         comboBoxItems.add(new Standart(1, "Hajmga taqsimlash", user.getId(), null));
         comboBoxItems.add(new Standart(2, "Vaznga taqsimlash", user.getId(), null));
         comboBoxItems.add(new Standart(3, "Narhga taqsimlash", user.getId(), null));
+        comboBoxItems.add(new Standart(4, "Donaga taqsimlash", user.getId(), null));
         standartComboBox.setMaxWidth(2000);
         standartComboBox.setPrefWidth(150);
         HBox.setHgrow(standartComboBox, Priority.ALWAYS);
@@ -300,13 +318,18 @@ public class ContainerController extends Application {
                 }
             }
         });
+        return comboBoxItems;
     }
 
     private void initNatijaTable() {
         TableColumn<HisobKitob, String> izohColumn = getTableView2.getIzoh2Column();
         izohColumn.setMinWidth(250);
         izohColumn.setText("Tovarlar");
-        natijaTableView.getColumns().addAll(izohColumn, getTableView2.getAdadColumn(), getTableView2.getNarhColumn(), getTableView2.getSummaColumn(), getTableView2.getHajmColumn(), getTableView2.getVaznColumn());
+        natijaTableView.getColumns().addAll(
+                izohColumn,
+                getTableView2.getAdadColumn(),
+                getNarhColumn()
+        );
         HBox.setHgrow(natijaTableView, Priority.ALWAYS);
         VBox.setVgrow(natijaTableView, Priority.ALWAYS);
     }
@@ -314,12 +337,14 @@ public class ContainerController extends Application {
     private void refreshValutaTable(Hisob hisob) {
         ObservableList<Valuta> valutaList = hisobKitobModels.getDistinctValuta(connection, hisob.getId(), new Date());
         valutaTableList.removeAll(valutaTableList);
+        KursModels kursModels = new KursModels();
         for (Valuta v: valutaList) {
             HisobKitob hk = hisobKitobModels.getValutaBalans(connection, hisob.getId(), v, new Date());
             if (hk.getNarh() != 0.0) {
                 hk.setHisob2(tranzitHisob.getId());
                 hk.setAmal(1);
-                hk.setKurs(1.0);
+                Kurs kurs = kursModels.getKurs(connection, v.getId(),new Date(), "sana desc");
+                hk.setKurs(kurs.getKurs());
                 valutaTableList.add(hk);
             }
         }
@@ -427,6 +452,11 @@ public class ContainerController extends Application {
         GridPane.setHgrow(qaydVaqtiTextField, Priority.ALWAYS);
 
         rowIndex++;
+        gridPane.add(standartComboBox, 0, rowIndex, 1, 1);
+        GridPane.setHgrow(standartComboBox, Priority.ALWAYS);
+        GridPane.setVgrow(standartComboBox, Priority.ALWAYS);
+
+        rowIndex++;
         gridPane.add(izohTextArea, 0, rowIndex, 3, 1);
         GridPane.setHgrow(izohTextArea, Priority.ALWAYS);
         GridPane.setVgrow(izohTextArea, Priority.ALWAYS);
@@ -446,10 +476,6 @@ public class ContainerController extends Application {
         GridPane.setHgrow(hisob2Hbox, Priority.ALWAYS);
         GridPane.setVgrow(hisob2Hbox, Priority.ALWAYS);
 
-        gridPane.add(standartComboBox, 1, rowIndex, 1, 1);
-        GridPane.setHgrow(standartComboBox, Priority.ALWAYS);
-        GridPane.setVgrow(standartComboBox, Priority.ALWAYS);
-
         rowIndex++;
         gridPane.add(natijaTableView, 0, rowIndex, 3, 1);
         GridPane.setHgrow(natijaTableView, Priority.ALWAYS);
@@ -463,8 +489,14 @@ public class ContainerController extends Application {
 
     private void initStage(Stage primaryStage) {
         stage = primaryStage;
-        stage.setTitle("Valyuta konvertatsiya");
-        scene = new Scene(borderpane, 770, 600);
+        Screen screen = Screen.getPrimary();
+        Rectangle2D bounds = screen.getVisualBounds();
+        stage.setX(bounds.getMinX());
+        stage.setY(bounds.getMinY());
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
+        stage.setTitle("Konteyner");
+        scene = new Scene(borderpane);
         stage.setScene(scene);
     }
 
@@ -528,12 +560,15 @@ public class ContainerController extends Application {
                     hvSumma += hk.getDona() * barCode.getVazn();
                     break;
                 case 3: //mablag taqsimoti
-                    hvSumma += hk.getDona() * hk.getNarh();
+                    hvSumma += hk.getDona() * hk.getNarh()/hk.getKurs();
+                    break;
+                case 4: //dona taqsimoti
+                    hvSumma += hk.getDona();
                     break;
             }
         }
         for (HisobKitob hk:valutaTableList) {
-            valutaSumma += hk.getNarh();
+            valutaSumma += hk.getNarh()/hk.getKurs();
         }
         deltaDouble = valutaSumma/hvSumma;
         return deltaDouble;
@@ -559,11 +594,14 @@ public class ContainerController extends Application {
                     summaDouble = barCode.getVazn();
                     break;
                 case 3: //mablag taqsimoti
-                    summaDouble = nhk.getNarh();
+                    summaDouble = nhk.getNarh()/nhk.getKurs();
+                    break;
+                case 4: //dona taqsimoti
+                    summaDouble = 1d;
                     break;
             }
             if (summaDouble != 0.00) {
-                yangiNarh = summaDouble * deltaDouble + nhk.getNarh();
+                yangiNarh = summaDouble * deltaDouble + nhk.getNarh()/nhk.getKurs();
                 nhk.setNarh(yangiNarh);
             }
             natijaTableList.add(nhk);
@@ -577,4 +615,436 @@ public class ContainerController extends Application {
         xaridniYakunlaButton.setDisable(disable);
         xaridniBekorQilButton.setDisable(disable);
     }
+
+    private TableColumn<HisobKitob, Double> getNarhColumn() {
+        TableColumn<HisobKitob, Double> hajmColumn = new TableColumn<>("Tannarh");
+        TableColumn<HisobKitob, Double> donaColumn = getTableView2.getNarhColumn();
+        donaColumn.setText("Dona");
+        TableColumn<HisobKitob, Double> jamiColumn = getTableView2.getSummaColumn();
+        jamiColumn.setText("Jami");
+        hajmColumn.setStyle( "-fx-alignment: CENTER;");
+        hajmColumn.getColumns().addAll(
+                donaColumn,
+                jamiColumn
+        );
+        return hajmColumn;
+    }
+
+    private TableColumn<HisobKitob, Double> getSotishNarhiColumn() {
+        TableColumn<HisobKitob, Double> sotishNarhiColumn = new TableColumn<>("Sotish narhlari");
+        TableColumn<HisobKitob, Double> chakanaColumn = getTableView2.getNarhColumn();
+        chakanaColumn.setText("Chakana");
+        TableColumn<HisobKitob, Double> ulgurjiColumn = getTableView2.getSummaColumn();
+        ulgurjiColumn.setText("Ulgurji");
+        sotishNarhiColumn.setStyle( "-fx-alignment: CENTER;");
+        sotishNarhiColumn.getColumns().addAll(
+                chakanaColumn,
+                ulgurjiColumn
+        );
+        return sotishNarhiColumn;
+    }
+
+    private TableColumn<HisobKitob, Double> getHajmColumn() {
+        TableColumn<HisobKitob, Double> hajmColumn = new TableColumn<>("Hajm");
+        hajmColumn.setStyle( "-fx-alignment: CENTER;");
+        hajmColumn.getColumns().addAll(
+                getHajmDonaColumn(),
+                getHajmJamiColumn()
+        );
+        return hajmColumn;
+    }
+
+    private TableColumn<HisobKitob, Double> getHajmDonaColumn() {
+        TableColumn<HisobKitob, Double> hajmColumn = new TableColumn<>("Dona");
+        hajmColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Double>, ObservableValue<Double>>() {
+
+            @Override
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<HisobKitob, Double> param) {
+                HisobKitob hisobKitob = param.getValue();
+                BarCode b = GetDbData.getBarCode(hisobKitob.getBarCode());
+                Double hajmDouble = .0;
+                if (b != null) {
+                    hajmDouble = b.getHajm();
+                }
+                return new SimpleObjectProperty<Double>(hajmDouble);
+            }
+        });
+        hajmColumn.setMinWidth(100);
+        hajmColumn.setMaxWidth(100);
+        hajmColumn.setStyle( "-fx-alignment: CENTER;");
+        hajmColumn.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                NumberFormat numberFormat = NumberFormat.getInstance();
+                numberFormat.setMinimumIntegerDigits (1);
+                numberFormat.setMaximumIntegerDigits (10);
+
+                numberFormat.setMinimumFractionDigits (1);
+                numberFormat.setMaximumFractionDigits (5);
+                return numberFormat.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                string = string.replaceAll(" ", "");
+                string = string.replaceAll(",", ".");
+                if (!Alerts.isNumericAlert(string)) {
+                    string = "0.0";
+                }
+                return Double.valueOf(string);
+            }
+        }));
+        hajmColumn.setOnEditCommit((TableColumn.CellEditEvent<HisobKitob, Double> event) -> {
+            Double newValue = event.getNewValue();
+            HisobKitob hisobKitob = event.getRowValue();
+            BarCode barCode = GetDbData.getBarCode(hisobKitob.getBarCode());
+            if (newValue != null) {
+                BarCodeModels barCodeModels = new BarCodeModels();
+                barCode.setHajm(newValue);
+                barCodeModels.update_data(connection, barCode);
+            }
+            event.getTableView().refresh();
+        });
+        return hajmColumn;
+    }
+
+    private TableColumn<HisobKitob, Double> getHajmJamiColumn() {
+        TableColumn<HisobKitob, Double> hajmColumn = new TableColumn<>("Jami");
+        hajmColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Double>, ObservableValue<Double>>() {
+
+            @Override
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<HisobKitob, Double> param) {
+                HisobKitob hisobKitob = param.getValue();
+                BarCode b = GetDbData.getBarCode(hisobKitob.getBarCode());
+                Double hajmDouble = .0;
+                if (b != null) {
+                    hajmDouble = b.getHajm() * hisobKitob.getDona();
+                }
+                return new SimpleObjectProperty<Double>(hajmDouble);
+            }
+        });
+        hajmColumn.setMinWidth(100);
+        hajmColumn.setMaxWidth(100);
+        hajmColumn.setStyle( "-fx-alignment: CENTER;");
+        hajmColumn.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                NumberFormat numberFormat = NumberFormat.getInstance();
+                numberFormat.setMinimumIntegerDigits (1);
+                numberFormat.setMaximumIntegerDigits (10);
+
+                numberFormat.setMinimumFractionDigits (1);
+                numberFormat.setMaximumFractionDigits (5);
+                return numberFormat.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                string = string.replaceAll(" ", "");
+                string = string.replaceAll(",", ".");
+                if (!Alerts.isNumericAlert(string)) {
+                    string = "0.0";
+                }
+                return Double.valueOf(string);
+            }
+        }));
+        return hajmColumn;
+    }
+
+    private TableColumn<HisobKitob, Double> getVaznColumn() {
+        TableColumn<HisobKitob, Double> vaznColumn = new TableColumn<>("Vazn");
+        vaznColumn.setStyle( "-fx-alignment: CENTER;");
+        vaznColumn.getColumns().addAll(
+                getVaznDonaColumn(),
+                getVaznJamiColumn()
+        );
+        return vaznColumn;
+    }
+
+    private TableColumn<HisobKitob, Double> getVaznDonaColumn() {
+        TableColumn<HisobKitob, Double> vaznColumn = new TableColumn<>("Dona");
+        vaznColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Double>, ObservableValue<Double>>() {
+
+            @Override
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<HisobKitob, Double> param) {
+                HisobKitob hisobKitob = param.getValue();
+                BarCode b = GetDbData.getBarCode(hisobKitob.getBarCode());
+                Double vaznDouble = .0;
+                if (b != null) {
+                    vaznDouble = b.getVazn();
+                }
+                return new SimpleObjectProperty<Double>(vaznDouble);
+            }
+        });
+        vaznColumn.setMinWidth(100);
+        vaznColumn.setMaxWidth(100);
+        vaznColumn.setStyle( "-fx-alignment: CENTER;");
+        vaznColumn.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                NumberFormat numberFormat = NumberFormat.getInstance();
+                numberFormat.setMinimumIntegerDigits (1);
+                numberFormat.setMaximumIntegerDigits (10);
+
+                numberFormat.setMinimumFractionDigits (1);
+                numberFormat.setMaximumFractionDigits (5);
+                return numberFormat.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                string = string.replaceAll(" ", "");
+                string = string.replaceAll(",", ".");
+                if (!Alerts.isNumericAlert(string)) {
+                    string = "0.0";
+                }
+                return Double.valueOf(string);
+            }
+        }));
+        vaznColumn.setOnEditCommit((TableColumn.CellEditEvent<HisobKitob, Double> event) -> {
+            Double newValue = event.getNewValue();
+            HisobKitob hisobKitob = event.getRowValue();
+            BarCode barCode = GetDbData.getBarCode(hisobKitob.getBarCode());
+            if (newValue != null) {
+                BarCodeModels barCodeModels = new BarCodeModels();
+                barCode.setVazn(newValue);
+                barCodeModels.update_data(connection, barCode);
+            }
+            event.getTableView().refresh();
+        });
+        return vaznColumn;
+    }
+
+    private TableColumn<HisobKitob, Double> getVaznJamiColumn() {
+        TableColumn<HisobKitob, Double> vaznColumn = new TableColumn<>("Jami");
+        vaznColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Double>, ObservableValue<Double>>() {
+
+            @Override
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<HisobKitob, Double> param) {
+                HisobKitob hisobKitob = param.getValue();
+                BarCode b = GetDbData.getBarCode(hisobKitob.getBarCode());
+                Double vaznDouble = .0;
+                if (b != null) {
+                    vaznDouble = b.getVazn() * hisobKitob.getDona();
+                }
+                return new SimpleObjectProperty<Double>(vaznDouble);
+            }
+        });
+        vaznColumn.setMinWidth(100);
+        vaznColumn.setMaxWidth(100);
+        vaznColumn.setStyle( "-fx-alignment: CENTER;");
+        vaznColumn.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                NumberFormat numberFormat = NumberFormat.getInstance();
+                numberFormat.setMinimumIntegerDigits (1);
+                numberFormat.setMaximumIntegerDigits (10);
+
+                numberFormat.setMinimumFractionDigits (1);
+                numberFormat.setMaximumFractionDigits (5);
+                return numberFormat.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                string = string.replaceAll(" ", "");
+                string = string.replaceAll(",", ".");
+                if (!Alerts.isNumericAlert(string)) {
+                    string = "0.0";
+                }
+                return Double.valueOf(string);
+            }
+        }));
+        return vaznColumn;
+    }
+
+    private  TableColumn<HisobKitob, Double> getChakanaNarhColumn() {
+        String chakana = narhList.get(0).getText();
+        TableColumn<HisobKitob, Double>  chakanaColumn = new TableColumn<>(chakana);
+        chakanaColumn.setMinWidth(100);
+        chakanaColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Double>, ObservableValue<Double>>() {
+
+            @Override
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<HisobKitob, Double> param) {
+                HisobKitob hk = param.getValue();
+                Double narhDouble = 0.0;
+                Standart6 s6 = narhOl(hk.getTovar());
+                if (s6 != null) {
+                    narhDouble = s6.getChakana();
+
+                }
+                else {
+                    TovarNarhi tn = yakkaTovarNarhi(hk.getTovar(), 1);
+                    if (tn != null) {
+                        narhDouble = tn.getNarh();
+                    }
+                }
+                return new SimpleObjectProperty<Double>(narhDouble);
+            }
+        });
+        chakanaColumn.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                NumberFormat numberFormat = NumberFormat.getInstance();
+                numberFormat.setMinimumIntegerDigits (1);
+                numberFormat.setMaximumIntegerDigits (10);
+
+                numberFormat.setMinimumFractionDigits (1);
+                numberFormat.setMaximumFractionDigits (5);
+                return numberFormat.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                string = string.replaceAll(" ", "");
+                string = string.replaceAll(",", ".");
+                if (!Alerts.isNumericAlert(string)) {
+                    string = "0.0";
+                }
+                return Double.valueOf(string);
+            }
+        }));
+        chakanaColumn.setOnEditCommit(event -> {
+            HisobKitob hk = event.getRowValue();
+            Double newValue = event.getNewValue();
+            if (newValue != null) {
+                narhYoz(hk.getTovar(), 1, newValue/hk.getKurs());
+            }
+            event.getTableView().getSelectionModel().select(hk);
+            event.getTableView().scrollTo(hk);
+            event.getTableView().requestFocus();
+            event.getTableView().refresh();
+        });
+        chakanaColumn.setStyle( "-fx-alignment: CENTER;");
+        return chakanaColumn;
+    }
+
+    private  TableColumn<HisobKitob, Double> getUlgurjiNarhColumn() {
+        String ulgurji = narhList.get(1).getText();
+        TableColumn<HisobKitob, Double>  ulgurjiColumn = new TableColumn<>(ulgurji);
+        ulgurjiColumn.setMinWidth(100);
+        ulgurjiColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Double>, ObservableValue<Double>>() {
+
+            @Override
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<HisobKitob, Double> param) {
+                HisobKitob hk = param.getValue();
+                Double narhDouble = 0.0;
+                Standart6 s6 = narhOl(hk.getTovar());
+                if (s6 != null) {
+                    narhDouble = s6.getUlgurji();
+
+                }
+                else {
+                    TovarNarhi tn = yakkaTovarNarhi(hk.getTovar(), 2);
+                    if (tn != null) {
+                        narhDouble = tn.getNarh();
+                    }
+                }
+                return new SimpleObjectProperty<Double>(narhDouble);
+            }
+        });
+        ulgurjiColumn.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                NumberFormat numberFormat = NumberFormat.getInstance();
+                numberFormat.setMinimumIntegerDigits (1);
+                numberFormat.setMaximumIntegerDigits (10);
+
+                numberFormat.setMinimumFractionDigits (1);
+                numberFormat.setMaximumFractionDigits (5);
+                return numberFormat.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                string = string.replaceAll(" ", "");
+                string = string.replaceAll(",", ".");
+                if (!Alerts.isNumericAlert(string)) {
+                    string = "0.0";
+                }
+                return Double.valueOf(string);
+            }
+        }));
+        ulgurjiColumn.setOnEditCommit(event -> {
+            HisobKitob hk = event.getRowValue();
+            Double newValue = event.getNewValue();
+            if (newValue != null) {
+                narhYoz(hk.getTovar(), 2, newValue/hk.getKurs());
+            }
+            event.getTableView().getSelectionModel().select(hk);
+            event.getTableView().scrollTo(hk);
+            event.getTableView().requestFocus();
+            event.getTableView().refresh();
+        });
+        ulgurjiColumn.setStyle( "-fx-alignment: CENTER;");
+        return ulgurjiColumn;
+    }
+
+    public Standart6 narhOl(int tovarId) {
+        Standart6 s6 = null;
+        Standart6Models standart6Models = new Standart6Models("TGuruh1");
+        Standart3Models standart3Models = new Standart3Models();
+        standart3Models.setTABLENAME("TGuruh2");
+        ObservableList<Standart3> s3List = standart3Models.getAnyData(connection, "id3 = " + tovarId, "");
+        if (s3List.size()>0) {
+            Standart3 s3 = s3List.get(0);
+            s6 = standart6Models.getWithId(connection, s3.getId2());
+        }
+        return s6;
+    }
+
+    public void narhYoz(int tovarId, int narhTuri, Double narhDouble) {
+        Standart6Models standart6Models = new Standart6Models("TGuruh1");
+        Standart3Models standart3Models = new Standart3Models();
+        standart3Models.setTABLENAME("TGuruh2");
+        ObservableList<Standart3> s3List = standart3Models.getAnyData(connection, "id3 = " + tovarId, "");
+        if (s3List.size()>0) {
+            Standart3 s3 = s3List.get(0);
+            Standart6 s6 = standart6Models.getWithId(connection, s3.getId2());
+            if (s6 != null) {
+                switch (narhTuri) {
+                    case 0:
+                        s6.setNarh(narhDouble);
+                        break;
+                    case 1:
+                        s6.setChakana(narhDouble);
+                        break;
+                    case 2:
+                        s6.setUlgurji(narhDouble);
+                        break;
+                    case 3:
+                        s6.setBoj(narhDouble);
+                        break;
+                    case 4:
+                        s6.setNds(narhDouble);
+                        break;
+                }
+                standart6Models.update_data(connection, s6);
+                GuruhNarhModels guruhNarhModels = new GuruhNarhModels();
+                GuruhNarh guruhNarh = new GuruhNarh(
+                        null, new Date(), s6.getId(), narhTuri, narhDouble, user.getId(), new Date()
+                );
+                guruhNarhModels.insert_data(connection, guruhNarh);
+            }
+        } else {
+            TovarNarhiModels tovarNarhiModels = new TovarNarhiModels();
+            TovarNarhi tovarNarhi = new TovarNarhi(
+                    null, date, tovarId, narhTuri, 1, 1d, narhDouble, user.getId(), null
+            );
+            tovarNarhiModels.insert_data(connection, tovarNarhi);
+        }
+    }
+
+    private TovarNarhi yakkaTovarNarhi(int tovarId, int narhTuri) {
+        TovarNarhi tovarNarhi = null;
+        TovarNarhiModels tovarNarhiModels = new TovarNarhiModels();
+        ObservableList<TovarNarhi> observableList = tovarNarhiModels.getAnyData(
+                connection, "tovar = " + tovarId + " AND narhTuri = " + narhTuri, "sana desc"
+        );
+        if (observableList.size()>0) {
+            tovarNarhi = observableList.get(0);
+        }
+        return tovarNarhi;
+    }
+
 }

@@ -140,8 +140,10 @@ public class KursModels {
             rs.close();
             prSt.close();
         } catch (SQLException e) {
+            e.printStackTrace();
             Alerts.losted();
         } catch (ParseException e) {
+            e.printStackTrace();
             Alerts.parseError();
         }
         return kurs;

@@ -23,11 +23,12 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.BarCode;
 import sample.Data.Standart;
 import sample.Data.Standart4;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.Standart4Models;
 import sample.Model.StandartModels;
@@ -80,7 +81,7 @@ public class NdsController extends Application {
     String IkkinchiUstunNomi = "NDS %";
 
     public NdsController() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     public NdsController(Connection connection, User user) {

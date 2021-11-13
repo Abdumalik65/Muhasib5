@@ -13,11 +13,12 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.HisobKitob;
 import sample.Data.QaydnomaData;
 import sample.Data.Standart;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Model.QaydnomaModel;
 import sample.Model.StandartModels;
@@ -52,7 +53,7 @@ public class Analitic extends Application {
     }
 
     public Analitic() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
     }
 

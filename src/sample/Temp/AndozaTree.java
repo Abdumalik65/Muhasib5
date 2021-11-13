@@ -107,10 +107,10 @@ public class AndozaTree extends Application {
         Rectangle2D bounds = screen.getVisualBounds();
         stage = primaryStage;
         stage.setTitle("Andoza");
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.initStyle(StageStyle.UNDECORATED);
         stage.setScene(scene);
     }

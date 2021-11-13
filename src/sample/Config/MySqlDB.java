@@ -2,6 +2,7 @@ package sample.Config;
 
 import javafx.collections.ObservableList;
 import sample.Data.Aloqa;
+import sample.Enums.ServerType;
 import sample.Model.AloqaModels;
 import sample.Tools.ConnectionType;
 import sample.Tools.LostConnection;
@@ -16,6 +17,20 @@ public class MySqlDB {
     protected String dbUser;
     protected String dbPass;
     private String dataBaseName;
+    private String setting = "?useUnicode=true" +
+            "&" +
+            "sessionVariables=sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))" +
+            "&" +
+            "useJDBCCompliantTimezoneShift=true" +
+            "&" +
+            "useLegacyDatetimeCode=false" +
+            "&" +
+            "serverTimezone=UTC" +
+            "&" +
+            "autoReconnect=true" +
+            "&" +
+            "createDatabaseIfNotExist=true";
+
     Connection dbConnection;
 
     public MySqlDB() {
@@ -25,12 +40,13 @@ public class MySqlDB {
         if (aloqas.size()>0) {
             Aloqa aloqa = aloqas.get(0);
             dbHost = aloqa.getDbHost();
+//            dbHost = "192.168.1.108";
             dbPort= aloqa.getDbPort();
             dbUser= aloqa.getDbUser();
             dbPass = aloqa.getDbPass();
-            dataBaseName = aloqa.getDbName() +
-                    "?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC&autoReconnect=true&createDatabaseIfNotExist=true";
-            System.out.println(aloqa.getDbName() + " | " + dbHost + " | " + dbPort + " | " + dbUser + " | " + dbPass);
+            dataBaseName = aloqa.getDbName() ;
+//            dataBaseName = "BestParfumery" ;
+            System.out.println(dataBaseName + " | " + dbHost + " | " + dbPort + " | " + dbUser + " | " + dbPass);
             ConnectionType.setIsRemoteConnection(false);
             ConnectionType.setAloqa(aloqa);
         }
@@ -40,7 +56,7 @@ public class MySqlDB {
         String connectionString = "jdbc:mysql://" +
                 dbHost + ":" +
                 dbPort + "/" +
-                dataBaseName;
+                dataBaseName + setting;
         dbConnection = null;
 
         try {
@@ -48,13 +64,15 @@ public class MySqlDB {
             dbConnection = DriverManager.getConnection(connectionString, dbUser, dbPass);
             CreateTables createTables = new CreateTables(dbConnection);
             createTables.start();
+            System.out.println("Boshqa computerdagi MySql serverga ulandik");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
+            System.out.println("MySql serverga ulana olmadik");
         } catch (SQLException e) {
             e.printStackTrace();
             LostConnection.losted();
+            System.out.println("MySql serverga ulana olmadik");
         }
-        System.out.println("Boshqa computerdagi MySql serverga ulandik");
         return dbConnection;
     }
     public String getDbHost() {

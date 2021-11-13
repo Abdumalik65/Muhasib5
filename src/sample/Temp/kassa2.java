@@ -1,7 +1,7 @@
 package sample.Temp;
 
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.Hisob;
 import sample.Data.Valuta;
 import sample.Model.HisobKitobModels;

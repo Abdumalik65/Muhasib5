@@ -30,8 +30,9 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -112,7 +113,7 @@ public class TovarKirimChiqimi extends Application {
     }
 
     public TovarKirimChiqimi() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         String serialNumber = Sotuvchi3.getSerialNumber();
         kassa = Sotuvchi3.getKassaData(connection, serialNumber);
@@ -1099,10 +1100,10 @@ public class TovarKirimChiqimi extends Application {
         scene = new Scene(borderpane);
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
 //        scene.getStylesheets().add("/sample/Styles/caspian.css");
         stage.setResizable(false);
         stage.setScene(scene);

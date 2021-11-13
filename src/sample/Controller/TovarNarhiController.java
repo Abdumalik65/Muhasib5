@@ -19,7 +19,8 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
+import sample.Enums.ServerType;
 import sample.Tools.*;
 import sample.Data.*;
 import sample.Model.*;
@@ -77,7 +78,7 @@ public class TovarNarhiController extends Application {
     TovarNarhi tovarNarhi;
 
     public TovarNarhiController() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     public TovarNarhiController(Connection connection, User user) {

@@ -2,7 +2,7 @@ package sample.Temp;
 
 import javafx.collections.ObservableList;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.Hisob;
 import sample.Data.HisobKitob;
 import sample.Data.QaydnomaData;

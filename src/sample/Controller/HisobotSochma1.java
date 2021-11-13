@@ -23,11 +23,13 @@ import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Model.HisobModels;
 import sample.Model.QaydnomaModel;
+import sample.Model.Standart3Models;
 import sample.Tools.ExportToExcel;
 import sample.Tools.GetDbData;
 import sample.Tools.GetTableView2;
@@ -58,6 +60,7 @@ public class HisobotSochma1 extends Application {
     GetTableView2 getTableView2 = new GetTableView2();
 
     ObservableList<Hisob> hisobObservableList;
+    ObservableList<Hisob> hisobListForTable = FXCollections.observableArrayList();
     ObservableList<HisobKitob> hisobKitobObservableList = FXCollections.observableArrayList();
     ObservableList<HisobKitob> rightObservableList = FXCollections.observableArrayList();
     ObservableList<QaydnomaData> qaydnomaDataObservableList = FXCollections.observableArrayList();
@@ -85,7 +88,7 @@ public class HisobotSochma1 extends Application {
     }
 
     public HisobotSochma1() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -135,6 +138,17 @@ public class HisobotSochma1 extends Application {
                 kirimHisobi.setBalans(kirimBalans + jami);
             }
         }
+        Standart3Models standart3Models = new Standart3Models();
+        standart3Models.setTABLENAME("CheklanganHisobTarkibi");
+        ObservableList<Standart3> standart3List = standart3Models.getAnyData(connection, "id2 = " + user.getId(), "");
+        hisobListForTable = hisobModels.get_data(connection, standart3List);
+        for (Hisob h: hisobObservableList) {
+            Hisob h1 = GetDbData.hisobniTop(h.getId(), hisobListForTable);
+            if (h1!=null) {
+                h1.setBalans(h.getBalans());
+            }
+        }
+
     }
 
     @Override
@@ -199,9 +213,9 @@ public class HisobotSochma1 extends Application {
         VBox.setVgrow(hisobTableView, Priority.ALWAYS);
         hisobTableView.getColumns().get(1).setMinWidth(150);
         hisobTableView.getColumns().get(1).setMaxWidth(150);
-        hisobTableView.setItems(hisobObservableList);
-        if (hisobObservableList.size()>0) {
-            hisob = hisobObservableList.get(0);
+        hisobTableView.setItems(hisobListForTable);
+        if (hisobListForTable.size()>0) {
+            hisob = hisobListForTable.get(0);
             refreshHisobKitobTableYangi(hisob);
             hisobTableView.getSelectionModel().selectFirst();
         }
@@ -384,10 +398,10 @@ public class HisobotSochma1 extends Application {
         scene = new Scene(borderpane);
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.setResizable(false);
         stage.setScene(scene);
     }

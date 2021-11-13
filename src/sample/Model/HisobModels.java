@@ -3,6 +3,7 @@ package sample.Model;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import sample.Data.Standart3;
+import sample.Data.User;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
 import sample.Data.Hisob;
@@ -11,6 +12,8 @@ import java.util.Date;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
 
 public class HisobModels {
     private String TABLENAME = "Hisob";
@@ -50,6 +53,45 @@ public class HisobModels {
                         rs.getInt(7),
                         sdf.parse(rs.getString(8))
                 ));
+            }
+        } catch (SQLException e) {
+            Alerts.losted();
+        } catch (ParseException e) {
+            Alerts.parseError();
+        }
+        return books;
+    }
+
+    public ObservableList<Hisob> get_data(Connection connection, ObservableList<Standart3> cheklanganHisoblar) {
+        Map<Integer, Hisob> hisobMap = new HashMap<>();
+        ObservableList<Hisob> books = FXCollections.observableArrayList();
+        ResultSet rs = null;
+        String select = "SELECT * FROM " + TABLENAME;
+        PreparedStatement prSt = null;
+        try {
+            prSt = connection.prepareStatement(select);
+            rs = prSt.executeQuery();
+            while (rs.next()) {
+                Boolean addForce = true;
+                Integer idHisob = rs.getInt(1);
+                for (Standart3 s3: cheklanganHisoblar) {
+                    if (s3.getId3().equals(idHisob)) {
+                        addForce = false;
+                        break;
+                    }
+                }
+                if (addForce) {
+                    books.add(new Hisob(
+                            rs.getInt(1),
+                            rs.getString(2),
+                            rs.getDouble(3),
+                            rs.getString(4),
+                            rs.getString(5),
+                            rs.getString(6),
+                            rs.getInt(7),
+                            sdf.parse(rs.getString(8))
+                    ));
+                }
             }
         } catch (SQLException e) {
             Alerts.losted();

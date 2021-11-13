@@ -7,10 +7,11 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Controller.HisobController;
 import sample.Data.Hisob;
 import sample.Data.User;
+import sample.Enums.ServerType;
 
 import java.sql.Connection;
 
@@ -24,7 +25,7 @@ public class HisobChanger extends HBox {
     String imageNameString = "/sample/images/Icons/add.png";
 
     public HisobChanger() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         hisobObservableList = GetDbData.getHisobObservableList();
         ibtido();

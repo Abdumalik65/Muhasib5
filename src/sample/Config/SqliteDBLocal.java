@@ -28,6 +28,7 @@ public class SqliteDBLocal {
             Class.forName("org.sqlite.JDBC");
             dbConnection = DriverManager.getConnection(connectionString);
             AndozaTable(dbConnection, "AdressComp");
+            PrintersTable(dbConnection, "Printers");
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }
@@ -49,6 +50,12 @@ public class SqliteDBLocal {
         PreparedStatement prSt = connection.prepareStatement(structure);
         prSt.executeUpdate();
     }
-    //ovglJuu40CD+x++g0uC2+g==
+
+    private void PrintersTable(Connection connection, String tableName) throws SQLException {
+        String structure = "CREATE TABLE IF NOT EXISTS " +  tableName + " (id integer PRIMARY KEY, text text(150), userId integer, dateTime datetime DEFAULT (datetime('now','localtime')))";
+        PreparedStatement prSt = connection.prepareStatement(structure);
+        prSt.executeUpdate();
+    }
+
 }
 

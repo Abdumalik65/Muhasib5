@@ -2,9 +2,10 @@ package sample.Temp;
 
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.HisobKitob;
 import sample.Data.Standart;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Model.StandartModels;
 
@@ -16,7 +17,7 @@ public class tovarqidir {
     static ObservableList<Standart> tovarList;
 
     public static void main(String[] args) {
-        Connection connection = new MySqlDBLocal().getDbConnection();
+        Connection connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         StandartModels standartModels = new StandartModels("Tovar");
         tovarList = standartModels.get_data(connection);
         HisobKitobModels hisobKitobModels = new HisobKitobModels();

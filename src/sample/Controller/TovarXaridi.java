@@ -29,8 +29,9 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -114,7 +115,7 @@ public class TovarXaridi extends Application {
     }
 
     public TovarXaridi() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }
@@ -520,8 +521,8 @@ public class TovarXaridi extends Application {
             Double newValue = event.getNewValue();
             HisobKitob hisobKitob = event.getRowValue();
             event.getTableView().refresh();
-            balanceRefresh();
             hisobKitob.setNarh(newValue);
+            balanceRefresh();
         });
         return narh;
     }
@@ -1104,6 +1105,7 @@ public class TovarXaridi extends Application {
         }
         hisobKitobTableView.getSelectionModel().select(hisobKitob);
         hisobKitobTableView.scrollTo(hisobKitob);
+        hisobKitobTableView.requestFocus();
         hisobKitobTableView.refresh();
         balanceRefresh();
     }

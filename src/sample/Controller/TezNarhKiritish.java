@@ -28,7 +28,8 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 import sample.Data.*;
@@ -109,7 +110,7 @@ public class TezNarhKiritish extends Application {
     }
 
     public TezNarhKiritish() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
 //        ibtido();
     }
 
@@ -688,10 +689,10 @@ public class TezNarhKiritish extends Application {
         stage.setTitle("Narh kiritish");
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         scene = new Scene(borderpane);
         barCodeOn();
         stage.setOnCloseRequest(event -> {

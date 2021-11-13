@@ -33,9 +33,11 @@ import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
+import sample.Config.SqliteDB;
 import sample.Config.SqliteDBPrinters;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -145,7 +147,7 @@ public class Sotuvchi3 extends Application {
     }
 
     public Sotuvchi3() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
     }
 
@@ -162,18 +164,13 @@ public class Sotuvchi3 extends Application {
         ibtido();
     }
 
-    private void initData1() {
-        tableViewObservableList = hisobKitobModels.getAnyData(connection, "qaydId = " + qaydnomaData.getId(), "");
-
-    }
-
     @Override
     public void start(Stage primaryStage) throws Exception {
         if (buKassami()) {
             login();
             ibtido();
         } else {
-            System.out.println("Bu kompyuterdan sistema qaydidan o`tmagan");
+            System.out.println("Bu kompyuter sistema qaydidan o`tmagan");
             Platform.exit();
             System.exit(0);
         }
@@ -215,9 +212,14 @@ public class Sotuvchi3 extends Application {
         hisobObservableList = hisobModels.get_data(connection);
         String serialNumber = getSerialNumber();
         kassa = getKassaData(connection, serialNumber);
+        if (kassa != null) {
+            user.setPulHisobi(kassa.getPulHisobi());
+            user.setTovarHisobi(kassa.getTovarHisobi());
+            user.setXaridorHisobi(kassa.getXaridorHisobi());
+        }
         valuta = GetDbData.getValuta(kassa.getValuta());
         valutaObservableList = GetDbData.getValutaObservableList();
-        tovarObservableList = GetDbData.getTovarObservableList();
+        tovarObservableList = hisobKitobModels.getTovarCount(connection, user.getTovarHisobi(), new Date());
         standartModels.setTABLENAME("Birlik");
         birlikObservableList = standartModels.get_data(connection);
         standartModels.setTABLENAME("TolovShakli");
@@ -287,8 +289,16 @@ public class Sotuvchi3 extends Application {
         SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
         MenuItem pochkaBizishMenuItem = new MenuItem("Pochka buzish");
         MenuItem tovarGuruhlariMenuItem = new MenuItem("Tovar guruhlari");
+        MenuItem serialNumberMenuItem = new MenuItem("Seriya raqami");
 
-        tovarMenu.getItems().addAll(tovarHisobotiMenuItem, tovarKirimiMenuItem, tovarChiqimiMenuItem, separatorMenuItem, pochkaBizishMenuItem, tovarGuruhlariMenuItem);
+        tovarMenu.getItems().addAll(
+                tovarHisobotiMenuItem,
+                tovarKirimiMenuItem,
+                tovarChiqimiMenuItem,
+                separatorMenuItem,
+                pochkaBizishMenuItem,
+                serialNumberMenuItem
+        );
 
         tovarHisobotiMenuItem.setOnAction(event -> {
             Hisob hisob = GetDbData.getHisob(kassa.getTovarHisobi());
@@ -301,17 +311,25 @@ public class Sotuvchi3 extends Application {
         tovarKirimiMenuItem.setOnAction(event -> {
             TovarXaridi tovarXaridi = new TovarXaridi(connection, user);
             qaydnomaData = tovarXaridi.display();
+            initTovarHBox();
         });
 
         tovarChiqimiMenuItem.setOnAction(event -> {
             TovarHarakatlari tovarHarakatlari = new TovarHarakatlari(connection, user);
             tovarHarakatlari.display();
+            initTovarHBox();
+        });
+
+        serialNumberMenuItem.setOnAction(event -> {
+            SerialNumbersController serialNumbersController = new SerialNumbersController(connection, user);
+            serialNumbersController.display();
         });
 
         pochkaBizishMenuItem.setOnAction(event -> {
             Hisob hisob = GetDbData.getHisob(kassa.getTovarHisobi());
             PochkaBuzish2 pochkaBuzish = new PochkaBuzish2(connection, user, hisob);
             pochkaBuzish.display();
+            initTovarHBox();
         });
 
         tovarGuruhlariMenuItem.setOnAction(event -> {
@@ -348,14 +366,6 @@ public class Sotuvchi3 extends Application {
             ConvertController convertController = new ConvertController(connection, user, pulHisobi);
             convertController.display();
         });
-    }
-
-    private Menu getTovarMenu() {
-        Menu menu = new Menu("Xarid");
-        MenuItem menuItem = getXaridJadvaliMenuItem();
-        menu.getItems().addAll(getXaridJadvaliMenuItem());
-        return menu;
-
     }
 
     private Menu getXaridMenu() {
@@ -1168,10 +1178,10 @@ public class Sotuvchi3 extends Application {
         Rectangle2D bounds = screen.getVisualBounds();
         stage = primaryStage;
         stage.setTitle("Savdo");
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
 //        stage.initStyle(StageStyle.UNDECORATED);
         stage.setOnCloseRequest(event -> {
             barCodeOff();
@@ -1280,6 +1290,7 @@ public class Sotuvchi3 extends Application {
     }
 
     private void initTovarHBox() {
+        tovarObservableList = hisobKitobModels.getTovarCount(connection, user.getTovarHisobi(), new Date());
         HBox.setHgrow(tovarHBox, Priority.ALWAYS);
         TextField textField = tovarHBox.getTextField();
         TextFields.bindAutoCompletion(textField, tovarObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Standart> autoCompletionEvent) -> {
@@ -1397,6 +1408,7 @@ public class Sotuvchi3 extends Application {
         navbatdagiXaridorButton.setPrefWidth(150);
         navbatdagiXaridorButton.setOnAction(event -> {
             barCodeOn();
+            initTovarHBox();
             setDisable(false);
         });
     }
@@ -1472,7 +1484,7 @@ public class Sotuvchi3 extends Application {
         barCodeOff();
     }
     private String printerim() {
-        Connection printersConnection = new SqliteDBPrinters().getDbConnection();
+        Connection printersConnection = new SqliteDB().getDbConnection();
         StandartModels printerModels = new StandartModels("Printers");
         ObservableList<Standart> printers = printerModels.get_data(printersConnection);
         Standart myPrinter = null;
@@ -1687,7 +1699,8 @@ public class Sotuvchi3 extends Application {
         String sanaString = sana.format(date);
         String vaqtString = vaqt.format(date);
         printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%29s\n", "O`RIKZOR 1/40"));
+        String shirkatNomi = GetDbData.getHisob(user.getTovarHisobi()).getText();
+        printStringBuffer.append(String.format("%29s\n", shirkatNomi));
         printStringBuffer.append(lineB);
         printStringBuffer.append(String.format("%-15s %29s\n", "Telefon", user.getPhone()));
         printStringBuffer.append(String.format("%-15s %29s\n", "Sana", sanaString));
@@ -1756,7 +1769,8 @@ public class Sotuvchi3 extends Application {
         String sanaString = sana.format(date);
         String vaqtString = vaqt.format(date);
         printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%23s\n", "BEST PERFUMERY"));
+        String shirkatNomi = GetDbData.getHisob(user.getTovarHisobi()).getText();
+        printStringBuffer.append(String.format("%23s\n", shirkatNomi));
         printStringBuffer.append(lineB);
         printStringBuffer.append(String.format("%-15s %16s\n", "Telefon", user.getPhone()));
         printStringBuffer.append(String.format("%-11s %20s\n", "Telegram", "t.me/best_perfumery"));
@@ -1827,7 +1841,8 @@ public class Sotuvchi3 extends Application {
         String sanaString = sana.format(date);
         String vaqtString = vaqt.format(date);
         printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%23s\n", "BEST PERFUMERY"));
+        String shirkatNomi = GetDbData.getHisob(user.getTovarHisobi()).getText();
+        printStringBuffer.append(String.format("%23s\n", shirkatNomi));
         printStringBuffer.append(lineB);
         printStringBuffer.append(String.format("%-15s %16s\n", "Telefon", user.getPhone()));
         printStringBuffer.append(String.format("%-15s %16s\n", "Sana", sanaString));

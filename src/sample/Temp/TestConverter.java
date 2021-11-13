@@ -1,8 +1,9 @@
 package sample.Temp;
 
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.User;
 import sample.Data.Valuta;
+import sample.Enums.ServerType;
 import sample.Tools.CurrencyConverter;
 import sample.Tools.GetDbData;
 import sample.Tools.MoneyShow;
@@ -12,7 +13,7 @@ import java.text.DecimalFormat;
 
 public class TestConverter {
     public static void main(String[] args) {
-        Connection connection = new MySqlDBLocal().getDbConnection();
+        Connection connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         User user = new User(1, "admin", "", "admin");
         GetDbData.initData(connection);
         Valuta sourceValuta = GetDbData.getValuta(2);

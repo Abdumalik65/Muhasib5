@@ -8,8 +8,9 @@ import javafx.scene.control.Button;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 
 import java.sql.Connection;
@@ -27,7 +28,7 @@ public class tempFx extends Application {
     @Override
     public void start(Stage primaryStage) {
         Connection sourceCconnection = new MySqlDB().getDbConnection();
-        Connection targetConnection = new MySqlDBLocal().getDbConnection();
+        Connection targetConnection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         TruncateTables(targetConnection);
         copyStandartData(sourceCconnection, targetConnection, "Amal");
         copyStandartData(sourceCconnection, targetConnection, "Tovar");

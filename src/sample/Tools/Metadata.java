@@ -1,6 +1,7 @@
 package sample.Tools;
 
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
+import sample.Enums.ServerType;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -20,7 +21,7 @@ public class Metadata {
  
     // Static block for initialization
     static {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
 
         try {
             metadata = connection.getMetaData();

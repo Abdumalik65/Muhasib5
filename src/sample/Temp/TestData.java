@@ -2,11 +2,12 @@ package sample.Temp;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.BarCode;
 import sample.Data.HisobKitob;
 import sample.Data.QaydnomaData;
 import sample.Data.Standart;
+import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.HisobKitobModels;
 import sample.Model.QaydnomaModel;
@@ -17,7 +18,7 @@ import java.sql.Connection;
 
 public class TestData {
     public static void main(String[] args) {
-        Connection connection = new MySqlDBLocal().getDbConnection();
+        Connection connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
         ObservableList<HisobKitob> hisobKitobObservableList = hisobKitobModels.get_data(connection);
         QaydnomaModel qaydnomaModel = new QaydnomaModel();

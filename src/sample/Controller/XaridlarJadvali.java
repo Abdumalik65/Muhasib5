@@ -8,11 +8,11 @@ import javafx.collections.ObservableList;
 import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
@@ -21,24 +21,22 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import javafx.util.converter.PercentageStringConverter;
-import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
+import sample.Config.MySqlDBGeneral;
+import sample.Config.SqliteDB;
 import sample.Config.SqliteDBPrinters;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Model.QaydnomaModel;
 import sample.Model.StandartModels;
 import sample.Tools.*;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.sql.Connection;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collection;
 import java.util.Date;
-import java.util.List;
-import java.util.Locale;
 
 public class XaridlarJadvali extends Application {
     Stage stage;
@@ -70,7 +68,8 @@ public class XaridlarJadvali extends Application {
     Double jamiMablag = 0.0;
     Double kassagaDouble = 0.0;
     Double chegirmaDouble = 0.0;
-    Double naqdDouble = 0.0;
+    Double naqdUsdDouble = 0.0;
+    Double naqdMilliyDouble = 0.0;
     Double plasticDouble = 0.0;
     Double balansDouble = 0.0;
     Double qaytimDouble = 0.0;
@@ -78,7 +77,8 @@ public class XaridlarJadvali extends Application {
     Label jamiMablagLabel = new Label();
     Label chegirmaLabel = new Label();
     Label kassagaLabel = new Label();
-    Label naqdLabel = new Label();
+    Label naqdUSDLabel = new Label();
+    Label naqdMilliyLabel = new Label();
     Label plasticLabel = new Label();
     Label balansLabel = new Label();
     Label qaytimLabel = new Label();
@@ -89,7 +89,7 @@ public class XaridlarJadvali extends Application {
     }
 
     public XaridlarJadvali() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -138,8 +138,8 @@ public class XaridlarJadvali extends Application {
 
     private void initRightPane() {
         initTaftishHBox();
-        initXaridChiptasiTableView();
         initGridPane2();
+        initXaridChiptasiTableView();
         initXaridChiptasiButton();
         SetHVGrow.VerticalHorizontal(rightPane);
         rightPane.getChildren().addAll(taftishHBox, xaridlarTableView);
@@ -282,7 +282,7 @@ public class XaridlarJadvali extends Application {
         return qaydnomaDataObservableList;
     }
     private String printerim() {
-        Connection printersConnection = new SqliteDBPrinters().getDbConnection();
+        Connection printersConnection = new SqliteDB().getDbConnection();
         StandartModels printerModels = new StandartModels("Printers");
         ObservableList<Standart> printers = printerModels.get_data(printersConnection);
         String printerNomi = "Topmadim";
@@ -346,6 +346,7 @@ public class XaridlarJadvali extends Application {
             String printerim = printerim();
             ExportToExcel exportToExcel = new ExportToExcel(printerim);
             User user1 = GetDbData.getUser(qaydnomaData.getUserId());
+            user1.setTovarHisobi(user.getTovarHisobi());
             exportToExcel.savdoChiptasi(qaydnomaData, connection, user1);
         });
     }
@@ -508,14 +509,14 @@ public class XaridlarJadvali extends Application {
         jamiMablagLabel.setText(decimalFormat.format(jamiMablag));
         kassagaDouble = jamiMablag - chegirmaDouble;
         kassagaLabel.setText(decimalFormat.format(kassagaDouble));
-        Double aDouble = (naqdDouble + plasticDouble) - (jamiMablag - chegirmaDouble);
+        Double aDouble = (naqdUsdDouble + plasticDouble) - (jamiMablag - chegirmaDouble);
         if (aDouble > 0) {
             qaytimDouble = (aDouble);
         } else {
             qaytimDouble = 0.0;
         }
         qaytimLabel.setText(decimalFormat.format(qaytimDouble));
-        balansDouble = (naqdDouble + plasticDouble - qaytimDouble) - (jamiMablag - chegirmaDouble);
+        balansDouble = (naqdUsdDouble + plasticDouble - qaytimDouble) - (jamiMablag - chegirmaDouble);
         balansLabel.setText(decimalFormat.format(balansDouble));
     }
 
@@ -570,15 +571,28 @@ public class XaridlarJadvali extends Application {
         GridPane.setHalignment(kassagaLabel, HPos.RIGHT);
 
         rowIndex++;
-        Label label4 = new Label("Naqd");
+        Valuta valutaUSD = GetDbData.getValuta(1);
+        Label label4 = new Label("Naqd " + valutaUSD.getValuta());
         label4.setFont(font);
         HBox.setHgrow(label4, Priority.ALWAYS);
         GridPane.setHgrow(label4, Priority.ALWAYS);
-        HBox.setHgrow(naqdLabel, Priority.ALWAYS);
-        GridPane.setHgrow(naqdLabel, Priority.ALWAYS);
+        HBox.setHgrow(naqdUSDLabel, Priority.ALWAYS);
+        GridPane.setHgrow(naqdUSDLabel, Priority.ALWAYS);
         gridPane1.add(label4, 0, rowIndex, 1, 1);
-        gridPane1.add(naqdLabel, 1, rowIndex, 1,1);
-        GridPane.setHalignment(naqdLabel, HPos.RIGHT);
+        gridPane1.add(naqdUSDLabel, 1, rowIndex, 1,1);
+        GridPane.setHalignment(naqdUSDLabel, HPos.RIGHT);
+
+        rowIndex++;
+        Valuta valutaMilliy = GetDbData.getValuta(2);
+        Label label4b = new Label("Naqd " + valutaMilliy.getValuta());
+        label4b.setFont(font);
+        HBox.setHgrow(label4b, Priority.ALWAYS);
+        GridPane.setHgrow(label4b, Priority.ALWAYS);
+        HBox.setHgrow(naqdMilliyLabel, Priority.ALWAYS);
+        GridPane.setHgrow(naqdMilliyLabel, Priority.ALWAYS);
+        gridPane1.add(label4b, 0, rowIndex, 1, 1);
+        gridPane1.add(naqdMilliyLabel, 1, rowIndex, 1,1);
+        GridPane.setHalignment(naqdMilliyLabel, HPos.RIGHT);
 
         rowIndex++;
         Label label5 = new Label("Plastik");
@@ -620,11 +634,28 @@ public class XaridlarJadvali extends Application {
         tableObservableList.removeAll(tableObservableList);
         jamiMablag = 0.0;
         chegirmaDouble = 0.0;
-        naqdDouble = 0.0;
+        naqdUsdDouble = 0.0;
+        naqdMilliyDouble = 0.0;
         plasticDouble = 0.0;
         qaytimDouble = 0.0;
         balansDouble = 0.0;
+        boolean valutaniOldim = false;
+        Valuta joriyValuta = null;
+        Double joriyValutaKurs = 1d;
+        initLabels();
         for (HisobKitob hk: hisobKitobObservableList) {
+            if (!valutaniOldim) {
+                if (hk.getHisob2().equals(qaydnomaData.getKirimId()) && hk.getTovar()>0) {
+                    joriyValuta = GetDbData.getValuta(hk.getValuta());
+                    joriyValutaKurs = hk.getKurs();
+                    valutaniOldim = true;
+                    setLabelToGrid(gridPane1, 1, "Xarid narhi " + joriyValuta.getValuta());
+                    setLabelToGrid(gridPane1, 3, "Chergirma " + joriyValuta.getValuta());
+                    setLabelToGrid(gridPane1, 5, "Kassaga " + joriyValuta.getValuta());
+                    setLabelToGrid(gridPane1, 13, "Qaytim " + joriyValuta.getValuta());
+                    setLabelToGrid(gridPane1, 15, "Balans " + joriyValuta.getValuta());
+                }
+            }
             switch (hk.getAmal()) {
                 case 4: //Tovar
                     if (hk.getHisob2().equals(qaydnomaData.getKirimId())) {
@@ -633,26 +664,54 @@ public class XaridlarJadvali extends Application {
                     }
                     break;
                 case 7: //To`lov naqd
-                    naqdDouble = hk.getNarh();
+                    if (hk.getValuta().equals(1)) {
+                        if (joriyValuta.getId().equals(1)) {
+                            naqdUsdDouble = hk.getNarh();
+                        } else if (joriyValuta.getId().equals(2)) {
+                            naqdUsdDouble = hk.getNarh() * joriyValutaKurs;
+                            Valuta v = GetDbData.getValuta(hk.getValuta());
+                            String labelText = "Naqd " + hk.getNarh() + " " + v.getValuta() + " * " + joriyValutaKurs + " " + joriyValuta.getValuta();
+                            setLabelToGrid(gridPane1, 7, labelText);
+                        }
+                    } else if (hk.getValuta().equals(2)) {
+                        if (joriyValuta.getId().equals(1)) {
+                            naqdMilliyDouble = hk.getNarh() / hk.getKurs();
+                            Valuta v = GetDbData.getValuta(hk.getValuta());
+                            String labelText = "Naqd " + hk.getNarh() + " " + v.getValuta() + " / " + hk.getKurs() + " " + v.getValuta();
+                            setLabelToGrid(gridPane1, 9, labelText);
+                        } else if (joriyValuta.getId().equals(2)) {
+                            naqdMilliyDouble = hk.getNarh();
+                        }
+                    }
                     break;
                 case 8: //Qaytim
                     qaytimDouble = hk.getNarh();
+                    setLabelToGrid(gridPane1, 13, "Qaytim " + joriyValuta.getValuta());
                     break;
                 case 13:    //Chegirma
                     chegirmaDouble = hk.getNarh();
+                    setLabelToGrid(gridPane1, 3, "Chegirma " + joriyValuta.getValuta());
                     break;
                 case 15:    //To`lov plastic
-                    plasticDouble = hk.getNarh();
+                    if (joriyValuta.getId().equals(1)) {
+                        Valuta vm = GetDbData.getValuta(2);
+                        plasticDouble = hk.getNarh() / hk.getKurs();
+                        setLabelToGrid(gridPane1, 11, "Plastic " + joriyValuta.getValuta() + " " + decimalFormat.format(hk.getNarh()) + " " + vm.getValuta() + "/" + decimalFormat.format(hk.getKurs()));
+                    } else if (joriyValuta.getId().equals(2)) {
+                        plasticDouble = hk.getNarh();
+                    }
                     break;
             }
         }
         kassagaDouble = jamiMablag - chegirmaDouble;
-        balansDouble = (naqdDouble + plasticDouble) - kassagaDouble - qaytimDouble;
+        double tolovDouble = naqdUsdDouble + naqdMilliyDouble + plasticDouble;
+        balansDouble = tolovDouble - kassagaDouble - qaytimDouble;
 
         jamiMablagLabel.setText(decimalFormat.format(jamiMablag));
         chegirmaLabel.setText(decimalFormat.format(chegirmaDouble));
         kassagaLabel.setText(decimalFormat.format(kassagaDouble));
-        naqdLabel.setText(decimalFormat.format(naqdDouble));
+        naqdUSDLabel.setText(decimalFormat.format(naqdUsdDouble));
+        naqdMilliyLabel.setText(decimalFormat.format(naqdMilliyDouble));
         plasticLabel.setText(decimalFormat.format(plasticDouble));
         qaytimLabel.setText(decimalFormat.format(qaytimDouble));
         balansLabel.setText(decimalFormat.format(balansDouble));
@@ -662,10 +721,43 @@ public class XaridlarJadvali extends Application {
         jamiMablagLabel.setFont(font);
         chegirmaLabel.setFont(font);
         kassagaLabel.setFont(font);
-        naqdLabel.setFont(font);
+        naqdUSDLabel.setFont(font);
+        naqdMilliyLabel.setFont(font);
         plasticLabel.setFont(font);
         qaytimLabel.setFont(font);
         balansLabel.setFont(font);
+    }
+
+    private void initLabels() {
+        Valuta v1 = GetDbData.getValuta(1);
+        Valuta v2 = GetDbData.getValuta(2);
+        Label labelXaridNarhi = getLabelFromGrid(gridPane1, 1);
+        labelXaridNarhi.setText("Xarid narhi");
+        Label labelChrgirma = getLabelFromGrid(gridPane1, 3);
+        labelChrgirma.setText("Chegirma");
+        Label labelKassaga = getLabelFromGrid(gridPane1, 5);
+        labelKassaga.setText("Kassaga");
+        Label labelNaqdUSD = getLabelFromGrid(gridPane1, 7);
+        labelNaqdUSD.setText("Naqd " + v1.getValuta());
+        Label labelNaqdMilliy = getLabelFromGrid(gridPane1, 9);
+        labelNaqdMilliy.setText("Naqd " + v2.getValuta());
+        Label labelPlastic = getLabelFromGrid(gridPane1, 11);
+        labelPlastic.setText("Plastic " + v2.getValuta());
+        Label labelQaytim = getLabelFromGrid(gridPane1, 13);
+        labelQaytim.setText("Qaytim");
+        Label labelBalance = getLabelFromGrid(gridPane1, 15);
+        labelBalance.setText("Balans");
+    }
+
+    public static Label getLabelFromGrid(GridPane gridPane, Integer labelId) {
+        Label label = null;
+        label = (Label) gridPane.getChildren().get(labelId);
+        return label;
+    }
+
+    public static void setLabelToGrid(GridPane gridPane, Integer labelId, String labelText) {
+        Label label = getLabelFromGrid(gridPane, labelId);
+        label.setText(labelText);
     }
 
     private void tolovChiptasiniBer(String printerNomi) {
@@ -677,7 +769,8 @@ public class XaridlarJadvali extends Application {
         String sanaString = sana.format(date);
         String vaqtString = vaqt.format(date);
         printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%23s\n", "BEST PERFUMERY"));
+        String shirkatNomi = GetDbData.getHisob(user.getTovarHisobi()).getText();
+        printStringBuffer.append(String.format("%23s\n", shirkatNomi));
         printStringBuffer.append(lineB);
         printStringBuffer.append(String.format("%-15s %16s\n", "Telefon", user.getPhone()));
         String lineT = String.format("%32s\n", user.getPhone());
@@ -713,8 +806,8 @@ public class XaridlarJadvali extends Application {
             printStringBuffer.append(line);
         }
 
-        if (naqdDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdDouble));
+        if (naqdUsdDouble > 0) {
+            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdUsdDouble));
             printStringBuffer.append(line);
         }
         if (plasticDouble > 0) {
@@ -782,8 +875,8 @@ public class XaridlarJadvali extends Application {
             printStringBuffer.append(line);
         }
 
-        if (naqdDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdDouble));
+        if (naqdUsdDouble > 0) {
+            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdUsdDouble));
             printStringBuffer.append(line);
         }
         if (plasticDouble > 0) {
@@ -828,7 +921,6 @@ public class XaridlarJadvali extends Application {
 
         contextMenu.getItems().add(addMenu);
         contextMenu.getItems().add(deleteMenu);
-//        contextMenu.getItems().add(editMenu);
         contextMenu.getItems().add(tolovMenu);
 
         addMenu.setOnAction(event -> {

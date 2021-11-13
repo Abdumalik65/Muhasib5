@@ -12,8 +12,9 @@ import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Tools.GetDbData;
 import sample.Tools.GetTableView2;
@@ -50,7 +51,7 @@ public class MahsulotMufassal extends Application {
     }
 
     public MahsulotMufassal() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         hisob = GetDbData.getHisob(10);

@@ -16,8 +16,9 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.HisobKitobModels;
 import sample.Temp.Hisobot2;
@@ -28,6 +29,8 @@ import sample.Tools.SetHVGrow;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -53,7 +56,7 @@ public class PulHisoboti extends Application {
     }
 
     public PulHisoboti() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -157,10 +160,13 @@ public class PulHisoboti extends Application {
     }
 
     private ObservableList<HisobKitob> pulList3(Integer hisobId) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate localDate = LocalDate.now();
+        String localDateString = localDate.format(formatter);
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
         ObservableList<HisobKitob> hisobKitobObservableList = FXCollections.observableArrayList();
         String select =
-                "Select valuta, sum(if(hisob2="+hisobId+",narh,0)) as kirim, sum(if(hisob1="+hisobId+",narh,0)) as chiqim from HisobKitob where tovar=0 and valuta>0 group by valuta";
+                "Select valuta, sum(if(hisob2="+hisobId+",narh,0)) as kirim, sum(if(hisob1="+hisobId+",narh,0)) as chiqim from HisobKitob where tovar=0 and valuta>0 and dateTime<='" + localDateString + " 23:59:59' group by valuta";
         ResultSet rs = hisobKitobModels.getResultSet(connection, select);
             try {
                 while (rs.next()) {

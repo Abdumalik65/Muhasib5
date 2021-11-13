@@ -5,7 +5,7 @@ import com.sun.tools.javac.code.Scope;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Model.*;
 import sample.Tools.Alerts;

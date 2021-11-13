@@ -315,4 +315,17 @@ public class GetDbData {
     public static void setUser(User user) {
         GetDbData.user = user;
     }
+
+    public static ObservableList<Hisob> cheklovlarniOlibTashla(ObservableList<Hisob> hisobList, User user1) {
+        Standart3Models standart3Models = new Standart3Models();
+        standart3Models.setTABLENAME("CheklanganHisobTarkibi");
+        ObservableList<Standart3> guruhTarkibi = standart3Models.getAnyData(connection, "id2 = " + user1.getId(), "");
+        for (Standart3 standart3: guruhTarkibi) {
+            Hisob hisobCheklangan = hisobniTop(standart3.getId3(), hisobList);
+            if (hisobCheklangan != null) {
+                hisobList.remove(hisobCheklangan);
+            }
+        }
+        return hisobList;
+    }
 }

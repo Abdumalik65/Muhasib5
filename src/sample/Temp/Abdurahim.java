@@ -4,16 +4,10 @@ package sample.Temp;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
-import sample.Config.MySqlDBTemp01;
-import sample.Config.MySqlDBTemp02;
 import sample.Data.*;
 import sample.Data.Tovar;
 import sample.Excel.NarhlarExcel;
 import sample.Model.*;
-import sample.Tools.GetDbData;
-import sample.Tools.MoneyShow;
-import sample.Tools.PrinterService;
 
 import java.io.File;
 import java.io.IOException;

@@ -2,25 +2,25 @@ package sample.Controller;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
-import sample.Config.SqliteDBPrinters;
+import sample.Config.*;
+import sample.Data.Kassa;
+import sample.Enums.ServerType;
 import sample.Tools.PathToImageView;
 import sample.Data.User;
 import sample.Model.UserModels;
 import sample.Tools.GetDbData;
+import sample.Tools.SetHVGrow;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -32,22 +32,16 @@ public class MainController extends Application {
     BorderPane borderpane = new BorderPane();
     MenuBar mainMenu;
     FlowPane flowPane = new FlowPane();
+    FlowPane centerPane;
     Connection connection;
     User user;
 
     public static void main(String[] args) {
         launch(args);
     }
-// mhv4csnf
-// 1 583 881 961 10 473 000
-// 93 587 8588
-// TechnoChain
-// AnKho
-// 3897 3866
-// 98 300 5979
-    // b-39
-    public MainController() throws SQLException {
-        connection = new MySqlDBLocal().getDbConnection();
+
+    public MainController() {
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         login();
@@ -70,10 +64,10 @@ public class MainController extends Application {
         });
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.setTitle("Hisobot");
         stage.setResizable(false);
         Scene scene = new Scene(borderpane);
@@ -97,9 +91,32 @@ public class MainController extends Application {
 
     private void initLeftPane() {}
 
-    private void initCenterPane() {}
+    private void initCenterPane() {
+//        centerPane = initCenterFlowPane();
+//        EngKopSotildi engKopSotildi = new EngKopSotildi(connection, user);
+//        centerPane.getChildren().add(engKopSotildi.getTable());
+    }
 
-    private void initRightPane() {}
+    private VBox initRightPane() {
+        VBox vBox = new VBox(3);
+        SetHVGrow.VerticalHorizontal(vBox);
+        ToggleGroup toggleGroup = new ToggleGroup();
+        ObservableList<RadioButton> radioButtons = FXCollections.observableArrayList(
+                new RadioButton("Eng ko`p sotilgan"),
+                new RadioButton("Sotilmagan"),
+                new RadioButton( "Qarzdorlar"),
+                new RadioButton("Haqdorlar"),
+                new RadioButton( "Analitika")
+        );
+        Integer i = 1;
+        for (RadioButton rb: radioButtons) {
+            rb.setToggleGroup(toggleGroup);
+            rb.setId(i.toString());
+            vBox.getChildren().add(rb);
+            i++;
+        }
+        return  vBox;
+    }
 
     private void initBottomPane() {
         initFlowPane();
@@ -148,13 +165,14 @@ public class MainController extends Application {
         HBox.setHgrow(flowPane, Priority.ALWAYS);
         VBox.setVgrow(flowPane, Priority.ALWAYS);
         flowPane.setAlignment(Pos.CENTER);
+
     }
 
     private void initBorderPane() {
         borderpane.setTop(mainMenu);
         borderpane.setLeft(null);
-        borderpane.setCenter(null);
-        borderpane.setRight(null);
+        borderpane.setCenter(centerPane);
+//        borderpane.setRight(initRightPane());
         borderpane.setBottom(flowPane);
     }
 
@@ -173,10 +191,13 @@ public class MainController extends Application {
     }
 
     private Menu getDasturMenu() {
-        Connection printerConnection = new SqliteDBPrinters().getDbConnection();
+        Connection printerConnection = new SqliteDB().getDbConnection();
         Menu dasturMenu = new Menu("Dastur");
         SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
         MenuItem printerMenuItem = new MenuItemStandart(printerConnection, "Printers", "Printerlar");
+        if (user.getStatus().equals(99)) {
+            dasturMenu.getItems().add(serverSozlashMenu());
+        }
         dasturMenu.getItems().addAll(
                 getUserMenuItem(),
                 getChangeUserMenuItem(),
@@ -194,6 +215,7 @@ public class MainController extends Application {
 
         hisobMenu.getItems().addAll(
                 getHisobMenuItem(),
+                kirshCheklanganHisoblar(),
                 getHisobGuruhlariMenuItem(),
                 separatorHisobGuruhlariItem,
                 getYordamchiHisoblarMenu()
@@ -252,8 +274,8 @@ public class MainController extends Application {
     private MenuItem getHisobot4MenuItem() {
         MenuItem hisobot4MenuItem = new MenuItem("Sochma hisobot");
         hisobot4MenuItem.setOnAction(event -> {
-            HisobotSochma1 hisobotSochma1 = new HisobotSochma1(connection, user);
-            hisobotSochma1.display();
+            HisobotSochma1 hisobotSochma = new HisobotSochma1(connection, user);
+            hisobotSochma.display();
         });
 
         return hisobot4MenuItem;
@@ -289,7 +311,7 @@ public class MainController extends Application {
     private MenuItem getHisobGuruhlariMenuItem() {
         MenuItem hisobGuruhlariMenuItem = new MenuItem("Hisob guruhlari");
         hisobGuruhlariMenuItem.setOnAction(event -> {
-            HisobGuruhlari2 hisobGuruhlari = new HisobGuruhlari2(connection, user);
+            HisobGuruhlari hisobGuruhlari = new HisobGuruhlari(connection, user);
             hisobGuruhlari.display();
         });
         return hisobGuruhlariMenuItem;
@@ -424,6 +446,15 @@ public class MainController extends Application {
         return userMenuItem;
     }
 
+    private MenuItem kirshCheklanganHisoblar() {
+        MenuItem kirishCheklovi = new MenuItem("Kirish cheklangan hisoblar");
+        kirishCheklovi.setOnAction(event -> {
+            HisobCheklovlari hisobCheklovlari = new HisobCheklovlari(connection, user);
+            hisobCheklovlari.display();
+        });
+        return kirishCheklovi;
+    }
+
     private MenuItem getChangeUserMenuItem() {
         MenuItem changeUserMenuItem = new MenuItem("Dastur yurituvchini alishtir");
         changeUserMenuItem.setOnAction(event -> {
@@ -431,6 +462,24 @@ public class MainController extends Application {
             login();
         });
         return changeUserMenuItem;
+    }
+
+    private Menu serverSozlashMenu() {
+        Menu menu = new Menu("Server sozlash");
+        MenuItem menuItem1 = new MenuItem("Local server");
+        MenuItem menuItem2 = new MenuItem("Remote server");
+
+        menuItem1.setOnAction(event -> {
+            ServerLocalController serverLocalController = new ServerLocalController();
+            serverLocalController.display();;
+        });
+
+        menuItem2.setOnAction(event -> {
+            ServerRemoteController serverRemoteController = new ServerRemoteController();
+            serverRemoteController.display();
+        });
+        menu.getItems().addAll(menuItem1, menuItem2);
+        return menu;
     }
 
     private Menu getPulMenu() {
@@ -481,7 +530,8 @@ public class MainController extends Application {
         MenuItem tovarHarakatlariMenuItem = new MenuItem("Tovar harakatlari");
         MenuItem birlikMenuItem = new MenuItemStandart("Birlik", "O`lchov birliklari");
         MenuItem jumlaMenuItem = new MenuItemStandart("Jumla", "Tovar jamlanmasi");
-        tovarMenu.getItems().addAll(tovarMenuItem, yangiTovarMenuItem, tartibMenuItem, ndsMenuItem, separatorTovarGuruhlariItem, birlikMenuItem, tovarNarhlariMenuItem, tovarXaridiMenuItem, tovarHarakatlariMenuItem, tovarGuruhlariMenuItem);
+        MenuItem serialNumberMenuItem = new MenuItem("Seriya raqami");
+        tovarMenu.getItems().addAll(tovarMenuItem, yangiTovarMenuItem, tartibMenuItem, ndsMenuItem, separatorTovarGuruhlariItem, birlikMenuItem, tovarNarhlariMenuItem, tovarXaridiMenuItem, tovarHarakatlariMenuItem, tovarGuruhlariMenuItem, serialNumberMenuItem);
 
         tovarMenuItem.setOnAction(e -> {
             TovarController1 tovarController = new TovarController1(connection, user);
@@ -520,6 +570,13 @@ public class MainController extends Application {
             TovarGuruhlari tovarGuruhlari = new TovarGuruhlari(connection, user);
             tovarGuruhlari.display();
         });
+
+        serialNumberMenuItem.setOnAction(event -> {
+            SerialNumbersController serialNumbersController = new SerialNumbersController(connection, user);
+            serialNumbersController.display();
+        });
+
+
 
         return tovarMenu;
     }
@@ -634,6 +691,13 @@ public class MainController extends Application {
             System.exit(0);
         } else {
             user = loginUserController.getUser();
+            String serialNumber = Sotuvchi3.getSerialNumber();
+            Kassa kassa = Sotuvchi3.getKassaData(connection, serialNumber);
+            if (kassa != null) {
+                user.setPulHisobi(kassa.getPulHisobi());
+                user.setTovarHisobi(kassa.getTovarHisobi());
+                user.setXaridorHisobi(kassa.getXaridorHisobi());
+            }
         }
     }
 
@@ -641,5 +705,12 @@ public class MainController extends Application {
         UserModels userModels = new UserModels();
         user.setOnline(0);
         userModels.changeUser(connection, user);
+    }
+
+    private FlowPane initCenterFlowPane() {
+        FlowPane flowPane = new FlowPane();
+        flowPane.setPadding(new Insets(5));
+        SetHVGrow.VerticalHorizontal(flowPane);
+        return flowPane;
     }
 }

@@ -22,6 +22,7 @@ public class SqliteDBRemote {
             Class.forName("org.sqlite.JDBC");
             dbConnection = DriverManager.getConnection(connectionString);
             AndozaTable(dbConnection, "AdressComp");
+            PrintersTable(dbConnection, "Printers");
         } catch (ClassNotFoundException | SQLException e) {
             e.printStackTrace();
         }
@@ -43,5 +44,12 @@ public class SqliteDBRemote {
         PreparedStatement prSt = connection.prepareStatement(structure);
         prSt.executeUpdate();
     }
+
+    private void PrintersTable(Connection connection, String tableName) throws SQLException {
+        String structure = "CREATE TABLE IF NOT EXISTS " +  tableName + " (id integer PRIMARY KEY, text text(150), userId integer, dateTime datetime DEFAULT (datetime('now','localtime')))";
+        PreparedStatement prSt = connection.prepareStatement(structure);
+        prSt.executeUpdate();
+    }
+
 }
 

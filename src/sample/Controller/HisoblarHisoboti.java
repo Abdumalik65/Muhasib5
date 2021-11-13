@@ -531,10 +531,10 @@ public class HisoblarHisoboti {
         this.stage = new Stage();
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.setTitle("Hisoblar bo`yicha hisobot");
 

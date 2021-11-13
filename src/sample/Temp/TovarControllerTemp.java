@@ -34,10 +34,11 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Controller.YangiTovar;
 import sample.Controller.YangiTovar1;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.NarhModels;
 import sample.Model.StandartModels;
@@ -158,7 +159,7 @@ public class TovarControllerTemp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         ibtido();
         initStage(primaryStage);
@@ -1275,10 +1276,10 @@ public class TovarControllerTemp extends Application {
         stage = primaryStage;
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.setResizable(false);
         stage.setTitle("Tovarlar");
 

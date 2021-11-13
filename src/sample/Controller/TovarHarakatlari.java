@@ -29,8 +29,9 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -71,7 +72,7 @@ public class TovarHarakatlari extends Application {
     LocalDateTime localDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     DatePicker qaydSanasiDatePicker;
     TextField qaydVaqtiTextField = new TextField();
-    HBox tovarHBox;
+    HBox tovarHBox = new HBox();
     HBox birlikHbox;
     DecimalFormat decimalFormat = new MoneyShow();
 
@@ -93,7 +94,7 @@ public class TovarHarakatlari extends Application {
 
     ObservableList<HisobKitob> hisobKitobObservableList = FXCollections.observableArrayList();
     ObservableList<Hisob> hisobObservableList;
-    ObservableList<Standart> tovarObservableList;
+    ObservableList<Standart> tovarObservableList = FXCollections.observableArrayList();
     ObservableList<Standart> birlikObservableList;
     ObservableList<Valuta> valutaObservableList;
 
@@ -110,7 +111,7 @@ public class TovarHarakatlari extends Application {
     }
 
     public TovarHarakatlari() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }
@@ -126,7 +127,7 @@ public class TovarHarakatlari extends Application {
         initHisob2Hbox();
         initQaydSanasiDatePicker();
         initQaydVaqtiTextField();
-        initTovarHbox();
+        initTovarHbox(true);
         initBirlikComboBox();
         initBarCodeTextField();
         initHisobKitobTableView();
@@ -162,8 +163,6 @@ public class TovarHarakatlari extends Application {
 
     private void initData() {
         hisobObservableList = hisobModels.get_data(connection);
-        standartModels.setTABLENAME("Tovar");
-        tovarObservableList = standartModels.get_data(connection);
         standartModels.setTABLENAME("Birlik");
         birlikObservableList = standartModels.get_data(connection);
         valutaObservableList = valutaModels.get_data(connection);
@@ -527,6 +526,8 @@ public class TovarHarakatlari extends Application {
             Hisob newHisob = autoCompletionEvent.getCompletion();
             if (newHisob != null) {
                 hisob1 = newHisob;
+                tovarObservableList = hisobKitobModels.getTovarCount(connection, hisob1.getId(), new Date());
+                initTovarHbox(true);
                 balanceRefresh();
             }
             hisob2Hbox.setDisable(false);
@@ -536,7 +537,8 @@ public class TovarHarakatlari extends Application {
             Hisob newHisob = addHisob();
             if (newHisob != null) {
                 hisob1 = newHisob;
-                hisob2Hbox.setDisable(false);
+                tovarObservableList = hisobKitobModels.getTovarCount(connection, hisob1.getId(), new Date());
+                initTovarHbox(true);
                 hisob1TextField.setText(hisob1.getText());
             }
         });
@@ -559,11 +561,11 @@ public class TovarHarakatlari extends Application {
                 hisob2 = newHisob;
                 qaydSanasiDatePicker.setDisable(false);
                 qaydVaqtiTextField.setDisable(false);
-                tovarHBox.setDisable(false);
                 birlikComboBox.setDisable(false);
                 barCodeTextField.setDisable(false);
                 hisobKitobTableView.setDisable(false);
                 izohTextArea.setDisable(false);
+                tovarHBox.setDisable(false);
                 barCodeOn();
                 balanceRefresh();
             }
@@ -575,12 +577,12 @@ public class TovarHarakatlari extends Application {
                 hisob2 = newHisob;
                 qaydSanasiDatePicker.setDisable(false);
                 qaydVaqtiTextField.setDisable(false);
-                tovarHBox.setDisable(false);
                 birlikComboBox.setDisable(false);
                 barCodeTextField.setDisable(false);
                 hisobKitobTableView.setDisable(false);
                 izohTextArea.setDisable(false);
                 hisob2TextField.setText(hisob2.getText());
+                tovarHBox.setDisable(false);
                 barCodeOn();
                 balanceRefresh();
             }
@@ -633,9 +635,11 @@ public class TovarHarakatlari extends Application {
         izohTextArea.setEditable(true);
     }
 
-    private void initTovarHbox() {
-        tovarHBox = new HBox();
-        tovarHBox.setDisable(true);
+    private void initTovarHbox(Boolean disable) {
+        if (tovarHBox.getChildren().size()>0) {
+            tovarHBox.getChildren().removeAll(tovarHBox.getChildren());
+        }
+        tovarHBox.setDisable(disable);
         tovarTextField.setFont(font);
         tovarTextField.setPromptText("Tovar nomi");
         HBox.setHgrow(tovarTextField, Priority.ALWAYS);
@@ -665,7 +669,7 @@ public class TovarHarakatlari extends Application {
 
     private void barCodeAction() {
         ObservableList<Standart> birlikList = FXCollections.observableArrayList();
-        ObservableList<BarCode> barCodeList = barCodeModels.getAnyData(connection, "tovar = " + tovar.getId(), "");
+        ObservableList<BarCode> barCodeList = hisobKitobModels.getBarCodeCount(connection, hisob1.getId(), tovar.getId(), new Date());
         for (BarCode bc: barCodeList) {
             HisobKitob balance = hisobKitobModels.getBarCodeBalans(connection, hisob1.getId(), bc, new Date());
             Standart b = getStandart(bc.getBirlik(), birlikObservableList, "Birlik");

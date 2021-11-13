@@ -159,7 +159,7 @@ public class StandartModels {
             prSt.executeUpdate();
             prSt.close();
         } catch (SQLException e) {
-            Alerts.losted();;
+            e.printStackTrace();
         }
         return insertedID;
     }

@@ -1,10 +1,11 @@
 package sample.Temp;
 
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.BarCode;
 import sample.Data.HisobKitob;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Tools.GetDbData;
 
@@ -16,7 +17,7 @@ public class temp2 {
     static User user = new User(1, "admin", "", "admin");
     public static void main(String[] args) {
 
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         HisobKitob hisobKitob = new HisobKitob(
                 2,
                 1,

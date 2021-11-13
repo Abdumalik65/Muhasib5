@@ -9,6 +9,7 @@ import sample.Tools.QueryHelper;
 import java.sql.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.Date;
 
 public class HisobKitobModels {
@@ -691,9 +692,172 @@ public class HisobKitobModels {
             rs.close();
             prSt.close();
         } catch (SQLException e) {
-           Alerts.losted();
+            Alerts.losted();
         }
         return hisobKitob;
+    }
+
+    public ObservableList<BarCode> getBarCodeCount(Connection connection, Integer hisobId, Date date) {
+        Map<String, BarCode> barCodeMap = new HashMap<>();
+        ObservableList<BarCode> books = FXCollections.observableArrayList();
+        ResultSet rs1 = null;
+        ResultSet rs2 = null;
+        String select1 = "SELECT " +  BARCODE + ", SUM(dona) FROM " + TABLENAME + " WHERE " + HISOB2 + " = ? AND " + BARCODE + " != '' AND " + TOVAR + " > 0 AND " + DATETIME + "<= ? GROUP BY " + BARCODE + " ORDER BY " + BARCODE;
+        String select2 = "SELECT " +  BARCODE + ", SUM(dona) FROM " + TABLENAME + " WHERE " + HISOB1 + " = ? AND " + BARCODE + " != '' AND " + TOVAR + " > 0 AND " + DATETIME + "<= ? GROUP BY " + BARCODE + " ORDER BY " + BARCODE;
+        PreparedStatement prSt = null;
+        try {
+            prSt = connection.prepareStatement(select1);
+            prSt.setInt(1,hisobId);
+            prSt.setString(2,sdf.format(date));
+            rs1 = prSt.executeQuery();
+            while (rs1.next()) {
+                String bcString = rs1.getString(1);
+                Double bcAdad = rs1.getDouble(2);
+                BarCode barCode = GetDbData.getBarCode(bcString);
+                barCode.setAdad(bcAdad);
+                barCodeMap.put(bcString, barCode);
+            }
+            rs1.close();
+
+            prSt = connection.prepareStatement(select2);
+            prSt.setInt(1,hisobId);
+            prSt.setString(2,sdf.format(date));
+            rs2 = prSt.executeQuery();
+            while (rs2.next()) {
+                String bcString = rs2.getString(1);
+                Double bcAdad = rs2.getDouble(2);
+                if (barCodeMap.containsKey(bcString)) {
+                    BarCode barCode = barCodeMap.get(bcString);
+                    barCode.setAdad(barCode.getAdad() - bcAdad);
+                } else {
+                    BarCode barCode = GetDbData.getBarCode(bcString);
+                    barCode.setAdad(bcAdad);
+                    barCodeMap.put(bcString, barCode);
+                }
+            }
+            barCodeMap.forEach((key, barCode)->{
+                if (barCode.getAdad()!=0) {
+                    books.add(barCode);
+                }
+            });
+            rs2.close();
+            prSt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
+    }
+
+    public ObservableList<BarCode> getBarCodeCount(Connection connection, Integer hisobId, Integer tovarId, Date date) {
+        Map<String, BarCode> barCodeMap = new HashMap<>();
+        ObservableList<BarCode> books = FXCollections.observableArrayList();
+        ResultSet rs1 = null;
+        ResultSet rs2 = null;
+        String select1 = "SELECT " +  BARCODE + ", SUM(dona) FROM " + TABLENAME + " WHERE " + HISOB2 + " = ? AND " + BARCODE + " != '' AND " + DATETIME + " <= ? AND " + TOVAR + "= ? GROUP BY " + BARCODE + " ORDER BY " + BARCODE;
+        String select2 = "SELECT " +  BARCODE + ", SUM(dona) FROM " + TABLENAME + " WHERE " + HISOB1 + " = ? AND " + BARCODE + " != '' AND " + DATETIME + " <= ? AND " + TOVAR + "= ? GROUP BY " + BARCODE + " ORDER BY " + BARCODE;
+        PreparedStatement prSt = null;
+        try {
+            prSt = connection.prepareStatement(select1);
+            prSt.setInt(1,hisobId);
+            prSt.setString(2,sdf.format(date));
+            prSt.setInt(3,tovarId);
+            rs1 = prSt.executeQuery();
+            while (rs1.next()) {
+                String bcString = rs1.getString(1);
+                Double bcAdad = rs1.getDouble(2);
+                BarCode barCode = GetDbData.getBarCode(bcString);
+                barCode.setAdad(bcAdad);
+                barCodeMap.put(bcString, barCode);
+            }
+            rs1.close();
+
+            prSt = connection.prepareStatement(select2);
+            prSt.setInt(1,hisobId);
+            prSt.setString(2,sdf.format(date));
+            prSt.setInt(3,tovarId);
+            rs2 = prSt.executeQuery();
+            while (rs2.next()) {
+                String bcString = rs2.getString(1);
+                Double bcAdad = rs2.getDouble(2);
+                if (barCodeMap.containsKey(bcString)) {
+                    BarCode barCode = barCodeMap.get(bcString);
+                    barCode.setAdad(barCode.getAdad() - bcAdad);
+                } else {
+                    BarCode barCode = GetDbData.getBarCode(bcString);
+                    barCode.setAdad(bcAdad);
+                    barCodeMap.put(bcString, barCode);
+                }
+            }
+            barCodeMap.forEach((key, barCode)->{
+                if (barCode.getAdad()!=0) {
+                    BarCode bc = GetDbData.getBarCode(barCode.getBarCode());
+                    books.add(bc);
+                }
+            });
+            if (books.size()>0) {
+                Collections.sort(books, Comparator.comparingInt(BarCode::getBirlik));
+
+            }
+            rs2.close();
+            prSt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
+    }
+
+    public ObservableList<Standart> getTovarCount(Connection connection, Integer hisobId, Date date) {
+        Map<Integer, Tovar> tovarMap = new HashMap<>();
+        ObservableList<Standart> books = FXCollections.observableArrayList();
+        ResultSet rs1 = null;
+        ResultSet rs2 = null;
+        String select1 = "SELECT " +  TOVAR + ", SUM(dona) FROM " + TABLENAME + " WHERE " + HISOB2 + " = ? AND " + TOVAR + " > 0 AND " + DATETIME + "<= ? GROUP BY " + TOVAR + " ORDER BY " + TOVAR;
+        String select2 = "SELECT " +  TOVAR + ", SUM(dona) FROM " + TABLENAME + " WHERE " + HISOB1 + " = ? AND " + TOVAR + " > 0 AND " + DATETIME + "<= ? GROUP BY " + TOVAR + " ORDER BY " + TOVAR;
+        PreparedStatement prSt = null;
+        try {
+            prSt = connection.prepareStatement(select1);
+            prSt.setInt(1,hisobId);
+            prSt.setString(2,sdf.format(date));
+            rs1 = prSt.executeQuery();
+            while (rs1.next()) {
+                Integer tovarId = rs1.getInt(1);
+                Double tovarAdad = rs1.getDouble(2);
+                Standart standart = GetDbData.getTovar(tovarId);
+                Tovar tovar = new Tovar(standart.getId(), standart.getText(), 0d, 1, null);
+                tovar.setNds(tovarAdad);
+                tovarMap.put(tovarId, tovar);
+            }
+            rs1.close();
+
+            prSt = connection.prepareStatement(select2);
+            prSt.setInt(1,hisobId);
+            prSt.setString(2,sdf.format(date));
+            rs2 = prSt.executeQuery();
+            while (rs2.next()) {
+                Integer tovarId = rs2.getInt(1);
+                Double tovarAdad = rs2.getDouble(2);
+                if (tovarMap.containsKey(tovarId)) {
+                    Tovar tovar = tovarMap.get(tovarId);
+                    tovar.setNds(tovar.getNds() - tovarAdad);
+                } else {
+                    Standart standart = GetDbData.getTovar(tovarId);
+                    Tovar tovar = new Tovar(standart.getId(), standart.getText(), 0d, 1, null);
+                    tovar.setNds(tovarAdad);
+                    tovarMap.put(tovarId, tovar);
+                }
+            }
+            tovarMap.forEach((key, tovar)->{
+                if (tovar.getNds()>0) {
+                    Standart standart = GetDbData.getTovar(tovar.getId());
+                    books.add(standart);
+                }
+            });
+            rs2.close();
+            prSt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
     }
 
     public ObservableList<HisobKitob> getBarCodeQoldiq(Connection connection, Integer hisobId, BarCode barCode, Date date) {
@@ -963,7 +1127,7 @@ public class HisobKitobModels {
                 prSt.setDouble(12, hisobKitob.getManba());
                 prSt.setString(13, hisobKitob.getIzoh());
                 prSt.setDouble(14, hisobKitob.getUserId());
-                prSt.setString(15, sdf.format(hisobKitob.getDateTime()));
+                prSt.setString(15, sdf.format(new Date()));
                 prSt.addBatch();
             }
             prSt.executeBatch();
@@ -992,7 +1156,7 @@ public class HisobKitobModels {
                 + IZOH + ", "
                 + USERID + ", "
                 + DATETIME +
-                ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+                ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         PreparedStatement prSt = null;
         try {
             prSt = connection.prepareStatement(insert);
@@ -1105,18 +1269,6 @@ public class HisobKitobModels {
         return yordamchiHisob;
     }
 
-    public Integer yordamchiHisob(Connection connection, Integer hisobID, String tableName) {
-        Integer yordamchiHisob = 0;
-        ObservableList<Standart3> standart3ObservableList = FXCollections.observableArrayList();
-        Standart3Models standart3Models = new Standart3Models();
-        standart3Models.setTABLENAME(tableName);
-        standart3ObservableList = standart3Models.getAnyData(connection, "id3 = " + hisobID,"");
-        if (standart3ObservableList.size()>0) {
-            yordamchiHisob = standart3ObservableList.get(0).getId2();
-        }
-        return yordamchiHisob;
-    }
-
     public Integer yordamchiHisob(Connection connection, Integer hisobID, String tableName, String boshJadval) {
         Integer yordamchiHisob = 0;
         ObservableList<Standart3> standart3ObservableList = FXCollections.observableArrayList();
@@ -1149,7 +1301,7 @@ public class HisobKitobModels {
         return dona;
     }
 
-    private void saveResult(ObservableList<HisobKitob> books, ResultSet rs) {
+    public void saveResult(ObservableList<HisobKitob> books, ResultSet rs) {
         try {
             while (rs.next()) {
                 books.add(new HisobKitob(

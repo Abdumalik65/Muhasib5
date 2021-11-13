@@ -2,14 +2,15 @@ package sample.Config;
 
 import javafx.collections.ObservableList;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 
 import java.sql.Connection;
 
 public class LocalToRemote {
     public static void main(String[] args) {
-        Connection sourceCconnection = new MySqlDBLocal().getDbConnection();
-        Connection targetConnection = new MySqlDB().getDbConnection();
+        Connection sourceCconnection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        Connection targetConnection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         copyStandartData(sourceCconnection, targetConnection, "Amal");
         copyStandartData(sourceCconnection, targetConnection, "Tovar");
         copyStandartData(sourceCconnection, targetConnection, "Birlik");

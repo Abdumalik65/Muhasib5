@@ -28,8 +28,9 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.Alerts;
 import sample.Tools.MoneyShow;
@@ -105,7 +106,7 @@ public class KassadanPulChiqimi extends Application {
     }
 
     public KassadanPulChiqimi() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     public KassadanPulChiqimi(Connection connection, User user, Hisob hisob) {

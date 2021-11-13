@@ -16,14 +16,12 @@ import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
-import sample.Data.Hisob;
-import sample.Data.HisobKitob;
-import sample.Data.QaydnomaData;
-import sample.Data.User;
+import sample.Config.MySqlDBGeneral;
+import sample.Data.*;
 import sample.Model.HisobKitobModels;
 import sample.Model.HisobModels;
 import sample.Model.QaydnomaModel;
+import sample.Model.Standart3Models;
 import sample.Tools.GetDbData;
 import sample.Tools.GetTableView2;
 import sample.Tools.MoneyShow;
@@ -160,8 +158,11 @@ public class Hisobot1 extends Application {
     }
 
     private void initData() {
-        hisobObservableList = GetDbData.getHisobObservableList();
         HisobModels hisobModels = new HisobModels();
+        Standart3Models standart3Models = new Standart3Models();
+        standart3Models.setTABLENAME("CheklanganHisobTarkibi");
+        ObservableList<Standart3> guruhTarkibi = standart3Models.getAnyData(connection, "id2 = " + user.getId(), "");
+        hisobObservableList = hisobModels.get_data(connection, guruhTarkibi);
         for (Hisob h: hisobObservableList) {
             h.setBalans(hisobBalans(h.getId()));
         }
@@ -171,16 +172,15 @@ public class Hisobot1 extends Application {
         }
         if (qaydnomaObservableList.size()>0) {
             QaydnomaData qaydnomaData = qaydnomaObservableList.get(0);
-
-                if (qaydnomaData.getChiqimId().equals(hisobCursor.getId())) {
-                    hisobKitobObservableList = hisobKitobModels.getAnyData(connection, "qaydid = " + qaydnomaData.getId() + " AND hisob1 = " + hisobCursor.getId(), "");
-                    hisobKitobObservableList.addAll(hisobKitobModels.getAnyData(connection, "qaydid = " + qaydnomaData.getId() + " AND  hisob2 = " + hisobCursor.getId(), ""));
-                } else {
-                    hisobKitobObservableList = hisobKitobModels.getAnyData(connection, "qaydid = " + qaydnomaData.getId() + " AND hisob2 = " + hisobCursor.getId(), "");
-                    hisobKitobObservableList.addAll(hisobKitobModels.getAnyData(connection, "qaydid = " + qaydnomaData.getId() + " AND  hisob1 = " + hisobCursor.getId(), ""));
-                }
-                hkKirimChiqim();
-                yigindi(hisobKitobObservableList);
+            if (qaydnomaData.getChiqimId().equals(hisobCursor.getId())) {
+                hisobKitobObservableList = hisobKitobModels.getAnyData(connection, "qaydid = " + qaydnomaData.getId() + " AND hisob1 = " + hisobCursor.getId(), "");
+                hisobKitobObservableList.addAll(hisobKitobModels.getAnyData(connection, "qaydid = " + qaydnomaData.getId() + " AND  hisob2 = " + hisobCursor.getId(), ""));
+            } else {
+                hisobKitobObservableList = hisobKitobModels.getAnyData(connection, "qaydid = " + qaydnomaData.getId() + " AND hisob2 = " + hisobCursor.getId(), "");
+                hisobKitobObservableList.addAll(hisobKitobModels.getAnyData(connection, "qaydid = " + qaydnomaData.getId() + " AND  hisob1 = " + hisobCursor.getId(), ""));
+            }
+            hkKirimChiqim();
+            yigindi(hisobKitobObservableList);
         }
     }
 
@@ -316,10 +316,10 @@ public class Hisobot1 extends Application {
 //        scene.getStylesheets().add("/sample/Styles/caspian.css");
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.setResizable(false);
         stage.setScene(scene);
     }

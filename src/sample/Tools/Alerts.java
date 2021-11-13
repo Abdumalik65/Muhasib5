@@ -125,6 +125,26 @@ public class Alerts {
         return davomEt;
     }
 
+    public static boolean haYoq(String headerText, String contentText) {
+        boolean davomEt = false;
+        DecimalFormat decimalFormat = new MoneyShow();
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.getButtonTypes().removeAll(alert.getButtonTypes());
+        ButtonType okButton = new ButtonType("Ha");
+        ButtonType noButton = new ButtonType("Yo`q");
+        alert.getButtonTypes().addAll(okButton, noButton);
+        alert.setTitle("Diqqat !!!");
+        alert.setHeaderText(headerText);
+        alert.setContentText(contentText);
+        Optional<ButtonType> option = alert.showAndWait();
+
+        ButtonType buttonType = option.get();
+        if (okButton.equals(buttonType)) {
+            davomEt = true;
+        }
+        return davomEt;
+    }
+
     public static boolean xaridniOchir(QaydnomaData qaydnomaData) {
         boolean davomEt = false;
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);

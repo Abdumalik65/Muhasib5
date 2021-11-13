@@ -14,8 +14,9 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Excel.FoydaExcel;
 import sample.Model.HisobKitobModels;
 import sample.Model.QaydnomaModel;
@@ -65,7 +66,7 @@ public class FoydaHisoboti extends Application {
     }
 
     public FoydaHisoboti() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         ibtido();
     }

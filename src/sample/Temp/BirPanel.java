@@ -17,9 +17,10 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.Hisob;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Model.HisobModels;
 import sample.Tools.GetDbData;
 
@@ -45,7 +46,7 @@ public class BirPanel extends Application {
     }
 
     public BirPanel() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();

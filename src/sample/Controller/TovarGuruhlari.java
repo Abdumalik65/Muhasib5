@@ -24,8 +24,9 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -79,7 +80,7 @@ public class TovarGuruhlari extends Application {
     }
 
     public TovarGuruhlari() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         ibtido();
     }
 
@@ -116,10 +117,10 @@ public class TovarGuruhlari extends Application {
         Rectangle2D bounds = screen.getVisualBounds();
         stage = primaryStage;
         stage.setTitle("Savdo");
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         scene = new Scene(borderpane);
         stage.setScene(scene);
     }
@@ -230,7 +231,7 @@ public class TovarGuruhlari extends Application {
 
         leftButtons.getExcel().setOnAction(event -> {
             ExportToExcel exportToExcel = new ExportToExcel();
-            exportToExcel.priceList(s6List);
+            exportToExcel.priceList(s6List, user);
         });
         leftTextField.textProperty().addListener((observable, oldValue, newValue) -> {
             leftTaftish(oldValue, newValue);

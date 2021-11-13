@@ -13,7 +13,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
+import sample.Enums.ServerType;
 import sample.Tools.CustomWindow;
 import sample.Tools.PathToImageView;
 import sample.Tools.Tugmachalar;
@@ -43,7 +44,7 @@ public class GuruhlarController {
     int padding = 3;
 
     public GuruhlarController() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     public GuruhlarController(Connection connection, User user, String tableName) {

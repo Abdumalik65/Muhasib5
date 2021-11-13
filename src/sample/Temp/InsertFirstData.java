@@ -3,7 +3,7 @@ package sample.Temp;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.Hisob;
 import sample.Data.Standart;
 import sample.Data.User;

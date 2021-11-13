@@ -28,8 +28,9 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -57,7 +58,6 @@ public class TezNarh2 extends Application {
 
     TableView<HisobKitob> dataTableView = new TableView<>();
     Connection connection;
-    MySqlDBLocal mySqlDBLocal = new MySqlDBLocal();
 
     Double narhDouble = 0.0;
     Double chakanaDouble = 0.0;
@@ -160,7 +160,7 @@ public class TezNarh2 extends Application {
     }
 
     private void initConnection() {
-        connection = mySqlDBLocal.getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     private void initGridPane() {
@@ -750,10 +750,10 @@ public class TezNarh2 extends Application {
         stage.setTitle("Narh kiritish");
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         scene = new Scene(borderpane);
         barCodeOn();
         stage.setOnCloseRequest(event -> {

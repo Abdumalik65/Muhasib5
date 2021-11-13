@@ -167,6 +167,31 @@ public class GetTableView2 {
         return sanaColumn;
     }
 
+    public TableColumn<Hisob, Date> getHisobSanaColumn() {
+        TableColumn<Hisob, Date> sanaColumn = new TableColumn("Sana");
+        sanaColumn.setMinWidth(80);
+        sanaColumn.setCellValueFactory(new PropertyValueFactory<>("dateTime"));
+        sanaColumn.setCellFactory(column -> {
+            TableCell<Hisob, Date> cell = new TableCell<Hisob, Date>() {
+                private SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy\n  HH:mm:ss");
+                @Override
+                protected void updateItem(Date item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if(empty) {
+                        setText(null);
+                    }
+                    else {
+                        setText(format.format(item));
+                    }
+                }
+            };
+            cell.setAlignment(Pos.TOP_CENTER);
+
+            return cell;
+        });
+        return sanaColumn;
+    }
+
     public TableColumn<QaydnomaData, Integer> getChiqimIdColumn() {
         TableColumn<QaydnomaData, Integer> chiqimIdColumn = new TableColumn("Chiqim N");
         chiqimIdColumn.setMinWidth(30);

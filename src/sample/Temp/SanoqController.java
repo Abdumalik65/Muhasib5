@@ -19,7 +19,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
+import sample.Enums.ServerType;
 import sample.Tools.GetDbData;
 import sample.Tools.MoneyShow;
 import sample.Data.*;
@@ -71,7 +72,7 @@ public class SanoqController extends Application {
     }
 
     public SanoqController() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }
@@ -155,10 +156,10 @@ public class SanoqController extends Application {
         stage = primaryStage;
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.setTitle("Tovarlar sanog`i");
         scene = new Scene(borderpane);
         stage.setScene(scene);

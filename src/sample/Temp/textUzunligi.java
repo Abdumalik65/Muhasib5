@@ -1,8 +1,9 @@
 package sample.Temp;
 
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.BarCode;
+import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.StandartModels;
 
@@ -10,7 +11,7 @@ import java.sql.Connection;
 
 public class textUzunligi {
     public static void main(String[] args) {
-        Connection connection = new MySqlDBLocal().getDbConnection();
+        Connection connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         StandartModels standartModels = new StandartModels();
         standartModels.setTABLENAME("Amal");
         Integer uzunlik = 0;

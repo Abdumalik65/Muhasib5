@@ -18,10 +18,11 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Controller.HisobController;
 import sample.Controller.YangiTovar1;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.HisobKitobModels;
 import sample.Model.StandartModels;
@@ -79,7 +80,7 @@ public class YangiSanoq extends Application {
     }
 
     public YangiSanoq() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }

@@ -38,8 +38,9 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Temp.PrintingExample;
 import sample.Tools.*;
@@ -153,7 +154,7 @@ public class TovarController extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         ibtido();
         initStage(primaryStage);
@@ -396,10 +397,6 @@ public class TovarController extends Application {
     }
 
     private void initTextFields() {
-/*
-        HBox.setHgrow(tovarNomiTextField, Priority.ALWAYS);
-        HBox.setHgrow(barCodeTextField, Priority.ALWAYS);
-*/
         HBox.setHgrow(tovarNomiTextField, Priority.ALWAYS);
         HBox.setHgrow(qidirBarCodeTextField, Priority.ALWAYS);
         qidirBarCodeTextField.setPromptText("Shtrix kod");
@@ -430,26 +427,13 @@ public class TovarController extends Application {
                 }
             }
         });
-/*
-        tovarNomiTextField.setPromptText("Tovar nomi");
-        TextFields.bindAutoCompletion(tovarNomiTextField, tovarObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Standart> autoCompletionEvent) -> {
-            Standart tovar = autoCompletionEvent.getCompletion();
-            tovarTableView.getSelectionModel().select(tovar);
-            tovarTableView.scrollTo(tovar);
-            tovarNomiTextField.setText("");
-        });
-*/
+
         tovarNomiTextField.setOnAction(event -> {
             String newValue = tovarNomiTextField.getText();
             if (newValue != null) {
                 Taftish(newValue);
             }
         });
-/*
-        tovarNomiTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-            Taftish(oldValue, newValue);
-        });
-*/
 
         barCodeTextField.setPromptText("Shtrix kod");
     }
@@ -1255,10 +1239,10 @@ public class TovarController extends Application {
         stage = primaryStage;
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.setResizable(false);
         stage.setTitle("Tovarlar");
 

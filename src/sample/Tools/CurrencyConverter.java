@@ -1,10 +1,11 @@
 package sample.Tools;
 
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.Kurs;
 import sample.Data.User;
 import sample.Data.Valuta;
+import sample.Enums.ServerType;
 import sample.Model.KursModels;
 
 import java.sql.Connection;
@@ -20,7 +21,7 @@ public class CurrencyConverter {
     User user = new User(1, "admin", "", "admin");
 
     public CurrencyConverter() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     public CurrencyConverter(Connection connection, User user, Valuta sourceValuta, Valuta targetValuta, Double summaDouble) {

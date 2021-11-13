@@ -1,9 +1,10 @@
 package sample.Temp;
 
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.BarCode;
 import sample.Data.HisobKitob;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Tools.GetDbData;
 
@@ -13,7 +14,7 @@ import java.util.Date;
 public class tempExcel {
 
     public static void main(String[] args) {
-        Connection connection = new MySqlDBLocal().getDbConnection();
+        Connection connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
         ObservableList<HisobKitob> data = hisobKitobModels.get_data(connection);
         GetDbData.initData(connection);

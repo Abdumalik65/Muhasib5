@@ -37,7 +37,6 @@ public class Mayda {
             this.barCode = barCode;
             this.hisobKitob = hisobKitob;
             this.adad = adad;
-            keldiKetdiHisobi = hisobKitobModels.yordamchiHisob(connection, hisobKitob, "TranzitHisobGuruhi");
             HisobKitob chiqimHisobi = initChiqimHisobi(hisobKitob);
             HisobKitob kirimHisobi = initKirimHisobi(hisobKitob);
             getQaydNoma();

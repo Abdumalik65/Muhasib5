@@ -2,15 +2,16 @@ package sample.Temp;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.BarCode;
+import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 
 import java.sql.Connection;
 
 public class CheckBarCodeTable {
     public static void main(String[] args) {
-        Connection connection = new MySqlDBLocal().getDbConnection();
+        Connection connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         BarCodeModels barCodeModels = new BarCodeModels();
         ObservableList<BarCode> barCodes = barCodeModels.getDistinct(connection);
         ObservableList<BarCode> barCodes1 = FXCollections.observableArrayList();

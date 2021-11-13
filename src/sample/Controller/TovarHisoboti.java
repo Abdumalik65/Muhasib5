@@ -16,8 +16,9 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.HisobKitobModels;
 import sample.Temp.Hisobot;
@@ -56,7 +57,7 @@ public class TovarHisoboti extends Application {
     }
 
     public TovarHisoboti() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         hisob = GetDbData.getHisob(13);
         ibtido();

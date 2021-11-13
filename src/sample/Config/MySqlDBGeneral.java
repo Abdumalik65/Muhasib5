@@ -1,60 +1,91 @@
 package sample.Config;
 
-import javafx.collections.ObservableList;
 import sample.Data.Aloqa;
 import sample.Model.AloqaModels;
 import sample.Tools.ConnectionType;
-
+import sample.Tools.LostConnection;
+import sample.Enums.ServerType;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class MySqlDBLocal {
+public class MySqlDBGeneral {
     protected String dbHost;
     protected String dbPort;
     protected String dbUser;
     protected String dbPass;
     private String dataBaseName;
-    Connection dbConnection;
+    private String setting = "?useUnicode=true" +
+            "&sessionVariables=sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))" +
+            "&useJDBCCompliantTimezoneShift=true" +
+            "&useLegacyDatetimeCode=false" +
+            "&serverTimezone=UTC" +
+            "&autoReconnect=true" +
+            "&createDatabaseIfNotExist=true";
 
-    public MySqlDBLocal() {
-        Connection connectionSqlite = new SqliteDBLocal().getDbConnection();
+    Connection dbConnection;
+    private Integer hostId;
+    private ServerType serverType;
+
+    public MySqlDBGeneral() {
+        this.serverType = ServerType.LOCAL;
+        this.hostId = 1;
+        setValues();
+    }
+
+    public MySqlDBGeneral(ServerType serverType) {
+        this.serverType = serverType;
+        if (serverType.equals(ServerType.LOCAL)) {
+            this.hostId = 1;
+        } else if(serverType.equals(ServerType.REMOTE)) {
+            this.hostId = 2;
+        }
+        setValues();
+    }
+
+    private Aloqa setValues() {
+        Connection connectionSqlite = new SqliteDB().getDbConnection();
         AloqaModels aloqaModels = new AloqaModels();
-        ObservableList<Aloqa> aloqas = aloqaModels.get_data(connectionSqlite);
-        if (aloqas.size()>0) {
-            Aloqa aloqa = aloqas.get(0);
+        Aloqa aloqa = aloqaModels.getWithId(connectionSqlite, hostId);
+        if (aloqa!=null) {
             dbHost = aloqa.getDbHost();
+//            dbHost = "192.168.1.108";
             dbPort= aloqa.getDbPort();
             dbUser= aloqa.getDbUser();
             dbPass = aloqa.getDbPass();
-            dataBaseName = aloqa.getDbName();
-            System.out.println(dbHost + " | " + dbPort + " | " + dbUser + " | " + dbPass);
+            dataBaseName = aloqa.getDbName() ;
+//            dataBaseName = "BestParfumery" ;
+            System.out.println(dataBaseName + " | " + dbHost + " | " + dbPort + " | " + dbUser + " | " + dbPass);
             ConnectionType.setIsRemoteConnection(false);
             ConnectionType.setAloqa(aloqa);
         }
+        return aloqa;
     }
-
     public Connection getDbConnection() {
         String connectionString = "jdbc:mysql://" +
                 dbHost + ":" +
                 dbPort + "/" +
-                dataBaseName +
-                "?autoReconnect=true&createDatabaseIfNotExist=true";
+                dataBaseName + setting;
         dbConnection = null;
 
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             dbConnection = DriverManager.getConnection(connectionString, dbUser, dbPass);
-
             CreateTables createTables = new CreateTables(dbConnection);
             createTables.start();
+            if (serverType.equals(ServerType.LOCAL)) {
+                System.out.println("Shu computerdagi MySql serverga ulandik");
+            } else if(serverType.equals(ServerType.REMOTE)) {
+                System.out.println("Boshqa computerdagi MySql serverga ulandik");
+            }
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
+            System.out.println("MySql serverga ulana olmadik");
         } catch (SQLException e) {
             e.printStackTrace();
- //           LostConnection.losted();
+            LostConnection.losted();
+            System.out.println("MySql serverga ulana olmadik");
         }
-        System.out.println("Shu computerdagi MySql serverga ulandik");
         return dbConnection;
     }
     public String getDbHost() {
@@ -97,4 +128,7 @@ public class MySqlDBLocal {
         this.dataBaseName = dataBaseName;
     }
 
+    public void setDbConnection(Connection dbConnection) {
+        this.dbConnection = dbConnection;
+    }
 }

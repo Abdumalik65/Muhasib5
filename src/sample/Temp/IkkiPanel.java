@@ -1,20 +1,26 @@
 package sample.Temp;
 
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
+import sample.Data.Standart;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Tools.GetDbData;
 
 import java.sql.Connection;
+import java.util.Collection;
 
 public class IkkiPanel extends Application {
     Stage stage;
@@ -23,6 +29,13 @@ public class IkkiPanel extends Application {
     SplitPane centerPane = new SplitPane();
     VBox rightPane = new VBox();
     VBox leftPane = new VBox();
+    TableView leftTable;
+    TableView centerTable;
+    TableView rightTable;
+
+    ObservableList leftTableData;
+    ObservableList centerTableData;
+    ObservableList rightTableData;
 
     Connection connection;
     User user;
@@ -34,7 +47,7 @@ public class IkkiPanel extends Application {
     }
 
     public IkkiPanel() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         ibtido();
     }
@@ -98,5 +111,20 @@ public class IkkiPanel extends Application {
         stage.setTitle("Ikki panel");
         scene = new Scene(borderpane, 600, 400);
         stage.setScene(scene);
+    }
+
+    private <S, T> TableView initLeftTable() {
+        TableView<S> tableView = new TableView<S>();
+        tableView.setItems(getLeftTableData());
+        tableView.getColumns().addAll();
+        tableView.getSelectionModel().selectedItemProperty().addListener((observable ,oldValue, newValue)->{
+            System.out.println("leftTableAddListener");
+        });
+        return  tableView;
+    }
+
+    private <T> ObservableList<T> getLeftTableData() {
+        ObservableList<T> observableList = FXCollections.observableArrayList();
+        return observableList;
     }
 }

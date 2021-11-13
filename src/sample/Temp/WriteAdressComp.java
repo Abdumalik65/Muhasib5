@@ -1,6 +1,6 @@
 package sample.Temp;
 
-import sample.Config.SqliteDBLocal;
+import sample.Config.SqliteDB;
 import sample.Data.Standart;
 import sample.Model.StandartModels;
 import sample.Tools.Encryptor;
@@ -9,7 +9,7 @@ import java.sql.Connection;
 
 public class WriteAdressComp {
     public static void main(String[] args) {
-        Connection connection = new SqliteDBLocal().getDbConnection();
+        Connection connection = new SqliteDB().getDbConnection();
         System.out.println(connection);
         StandartModels standartModels = new StandartModels();
         standartModels.setTABLENAME("AdressComp");

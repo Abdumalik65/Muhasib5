@@ -30,8 +30,9 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -132,7 +133,7 @@ public class Sotuvchi5 extends Application {
     }
 
     public Sotuvchi5() {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
 //        ibtido();
     }
@@ -162,7 +163,7 @@ public class Sotuvchi5 extends Application {
             login();
             ibtido();
         } else {
-            System.out.println("Bu kompyuterdan sistema qaydidan o`tmagan");
+            System.out.println("Bu kompyuter sistema qaydidan o`tmagan");
             Platform.exit();
             System.exit(0);
         }
@@ -1121,10 +1122,10 @@ public class Sotuvchi5 extends Application {
         Rectangle2D bounds = screen.getVisualBounds();
         stage = primaryStage;
         stage.setTitle("Savdo");
-        stage.setX(bounds.getMinX() - 3);
+        stage.setX(bounds.getMinX());
         stage.setY(bounds.getMinY());
-        stage.setWidth(bounds.getWidth() + 7);
-        stage.setHeight(bounds.getHeight() + 6);
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
 //        stage.initStyle(StageStyle.UNDECORATED);
         stage.setOnCloseRequest(event -> {
             barCodeOff();

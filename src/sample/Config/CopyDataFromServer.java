@@ -4,6 +4,7 @@ import com.mysql.cj.jdbc.DatabaseMetaData;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.Alerts;
 
@@ -15,14 +16,14 @@ import java.text.ParseException;
 
 public class CopyDataFromServer {
     public static void main(String[] args) throws ParseException {
-        Connection sourceConnection = new MySqlDB().getDbConnection();
-        Connection targetConnection = new MySqlDBLocal().getDbConnection();
+        Connection sourceConnection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
+        Connection targetConnection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         ObservableList<String> list = getTableList(targetConnection);
         for (String s : list) {
             dropTable(targetConnection, s);
             System.out.println(s + " o`chdi");
         }
-        targetConnection = new MySqlDBLocal().getDbConnection();
+        targetConnection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         copyStandartData(sourceConnection, targetConnection, "Amal");
         copyStandartData(sourceConnection, targetConnection, "Tovar");
         copyStandartData(sourceConnection, targetConnection, "Birlik");

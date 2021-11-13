@@ -190,15 +190,14 @@ public class AloqaModels {
             prSt = connection.prepareStatement(insert);
             for(Aloqa s6: aloqaObservableList) {
                 prSt = connection.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS);
-                prSt.setInt(1, s6.getId());
-                prSt.setString(2, s6.getText());
-                prSt.setString(3, s6.getDbHost());
-                prSt.setString(4, s6.getDbPort());
-                prSt.setString(5, s6.getDbUser());
-                prSt.setString(6, s6.getDbPass());
-                prSt.setString(7, s6.getDbName());
-                prSt.setString(8, s6.getDbPrefix());
-                prSt.setInt(9, s6.getId());
+                prSt.setString(1, s6.getText());
+                prSt.setString(2, s6.getDbHost());
+                prSt.setString(3, s6.getDbPort());
+                prSt.setString(4, s6.getDbUser());
+                prSt.setString(5, s6.getDbPass());
+                prSt.setString(6, s6.getDbName());
+                prSt.setString(7, s6.getDbPrefix());
+                prSt.setInt(8, s6.getId());
                 prSt.addBatch();
             }
             prSt.executeBatch();

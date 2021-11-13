@@ -24,8 +24,9 @@ import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDB;
-import sample.Config.MySqlDBLocal;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Temp.YangiTovarGuruhi;
 import sample.Tools.*;
@@ -102,7 +103,7 @@ public class YangiTovar1 extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        connection = new MySqlDBLocal().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         initStage(primaryStage);
         ibtido();
         stage.show();
@@ -215,7 +216,8 @@ public class YangiTovar1 extends Application {
         radioButton1.setId("2");
         radioButton1.setToggleGroup(toggleGroup);
         hBox.getChildren().addAll(radioButton, radioButton1);
-
+        toggleGroup.selectToggle(radioButton1);
+        showYakka();
         toggleGroup.selectedToggleProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 RadioButton rb = (RadioButton) newValue;
@@ -911,8 +913,8 @@ public class YangiTovar1 extends Application {
         Integer narhTuri = 0;
         ObservableList<TextField> observableList = FXCollections.observableArrayList(
                 xaridNarhiTextField,
-                ulgurjiNarhTextField,
                 chakanaNarhTextField,
+                ulgurjiNarhTextField,
                 ndsTextField,
                 bojTextField
         );
