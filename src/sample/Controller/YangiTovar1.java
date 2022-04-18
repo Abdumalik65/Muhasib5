@@ -23,12 +23,10 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.*;
-import sample.Temp.YangiTovarGuruhi;
 import sample.Tools.*;
 
 import java.io.IOException;
@@ -96,6 +94,8 @@ public class YangiTovar1 extends Application {
     public YangiTovar1(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     public YangiTovar1() {

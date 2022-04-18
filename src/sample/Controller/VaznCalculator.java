@@ -15,6 +15,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Data.User;
 import sample.Tools.Alerts;
+import sample.Tools.DasturlarRoyxati;
 
 import java.sql.Connection;
 import java.text.NumberFormat;
@@ -55,6 +56,8 @@ public class VaznCalculator extends Application {
     public VaznCalculator(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 

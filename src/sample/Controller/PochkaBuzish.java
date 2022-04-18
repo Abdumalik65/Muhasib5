@@ -28,7 +28,6 @@ import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.*;
-import sample.Temp.Hisobot2;
 import sample.Tools.*;
 
 import java.io.IOException;
@@ -113,6 +112,8 @@ public class PochkaBuzish extends Application {
     public PochkaBuzish(Connection connection, User user, Hisob hisob) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         this.hisob1 = hisob;
     }
 
@@ -199,9 +200,9 @@ public class PochkaBuzish extends Application {
     }
 
     private void initHisob1TarkibTableView() {
-        GetTableView2 getTableView2 = new GetTableView2();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
         hisob1TarkibTableView.getColumns().removeAll(hisob1TarkibTableView.getColumns());
-        hisob1TarkibTableView.getColumns().addAll(getTableView2.getIzoh2Column(), getTableView2.getAdadColumn());
+        hisob1TarkibTableView.getColumns().addAll(tableViewAndoza.getIzoh2Column(), tableViewAndoza.getAdadColumn());
         refreshHisob1TarkibList();
         hisob1TarkibTableView.setItems(hisob1TarkibList);
         hisob1TarkibTableView.setRowFactory( tv -> {
@@ -302,10 +303,10 @@ public class PochkaBuzish extends Application {
     }
 
     private void initMaydaTarkibTableView() {
-        GetTableView2 getTableView2 = new GetTableView2();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
         maydaTarkibTableView.getColumns().removeAll(maydaTarkibTableView.getColumns());
         maydaTarkibTableView.getColumns().addAll(
-                getTableView2.getIzoh2Column(),
+                tableViewAndoza.getIzoh2Column(),
                 getAdadColumn()
         );
         maydaTarkibTableView.setItems(maydaTarkibList);

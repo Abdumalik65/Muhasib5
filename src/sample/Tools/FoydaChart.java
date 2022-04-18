@@ -16,7 +16,6 @@ import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
-import sample.Temp.ShowCoordinatesNode2;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -160,7 +159,7 @@ public class FoydaChart extends Application {
         XYChart.Series series = new XYChart.Series();
         XYChart.Data<String, Double> data = null;
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
-        ResultSet rs = hisobKitobModels.getResultSet(connection, "SELECT barcode, sum(dona) as adad, sum(narh/kurs) as summa FROM Muhasib.HisobKitob where amal=9 group by barcode order by summa desc limit 20");
+        ResultSet rs = hisobKitobModels.getResultSet(connection, "SELECT barcode, sum(dona) as adad, sum(narh/kurs) as summa FROM HisobKitob where amal=9 group by barcode order by summa desc limit 20");
         try {
             Integer id = 1;
             while (rs.next()) {
@@ -192,15 +191,15 @@ public class FoydaChart extends Application {
     }
 
     private TableView<HisobKitob> initTableView() {
-        GetTableView2 getTableView2 = new GetTableView2();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
         TableView<HisobKitob> hisobKitobTableView = new TableView<>();
         SetHVGrow.VerticalHorizontal(hisobKitobTableView);
         hisobKitobTableView.getColumns().addAll(
-                getTableView2.getHKIdColumn(),
-                getTableView2.getBarCodeColumn(),
-                getTableView2.getIzoh2Column(),
-                getTableView2.getAdadColumn(),
-                getTableView2.getNarhColumn()
+                tableViewAndoza.getHKIdColumn(),
+                tableViewAndoza.getBarCodeColumn(),
+                tableViewAndoza.getIzoh2Column(),
+                tableViewAndoza.getAdadColumn(),
+                tableViewAndoza.getNarhColumn()
         );
         hisobKitobTableView.setItems(hisobKitobObservableList);
         return hisobKitobTableView;

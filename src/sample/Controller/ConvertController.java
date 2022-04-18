@@ -99,7 +99,7 @@ public class ConvertController extends Application {
     }
 
     public ConvertController() {
-        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }
@@ -107,6 +107,8 @@ public class ConvertController extends Application {
     public ConvertController(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     public ConvertController(Connection connection, User user, Hisob hisob1) {
@@ -122,17 +124,9 @@ public class ConvertController extends Application {
         kirimHisobKitob.setHisob1(yordamchiHisob);
     }
 
-    private void ibtido() {
+    public void ibtido() {
         initData();
-        initQaydSanasiDatePicker();
-        initQaydVaqtiTextField();
-        initTextFields();
-        initValuta1Hbox();
-        initValuta2Hbox();
-        initYakunlaButton();
-        initIzohTextArea();
         initHisob1Hbox();
-        initGridPane();
         initCenterPane();
         initBorderPane();
         if (!yagonaHisob) {
@@ -177,6 +171,8 @@ public class ConvertController extends Application {
     private void initCenterPane() {
         SetHVGrow.VerticalHorizontal(centerPane);
         centerPane.setPadding(new Insets(padding));
+        initYakunlaButton();
+        initGridPane();
         centerPane.getChildren().addAll(gridPane, xaridniYakunlaButton);
     }
 
@@ -429,12 +425,31 @@ public class ConvertController extends Application {
             stage.close();
         });
     }
+    private HisobKitob initSavdoXususiyatlari(QaydnomaData qaydnomaData) {
+        HisobKitob hisobKitob = new HisobKitob();
+        hisobKitob.setQaydId(qaydnomaData.getId());
+        hisobKitob.setHujjatId(qaydnomaData.getHujjat());
+        hisobKitob.setAmal(amalTuri);
+        hisobKitob.setHisob1(qaydnomaData.getChiqimId());
+        hisobKitob.setHisob2(qaydnomaData.getKirimId());
+        hisobKitob.setValuta(1);
+        hisobKitob.setTovar(0);
+        hisobKitob.setKurs(1d);
+        hisobKitob.setBarCode("");
+        hisobKitob.setDona(0d);
+        hisobKitob.setNarh(0d);
+        hisobKitob.setManba(0);
+        hisobKitob.setIzoh("Pul ayriboshlash №: " + qaydnomaData.getHujjat() + "\n" + izohTextArea.getText().trim());
+        hisobKitob.setUserId(user.getId());
+        hisobKitob.setDateTime(qaydnomaData.getSana());
+        return hisobKitob;
+    }
 
     private QaydnomaData qaydnomaSaqlash() {
         int hujjatInt = getQaydnomaNumber();
         String izohString = izohTextArea.getText();
         Double jamiDouble = getJami(hisobKitobObservableList);
-        date = getQaydDate();
+        Date date = getQaydDate();
         QaydnomaData qaydnomaData = new QaydnomaData(null, amalTuri, hujjatInt, date,
                 hisob1.getId(), hisob1.getText(), hisob2.getId(), hisob2.getText(),
                 izohString, jamiDouble, 0, user.getId(), new Date());
@@ -461,6 +476,7 @@ public class ConvertController extends Application {
 
     private void xaridSaqlash(QaydnomaData qData) {
         hisobKitobObservableList.removeAll(hisobObservableList);
+        hisobKitobObservableList.add(initSavdoXususiyatlari(qaydnomaData));
         hisobKitobObservableList.addAll(chiqimHisobKitob, kirimHisobKitob);
         for (HisobKitob hk: hisobKitobObservableList) {
             hk.setQaydId(qData.getId());
@@ -471,6 +487,13 @@ public class ConvertController extends Application {
     }
 
     private void initGridPane() {
+        initValuta1Hbox();
+        initValuta2Hbox();
+        initQaydSanasiDatePicker();
+        initQaydVaqtiTextField();
+        initTextFields();
+        initIzohTextArea();
+
         SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
         HBox.setHgrow(gridPane, Priority.ALWAYS);
         int rowIndex = 0;
@@ -483,11 +506,6 @@ public class ConvertController extends Application {
         GridPane.setHgrow(qaydVaqtiTextField, Priority.ALWAYS);
 
         rowIndex++;
-        gridPane.add(izohTextArea, 0, rowIndex, 3, 1);
-        GridPane.setHgrow(izohTextArea, Priority.ALWAYS);
-        GridPane.setVgrow(izohTextArea, Priority.ALWAYS);
-
-        rowIndex++;
         gridPane.add(valuta1Hbox, 0, rowIndex, 1, 1);
         GridPane.setHgrow(valuta1Hbox, Priority.ALWAYS);
         gridPane.add(valuta1KursTextField, 2, rowIndex, 1, 1);
@@ -498,6 +516,11 @@ public class ConvertController extends Application {
         GridPane.setHgrow(valuta2Hbox, Priority.ALWAYS);
         gridPane.add(valuta2KursTextField, 2, rowIndex, 1, 1);
         gridPane.add(valuta2SummaTextField, 1, rowIndex, 1, 1);
+
+        rowIndex++;
+        gridPane.add(izohTextArea, 0, rowIndex, 3, 1);
+        GridPane.setHgrow(izohTextArea, Priority.ALWAYS);
+        GridPane.setVgrow(izohTextArea, Priority.ALWAYS);
     }
 
     private void initBorderPane() {
@@ -577,5 +600,13 @@ public class ConvertController extends Application {
         Double chiqimSummasi = Double.valueOf((valuta2SummaTextField.getText().trim().replaceAll(" ", "")));
         chiqimSummasi = kirimSummasi*chiqimKursi/kirimKursi;
         valuta2SummaTextField.setText(decimalFormat.format(chiqimSummasi));
+    }
+
+    public GridPane getGridPane() {
+        return gridPane;
+    }
+
+    public void setGridPane(GridPane gridPane) {
+        this.gridPane = gridPane;
     }
 }

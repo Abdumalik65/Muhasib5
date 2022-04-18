@@ -19,6 +19,7 @@ import java.awt.*;
 import java.io.*;
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -51,6 +52,9 @@ public class QaydnomaExcel {
     int fontSize = 10;
 
     File file;
+    File directory = new File(System.getProperty("user.dir") + File.separator + "Hisobot");
+    String pathString;
+    String printerim;
     Desktop desktop = Desktop.getDesktop();
 
     public QaydnomaExcel() {
@@ -58,11 +62,18 @@ public class QaydnomaExcel {
     }
 
     private void ibtido() {
+        initDirectory();
         initWorkBook();
         initFonts();
         initStyles();
     }
 
+    private void initDirectory() {
+        if (!directory.exists()) {
+            directory.mkdir();
+        }
+        pathString = directory.getAbsolutePath() + File.separator;
+    }
     private void initWorkBook() {
         wb = new XSSFWorkbook();
     }
@@ -207,15 +218,18 @@ public class QaydnomaExcel {
         }
         sheet.setColumnWidth(0, 8*256);
         sheet.autoSizeColumn(1);
-
-        try (OutputStream fileOut = new FileOutputStream("hisoblar.xlsx")) {
+        File directory = new File(System.getProperty("user.dir") + File.separator + "Hisobot");
+        String pathString = directory.getAbsolutePath() + File.separator;
+        OutputStream fileOut = null;
+        String fileName = pathString + "Hisoblarlar_" + LocalDate.now() + ".xlsx";
+        try {
+            fileOut = new FileOutputStream(fileName);
             wb.write(fileOut);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            showFile(fileName);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        showFile("hisoblar.xlsx");
+
     }
     private void headerHisobIdCell() {
         cell = row.createCell(cellIndex, CellType.STRING);
@@ -353,7 +367,7 @@ public class QaydnomaExcel {
         }
 
         OutputStream fileOut = null;
-        String fileName= "hisob"+ hisobId +".xlsx";
+        String fileName= pathString + hisob.getText().trim() + "_" + LocalDate.now() + ".xlsx";
         try {
             fileOut = new FileOutputStream(fileName);
             wb.write(fileOut);
@@ -399,14 +413,15 @@ public class QaydnomaExcel {
         sheet.setColumnWidth(0, 30*256);
         sheet.autoSizeColumn(1);
 
-        try (OutputStream fileOut = new FileOutputStream("Mufassal.xlsx")) {
+        String fileName= pathString + "Mufassal_" + LocalDate.now() + ".xlsx";
+        try (OutputStream fileOut = new FileOutputStream(fileName)) {
             wb.write(fileOut);
+            showFile(fileName);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        showFile("Mufassal.xlsx");
     }
 
     private void hisobToExcel(Connection connection, Hisob hisob, ObservableList<QaydnomaData> qList, Boolean withHyperlink) {
@@ -724,6 +739,7 @@ public class QaydnomaExcel {
     }
 
     public void savdoChiptasi(QaydnomaData qaydnomaData, Connection connection, User user) {
+        Integer chiptaRaqami = qaydnomaData.getHujjat();
         Double jamiMablag = 0.0;
         Double kassagaDouble = 0.0;
         Double chegirmaDouble = 0.0;
@@ -825,7 +841,7 @@ public class QaydnomaExcel {
         sheet.setColumnWidth(3, 10*256);
 
         OutputStream fileOut = null;
-        String fileName= "Chipta.xlsx";
+        String fileName= pathString + "Chipta_" + qaydnomaData.getHujjat().toString().trim() + "_" + LocalDate.now() + ".xlsx";
         try {
             fileOut = new FileOutputStream(fileName);
             wb.write(fileOut);
@@ -958,7 +974,7 @@ public class QaydnomaExcel {
         sheet.setColumnWidth(1, 10*256);
 
         OutputStream fileOut = null;
-        String fileName= "Price.xlsx";
+        String fileName= pathString + "Price_" + LocalDate.now() + ".xlsx";
         try {
             fileOut = new FileOutputStream(fileName);
             wb.write(fileOut);

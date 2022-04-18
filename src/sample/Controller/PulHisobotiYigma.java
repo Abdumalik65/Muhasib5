@@ -21,18 +21,19 @@ import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
+import sample.Excel.ExportToExcel;
+import sample.Excel.PulHisobotiExcel;
 import sample.Model.*;
-import sample.Temp.Hisobot2;
 import sample.Tools.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
-import java.time.LocalDate;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 
 public class PulHisobotiYigma extends Application {
     Stage stage;
@@ -53,7 +54,7 @@ public class PulHisobotiYigma extends Application {
 
     TableView<Hisob> hisobTableView = new TableView<>();
     TableView<HisobKitob> hisobKitobTableView = new TableView<>();
-    GetTableView2 getTableView2 = new GetTableView2();
+    TableViewAndoza tableViewAndoza = new TableViewAndoza();
 
     ObservableList<Hisob> hisobListAll;
     ObservableList<Hisob> hisobListForTable = FXCollections.observableArrayList();
@@ -75,7 +76,7 @@ public class PulHisobotiYigma extends Application {
     }
 
     public PulHisobotiYigma() {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -84,6 +85,8 @@ public class PulHisobotiYigma extends Application {
     public PulHisobotiYigma(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
@@ -93,7 +96,7 @@ public class PulHisobotiYigma extends Application {
         initButtons();
         initTextFields();
         initLeftHBox();
-        getTableView2.initTableViews();
+        tableViewAndoza.initTableViews();
         initHisobTableView();
         initLeftPane();
         initHisobKitobTable();
@@ -130,14 +133,14 @@ public class PulHisobotiYigma extends Application {
         hisoblarToExcelButton.setGraphic(new PathToImageView("/sample/images/Icons/excel.png").getImageView());
         hisoblarToExcelButton.setOnAction(event -> {
             ExportToExcel exportToExcel = new ExportToExcel();
-            exportToExcel.hisoblar(hisobListAll);
+            exportToExcel.hisoblar(hisobListForTable);
         });
         hisobToExcelButton.setGraphic(new PathToImageView("/sample/images/Icons/excel.png").getImageView());
         hisobToExcelButton.setOnAction(event -> {
             Hisob hisob = hisobTableView.getSelectionModel().getSelectedItem();
             if (hisob != null) {
-                ExportToExcel exportToExcel = new ExportToExcel();
-                exportToExcel.hisob(hisob.getId(), rightObservableList);
+                PulHisobotiExcel pulHisobotiExcel = new PulHisobotiExcel();
+                pulHisobotiExcel.pulHisoboti(hisob.getId(), rightObservableList);
             }
         });
 
@@ -145,7 +148,7 @@ public class PulHisobotiYigma extends Application {
 
     private void initTextFields() {
         HBox.setHgrow(qidirTextField, Priority.ALWAYS);
-        TextFields.bindAutoCompletion(qidirTextField, hisobListAll).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
+        TextFields.bindAutoCompletion(qidirTextField, hisobListForTable).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
             Hisob hisob = autoCompletionEvent.getCompletion();
             hisobTableView.getSelectionModel().select(hisob);
             hisobTableView.scrollTo(hisob);
@@ -212,14 +215,14 @@ public class PulHisobotiYigma extends Application {
     }
 
     private void initHisobTableView() {
-        hisobTableView = getTableView2.getHisobTableView();
+        hisobTableView = tableViewAndoza.getHisobTableView();
         HBox.setHgrow(hisobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobTableView, Priority.ALWAYS);
         hisobTableView.getColumns().get(1).setMinWidth(150);
         hisobTableView.getColumns().get(1).setMaxWidth(150);
         hisobTableView.setItems(hisobListForTable);
         if (hisobListForTable.size()>0) {
-            refreshHisobKitobTable(hisobListForTable    .get(0), localDate);
+            refreshHisobKitobTable(hisobListForTable.get(0), localDate);
             hisobTableView.getSelectionModel().selectFirst();
         }
         hisobTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
@@ -230,12 +233,13 @@ public class PulHisobotiYigma extends Application {
     }
 
     private ObservableList<HisobKitob> pulList3(Integer hisobId, LocalDate localDate) {
+        KursModels kursModels = new KursModels();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String localDateString = localDate.format(formatter);
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
         ObservableList<HisobKitob> hisobKitobObservableList = FXCollections.observableArrayList();
         String select =
-                "Select valuta, sum(if(hisob2="+hisobId+",narh,0)) as kirim, sum(if(hisob1="+hisobId+",narh,0)) as chiqim from HisobKitob where tovar=0 and valuta>0 and dateTime<='" + localDateString + " 23:59:59' group by valuta";
+                "Select valuta, sum(if(hisob2="+hisobId+",narh,0)) as kirim, sum(if(hisob1="+hisobId+",narh,0)) as chiqim, sum(if(hisob2="+hisobId+",narh/kurs,0)) as kirimB, sum(if(hisob1="+hisobId+",narh/kurs,0)) as chiqimB from HisobKitob where tovar=0 and valuta>0 and dateTime<='" + localDateString + " 23:59:59' group by valuta";
         ResultSet rs = hisobKitobModels.getResultSet(connection, select);
         try {
             while (rs.next()) {
@@ -243,10 +247,19 @@ public class PulHisobotiYigma extends Application {
                 Double kirim = rs.getDouble(2);
                 Double chiqim = rs.getDouble(3);
                 Double jami = kirim - chiqim;
+                Double kirimB = rs.getDouble(4);
+                Double chiqimB = rs.getDouble(5);
+                Double jamiB = kirimB - chiqimB;
                 Valuta v = GetDbData.getValuta(id);
                 HisobKitob hisobKitob = new HisobKitob();
+                Instant instant = Instant.from(localDate.atStartOfDay(ZoneId.systemDefault()));
+                hisobKitob.setDateTime(Date.from(instant));
+                Kurs kurs = kursModels.getKurs(connection, v.getId(), hisobKitob.getDateTime(), "sana desc");
+                hisobKitob.setKurs(kurs.getKurs());
+                hisobKitob.setHisob1(hisobId);
                 hisobKitob.setValuta(v.getId());
                 hisobKitob.setIzoh(v.getValuta());
+                hisobKitob.setBalans(jamiB);
                 hisobKitob.setNarh(jami);
                 hisobKitobObservableList.add(hisobKitob);
             }
@@ -262,17 +275,10 @@ public class PulHisobotiYigma extends Application {
         rightObservableList.addAll(pulList3(hisob.getId(), localDate));
         hisobKitobTableView.setItems(rightObservableList);
         hisobKitobTableView.refresh();
-/*
-        Hisobot2 hisobot = new Hisobot2(connection,user);
-        rightObservableList.removeAll(rightObservableList);
-        rightObservableList.addAll(hisobot.getPul(hisob.getId(), localDate));
-        hisobKitobTableView.setItems(rightObservableList);
-        hisobKitobTableView.refresh();
-*/
     }
 
     private void initHisobKitobTable() {
-        hisobKitobTableView.getColumns().addAll(getTableView2.getIzoh2Column(), getTableView2.getAdadColumn(), getTableView2.getNarhColumn());
+        hisobKitobTableView.getColumns().addAll(tableViewAndoza.getIzoh2Column(), tableViewAndoza.getAdadColumn(), tableViewAndoza.getNarhColumn());
         HBox.setHgrow(hisobKitobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobKitobTableView, Priority.ALWAYS);
         hisobKitobTableView.setItems(rightObservableList);
@@ -449,7 +455,6 @@ public class PulHisobotiYigma extends Application {
     }
 
     private ObservableList<Hisob> hisoblarList(LocalDate localDate) {
-        DecimalFormat decimalFormat = new MoneyShow();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         String localDateString = localDate.format(formatter);
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
@@ -462,7 +467,11 @@ public class PulHisobotiYigma extends Application {
                 Integer id = rs1.getInt(1);
                 Double balance = rs1.getDouble(2);
                 Hisob hisob = GetDbData.getHisob(id);
-                hisobObservableList.add(new Hisob(id, hisob.getText(), 0d, 0d, balance));
+                if (hisob != null) {
+                    hisobObservableList.add(new Hisob(id, hisob.getText(), 0d, balance, 0d));
+                } else {
+                    System.out.println("Select Hisob topilmadi " + id);
+                }
             }
             rs1.close();
         } catch (SQLException e) {
@@ -477,10 +486,14 @@ public class PulHisobotiYigma extends Application {
                 Double balance = rs2.getDouble(2);
                 Hisob hisob = GetDbData.hisobniTop(id, hisobObservableList);
                 if (hisob != null) {
-                    hisob.setBalans(hisob.getBalans() - balance);
+                    hisob.setChiqim(balance);
                 } else {
                     Hisob h = GetDbData.getHisob(id);
-                    hisobObservableList.add(new Hisob(id, h.getText(), 0d, 0d, balance));
+                    if (h != null) {
+                        hisobObservableList.add(new Hisob(id, h.getText(), balance, 0d, 0d));
+                    } else {
+                        System.out.println("Select Hisob topilmadi " + id);
+                    }
                 }
             }
             rs2.close();
@@ -488,10 +501,10 @@ public class PulHisobotiYigma extends Application {
             e.printStackTrace();
         }
         if (hisobObservableList.size()>0) {
+            hisobObservableList.forEach(h -> h.setBalans(h.getKirim() - h.getChiqim()));
             Comparator<Hisob> comparator = Comparator.comparing(Hisob::getId);
             Collections.sort(hisobObservableList, comparator);
         }
-//        hisobObservableList.removeIf(hisob -> yahlitla(hisob.getBalans(), 2) == 0d);
         return hisobObservableList;
     }
 

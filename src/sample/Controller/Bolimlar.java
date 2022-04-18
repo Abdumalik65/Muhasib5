@@ -5,7 +5,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
-import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -20,13 +19,12 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
+import sample.Excel.ExportToExcel;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -87,6 +85,8 @@ public class Bolimlar extends Application {
     public Bolimlar(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 

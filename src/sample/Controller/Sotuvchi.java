@@ -12,7 +12,6 @@ import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.Image;
@@ -54,7 +53,6 @@ public class Sotuvchi extends Application {
     TreeView<TreeItemClass> treeView = new TreeView();
     TableView<HisobKitob> tovarTableView = new TableView();
 
-    SplitPane centerPane = new SplitPane();
     GridPane leftGridPane = new GridPane();
     VBox rightPane = new VBox();
     HBox topHBox = new HBox();
@@ -63,14 +61,20 @@ public class Sotuvchi extends Application {
     TextField tovarTextField = new TextField();
     TextField barCodeTextField = new TextField();
     TextField chegirmaTextField = new TextField();
-    TextField chegirmaMilliyTextField = new TextField();
-    TextField chegirmaKurs = new TextField();
     TextField milliyKurs = new TextField();
     TextField plasticKurs= new TextField();
     TextField naqdTextField = new TextField();
     TextField naqdMilliyTextField = new TextField();
-    TextField naqdKurs = new TextField();
     TextField plasticTextField = new TextField();
+    TextField qaytimUsdTextField = new TextField();
+    TextField qaytimMilliyTextField = new TextField();
+    TextField qaytimPlasticTextField = new TextField();
+    TextField qaytimMilliyKursTextField = new TextField();
+    TextField qaytimPlasticKursTextField = new TextField();
+    TextField qaytimFoizTextField = new TextField();
+    TextField qaytimBankXarajatiTextField = new TextField();
+    TextField tolovFoizTextField = new TextField();
+    TextField tolovBankXarajatiTextField = new TextField();
     TextArea izohTextArea = new TextArea();
     ComboBox<Standart> barCodeComboBox = new ComboBox<>();
     ComboBox<Standart> narhComboBox = new ComboBox<>();
@@ -96,12 +100,13 @@ public class Sotuvchi extends Application {
 
     HBoxTextFieldPlusButton hisob1HBox = new HBoxTextFieldPlusButton();
     HBoxTextFieldPlusButton hisob2HBox = new HBoxTextFieldPlusButton();
-    HBoxTextFieldPlusButton tovarHBox = new HBoxTextFieldPlusButton();
+    TovarBox tovarBox;
     HBoxTextFieldPlusButton valutaHBox = new HBoxTextFieldPlusButton();
     Button navbatdagiXaridorButton = new Button("Navbatdagi xaridor");
     Button xaridnBekorQilButton = new Button("Xaridni bekor qil");
     Button xaridniYakunlaButton = new Button("Xaridni yakunla");
     KeyCombination kc = new KeyCodeCombination(KeyCode.ENTER, KeyCombination.ALT_DOWN);
+    KeyCombination kcB = new KeyCodeCombination(KeyCode.B, KeyCombination.CONTROL_DOWN);
     KeyCombination kcC = new KeyCodeCombination(KeyCode.C, KeyCombination.CONTROL_DOWN);
     KeyCombination kcN = new KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN);
     KeyCombination kcP = new KeyCodeCombination(KeyCode.P, KeyCombination.CONTROL_DOWN);
@@ -115,11 +120,15 @@ public class Sotuvchi extends Application {
     Double jamiMablag = 0.0;
     Double kassagaDouble = 0.0;
     Double chegirmaDouble = 0.0;
-    Double naqdDouble = 0.0;
+    Double naqdUsdDouble = 0.0;
     Double naqdMilliyDouble = 0.0;
     Double plasticDouble = 0.0;
     Double balansDouble = 0.0;
     Double qaytimDouble = 0.0;
+    Double qaytimPlasticDouble = 0.0;
+    Double qaytimPlasticFoiziDouble = 0d;
+    Double qaytimPlasticXarajatiDouble = 0d;
+
     Double vaznDouble = .0;
 
     Label jamiMablagLabel = new Label();
@@ -135,6 +144,8 @@ public class Sotuvchi extends Application {
     StringBuffer stringBuffer = new StringBuffer();
 
     ObservableList<HisobKitob> tableViewObservableList = FXCollections.observableArrayList();
+    ObservableList<HisobKitob> tolovObservableList = FXCollections.observableArrayList();
+    ObservableList<HisobKitob> qaytimObservableList = FXCollections.observableArrayList();
     ObservableList<Standart> tovarObservableList;
     ObservableList<Valuta> valutaObservableList;
     ObservableList<Standart> narhTuriObservableList;
@@ -143,18 +154,22 @@ public class Sotuvchi extends Application {
     ObservableList<Standart> tolovShakliObservableList;
     ObservableList<Hisob> hisobObservableList;
     ObservableList<BarCode> barCodeList= FXCollections.observableArrayList();
+    LoginUserController loginUserController;
 
     public static void main(String[] args) {
         launch(args);
     }
 
     public Sotuvchi() {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
+        loginUserController = new LoginUserController(connection);
+        user = loginUserController.login();
         GetDbData.initData(connection);
     }
 
     public Sotuvchi(Connection connection, User user) {
         this.connection = connection;
+        loginUserController = new LoginUserController(connection, user);
         this.user = user;
         ibtido();
     }
@@ -166,15 +181,9 @@ public class Sotuvchi extends Application {
         ibtido();
     }
 
-    private void initData1() {
-        tableViewObservableList = hisobKitobModels.getAnyData(connection, "qaydId = " + qaydnomaData.getId(), "");
-
-    }
-
     @Override
     public void start(Stage primaryStage) throws Exception {
         if (buKassami()) {
-            login();
             ibtido();
         } else {
             System.out.println("Bu kompyuter sistema qaydidan o`tmagan");
@@ -182,35 +191,30 @@ public class Sotuvchi extends Application {
             System.exit(0);
         }
         initStage(primaryStage);
+        stage.setOnCloseRequest(event -> {
+            barCodeOff();
+            loginUserController.logOut();
+            Platform.exit();
+            System.exit(0);
+        });
         stage.show();
     }
 
     public void display() {
         stage = new Stage();
         initStage(stage);
+        stage.setOnCloseRequest(event -> {
+            barCodeOff();
+            stage.close();
+        });
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.showAndWait();
     }
 
     private void ibtido() {
         initData();
-        initTableView();
-        initGridPane();
-        initHisob1HBox();
-        initHisob2HBox();
-        initTovarHBox();
-        initValutaHBox();
-        initBirlikComboBox();
-        initNarhComboBox();
-        initNavbatdagiXaridorButton();
-        initXaridorBekorQilButton();
-        initXaridniYakunlaButton();
-        initTopPane();
-        initBottomPane();
-        initTreeView();
         initRightPane();
         initCenterPane();
-        initSystemMenu();
         initBorderPane();
         setDisable(true);
     }
@@ -236,9 +240,14 @@ public class Sotuvchi extends Application {
         chiqimShakliObservableList = standartModels.get_data(connection);
         standartModels.setTABLENAME("NarhTuri");
         narhTuriObservableList = standartModels.get_data(connection);
+        qaytimDisable(true);
+        qaytimPlasticFoiziDouble = GetDbData.plasticFoizi.getFoiz();
+        tolovDisable(true);
     }
 
     private void initTopPane() {
+        initNavbatdagiXaridorButton();
+        initXaridorBekorQilButton();
         HBox.setHgrow(topHBox, Priority.ALWAYS);
         topHBox.getChildren().addAll(navbatdagiXaridorButton, xaridnBekorQilButton);
     }
@@ -247,19 +256,17 @@ public class Sotuvchi extends Application {
     }
 
     private void initRightPane() {
+        initTreeView();
         SetHVGrow.VerticalHorizontal(rightPane);
         rightPane.getChildren().add(treeView);
-    }
-
-    private void initBottomPane() {
-        HBox.setHgrow(bottomHBox, Priority.ALWAYS);
-        bottomHBox.getChildren().add(xaridniYakunlaButton);
     }
 
     private void initBorderPane() {
         borderpane.setPadding(new Insets(padding));
         SetHVGrow.VerticalHorizontal(borderpane);
+        initSystemMenu();
         borderpane.setTop(mainMenu);
+        initGridPane();
         borderpane.setCenter(leftGridPane);
         borderpane.setRight(rightPane);
         borderpane.setBottom(bottomHBox);
@@ -319,7 +326,7 @@ public class Sotuvchi extends Application {
             TovarXaridi tovarXaridi = new TovarXaridi(connection, user);
             qaydnomaData = tovarXaridi.display();
             tovarObservableList = hisobKitobModels.getTovarCount(connection, user.getTovarHisobi(), new Date());
-            TextField textField = tovarHBox.getTextField();
+            TextField textField = tovarBox.getTextField();
             TextFields.bindAutoCompletion(textField, tovarObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Standart> autoCompletionEvent) -> {
                 Standart newValue = autoCompletionEvent.getCompletion();
                 if (newValue != null) {
@@ -412,13 +419,20 @@ public class Sotuvchi extends Application {
         leftGridPane.setPadding(new Insets(padding));
 
         int rowIndex = 0;
+        initTopPane();
         leftGridPane.add(topHBox, 0, rowIndex, 1, 1);
         GridPane.setHgrow(topHBox, Priority.ALWAYS);
 
         rowIndex++;
+        initTableView();
         leftGridPane.add(tovarTableView, 0, rowIndex, 1, 1);
         GridPane.setHgrow(tovarTableView, Priority.ALWAYS);
         GridPane.setVgrow(tovarTableView, Priority.ALWAYS);
+
+        rowIndex++;
+        initXaridniYakunlaButton();
+        leftGridPane.add(xaridniYakunlaButton, 0, rowIndex, 2, 1);
+        GridPane.setHgrow(xaridniYakunlaButton, Priority.ALWAYS);
     }
 
     private void initTableView() {
@@ -495,8 +509,9 @@ public class Sotuvchi extends Application {
                 hisobKitob.setDona(event.getOldValue());
                 Alerts.showKamomat(tovar, event.getNewValue(), hisobKitob.getBarCode(), barCodeCount);
             }
+            refreshTableData();
             tovarTableView.refresh();
-            jamiHisob(tableViewObservableList);
+//            jamiHisob(tableViewObservableList);
         });
         adad.setStyle( "-fx-alignment: CENTER;");
         return adad;
@@ -539,64 +554,14 @@ public class Sotuvchi extends Application {
                 hisobKitob.setNarh(newValue);
                 if (narhComboBox.getValue().getId() == 1) {
                     Double yangiNarhDouble = newValue / tovarDonasi(barCode) / hisobKitob.getKurs();
-                    narhYoz(tovar.getId(), 1, yangiNarhDouble);
+//                    narhYoz(tovar.getId(), 1, yangiNarhDouble);
                 }
             }
+            refreshTableData();
             event.getTableView().refresh();
-            jamiHisob(event.getTableView().getItems());
+//            jamiHisob(event.getTableView().getItems());
         });
         return narh;
-    }
-
-    private TableColumn<HisobKitob, Valuta> getValutaColumn() {
-        TableColumn<HisobKitob, Valuta> valuta = new TableColumn<>("Valuta");
-        valuta.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Valuta>, ObservableValue<Valuta>>() {
-
-            @Override
-            public ObservableValue<Valuta> call(TableColumn.CellDataFeatures<HisobKitob, Valuta> param) {
-                HisobKitob hisobKitob = param.getValue();
-                Integer valutaCode = hisobKitob.getValuta();
-                Valuta v = GetDbData.getValuta(valutaCode);
-                return new SimpleObjectProperty<Valuta>(v);
-            }
-        });
-
-        valuta.setCellFactory(ComboBoxTableCell.forTableColumn(valutaObservableList));
-        valuta.setOnEditCommit((TableColumn.CellEditEvent<HisobKitob, Valuta> event) -> {
-            Valuta newValuta = event.getNewValue();
-            HisobKitob hisobKitob = event.getRowValue();
-            hisobKitob.setValuta(newValuta.getId());
-        });
-        valuta.setMinWidth(120);
-        valuta.setStyle( "-fx-alignment: CENTER;");
-        return valuta;
-    }
-
-    private TableColumn<HisobKitob, ComboBox<Valuta>> getValuta2Column() {
-        TableColumn<HisobKitob, ComboBox<Valuta>> valutaColumn = new TableColumn<>("Valuta");
-        valutaColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, ComboBox<Valuta>>, ObservableValue<ComboBox<Valuta>>>() {
-            ComboBox<Valuta> comboBox = new ComboBox<Valuta>(valutaObservableList);
-
-            @Override
-            public ObservableValue<ComboBox<Valuta>> call(TableColumn.CellDataFeatures<HisobKitob, ComboBox<Valuta>> param) {
-                HisobKitob hisobKitob = param.getValue();
-                Integer valutaCode = hisobKitob.getValuta();
-                for (Valuta v: valutaObservableList) {
-                    if (v.getId().equals(valutaCode)) {
-                        comboBox.getSelectionModel().select(v);
-                        break;
-                    }
-                }
-                comboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-                    if (newValue != null) {
-                    }
-                });
-                return new SimpleObjectProperty<ComboBox<Valuta>>(comboBox);
-            }
-        });
-        valutaColumn.setMinWidth(120);
-        valutaColumn.setStyle( "-fx-alignment: CENTER;");
-        return valutaColumn;
     }
 
     private TableColumn<HisobKitob, Button> getDeleteColumn() {
@@ -627,7 +592,7 @@ public class Sotuvchi extends Application {
                 b.setOnAction(event -> {
                     tableViewObservableList.remove(hisobKitob);
                     param.getTableView().refresh();
-                    jamiHisob(param.getTableView().getItems());
+                    refreshTableData();
                 });
                 return new SimpleObjectProperty<Button>(b);
             }
@@ -637,72 +602,6 @@ public class Sotuvchi extends Application {
         deleteColumn.setMaxWidth(100);
         deleteColumn.setStyle( "-fx-alignment: CENTER;");
         return deleteColumn;
-    }
-
-    private TableColumn<HisobKitob, Double> getVaznColumn() {
-        TableColumn<HisobKitob, Double> vaznColumn = new TableColumn<>("Vazn");
-        vaznColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Double>, ObservableValue<Double>>() {
-
-            @Override
-            public ObservableValue<Double> call(TableColumn.CellDataFeatures<HisobKitob, Double> param) {
-                HisobKitob hisobKitob = param.getValue();
-                BarCode b = GetDbData.getBarCode(hisobKitob.getBarCode());
-                Double vaznDouble = .0;
-                if (b != null) {
-                    vaznDouble = b.getVazn();
-                }
-                return new SimpleObjectProperty<Double>(vaznDouble);
-            }
-        });
-
-        vaznColumn.setMinWidth(20);
-        vaznColumn.setMaxWidth(40);
-        vaznColumn.setStyle( "-fx-alignment: CENTER;");
-        return vaznColumn;
-    }
-
-    private TableColumn<HisobKitob, Button> getEditColumn() {
-        TableColumn<HisobKitob, Button> editColumn = new TableColumn<>("O`chir");
-        editColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Button>, ObservableValue<Button>>() {
-
-            @Override
-            public ObservableValue<Button> call(TableColumn.CellDataFeatures<HisobKitob, Button> param) {
-                HisobKitob hisobKitob = param.getValue();
-                Button b = new Button("");
-                b.setMaxWidth(2000);
-                b.setPrefWidth(150);
-                HBox.setHgrow(b, Priority.ALWAYS);
-                InputStream inputStream = getClass().getResourceAsStream("/sample/images/Icons/edit.png");
-                Image image = new Image(inputStream);
-                ImageView imageView = new ImageView(image);
-                b.setGraphic(imageView);
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                image = null;
-
-                b.setOnAction(event -> {
-                    tableViewObservableList.remove(hisobKitob);
-                });
-                return new SimpleObjectProperty<Button>(b);
-            }
-        });
-
-        editColumn.setMinWidth(20);
-        editColumn.setMaxWidth(40);
-        editColumn.setStyle( "-fx-alignment: CENTER;");
-        return editColumn;
-    }
-
-    private TableColumn<HisobKitob, Double> getTotalColumn() {
-        TableColumn<HisobKitob, Double>  total = new TableColumn<>("Jami");
-        total.setMinWidth(150);
-        total.setMaxWidth(300);
-        total.setCellValueFactory(new PropertyValueFactory<>("chiqim"));
-        total.setStyle( "-fx-alignment: CENTER;");
-        return total;
     }
 
     private TableColumn<HisobKitob, String> getSummaColumn() {
@@ -752,11 +651,21 @@ public class Sotuvchi extends Application {
                 getKassagaLabelTreeItem(),  //80
                 getTolandiLabelTreeItem(),  //90
                 getQaytimLabelTreeItem(),   //100
-                getBalansLabelTreeItem()   //110
+                getBalansLabelTreeItem(),   //110
+                getNewTreeItem()
         );
         treeView.setRoot(rootTreeItem);
         treeView.setShowRoot(false);
         treeView.setMaxWidth(280);
+    }
+
+    private TreeItem<TreeItemClass> getNewTreeItem() {
+        TextFieldButton textFieldButton1 = new TextFieldButton();
+        TextFieldButton textFieldButton2 = new TextFieldButton();
+
+        TreeItemClass treeItemClass = new TreeItemClass(200, textFieldButton1, textFieldButton2);
+        TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
+        return treeItem;
     }
 
     private TreeItem<TreeItemClass> getRootTreeItem() {
@@ -814,31 +723,10 @@ public class Sotuvchi extends Application {
         }
     }
 
-    private TreeItem<TreeItemClass> getXodimTreeItem() {
-        Standart standart = new Standart(10, "Xodim", user.getId(), new Date());
-        TreeItemClass treeItemClass = new TreeItemClass(standart);
-        TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
-        treeItem.getChildren().addAll(getChangeUserTreeItem());
-        return treeItem;
-    }
-
     private TreeItem<TreeItemClass> getChangeUserTreeItem() {
         Standart standart = new Standart(11, "Dastur yurituvchini alishtir", user.getId(), new Date());
         TreeItemClass treeItemClass = new TreeItemClass(standart);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
-        return treeItem;
-    }
-
-    private TreeItem<TreeItemClass> getPulTreeItem() {
-        Standart standart = new Standart(20, "Pul", user.getId(), new Date());
-        TreeItemClass treeItemClass = new TreeItemClass(standart);
-        TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
-        treeItem.getChildren().addAll(
-                getPulHisobotiTreeItem(),
-                getPulKirimiTreeItem(),
-                getPulChiqimiTreeItem(),
-                getConvertTreeItem()
-        );
         return treeItem;
     }
 
@@ -867,19 +755,6 @@ public class Sotuvchi extends Application {
         Standart standart = new Standart(24, "Konvertatsiya", user.getId(), new Date());
         TreeItemClass treeItemClass = new TreeItemClass(standart);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
-        return treeItem;
-    }
-
-    private TreeItem<TreeItemClass> getMahsulotTreeItem() {
-        Standart standart = new Standart(30, "Mahsulot", user.getId(), new Date());
-        TreeItemClass treeItemClass = new TreeItemClass(standart);
-        TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
-        treeItem.getChildren().addAll(
-                getMahsulotHisobotiTreeItem(),
-                getMahsulotKirimiTreeItem(),
-                getMahsulotChiqimiTreeItem(),
-                getPochkaBuzishTreeItem()
-        );
         return treeItem;
     }
 
@@ -927,32 +802,34 @@ public class Sotuvchi extends Application {
     }
 
     private TreeItem<TreeItemClass> getHisob1TreeItem() {
+        initHisob1HBox();
         TreeItemClass treeItemClass = new TreeItemClass(41, hisob1HBox);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         return treeItem;
     }
 
     private TreeItem<TreeItemClass> getHisob2TreeItem() {
+        initHisob2HBox();
         TreeItemClass treeItemClass = new TreeItemClass(42, hisob2HBox);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         return treeItem;
     }
 
     private TreeItem<TreeItemClass> getValutaTreeItem() {
+        initValutaHBox();
         TreeItemClass treeItemClass = new TreeItemClass(43, valutaHBox);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         return treeItem;
     }
 
     private TreeItem<TreeItemClass> getNarhTuriTreeItem() {
+        initNarhComboBox();
         TreeItemClass treeItemClass = new TreeItemClass(44, narhComboBox);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         return treeItem;
     }
 
     private TreeItem<TreeItemClass> getTovarTreeItem() {
-        HBoxTextFieldPlusButton hBoxTextFieldPlusButton = new HBoxTextFieldPlusButton();
-
         TreeItemClass treeItemClass = new TreeItemClass(50, new Label("Tovar"));
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         Label label = treeItemClass.getLabel();
@@ -967,13 +844,15 @@ public class Sotuvchi extends Application {
     }
 
     private TreeItem<TreeItemClass> getTovarNomiTreeItem() {
-        TreeItemClass treeItemClass = new TreeItemClass(51, tovarHBox);
+        TovarBox tovarBox = initTovarBox();
+        TreeItemClass treeItemClass = new TreeItemClass(51, tovarBox);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         return treeItem;
 
     }
 
     private TreeItem<TreeItemClass> getBirlikTreeItem() {
+        initBirlikComboBox();
         TreeItemClass treeItemClass = new TreeItemClass(52, birlikComboBox);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         return treeItem;
@@ -985,7 +864,7 @@ public class Sotuvchi extends Application {
         textField.setPromptText("STRIXKOD");
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                jamiHisob(tableViewObservableList);
+                refreshTableData();
             }
         });
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
@@ -1031,7 +910,7 @@ public class Sotuvchi extends Application {
         textField.setPromptText("CHEGIRMA");
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                jamiHisob(tableViewObservableList);
+                refreshChegirma(textToDouble(newValue));
             }
         });
         return treeItem;
@@ -1061,7 +940,8 @@ public class Sotuvchi extends Application {
         treeItem.getChildren().addAll(
                 getNaqdUsdTreeItem(),
                 getNaqdMilliyTreeItem(),
-                getPlastikTreeItem()
+                getPlastikTreeItem(),
+                getPlastikBankItem()
         );
         Label label = treeItemClass.getLabel();
         label.setFont(font);
@@ -1078,7 +958,8 @@ public class Sotuvchi extends Application {
         textField.setFont(font1);
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                jamiHisob(tableViewObservableList);
+                setUsdTolov(textToDouble(newValue));
+                refreshNatija();
             }
         });
         return treeItem;
@@ -1086,22 +967,55 @@ public class Sotuvchi extends Application {
 
     private TreeItem<TreeItemClass> getNaqdMilliyTreeItem() {
         Valuta valuta1 = GetDbData.getValuta(2);
-        TreeItemClass treeItemClass = new TreeItemClass(92, naqdMilliyTextField, milliyKurs, valuta1);
+        TreeItemClass treeItemClass = new TreeItemClass(92, naqdMilliyTextField, milliyKurs, valuta1, true);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         TextField textField = treeItemClass.getTextField();
         textField.setPromptText(valuta1.getValuta());
         textField.setFont(font1);
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                jamiHisob(tableViewObservableList);
+                setMilliyTolov(textToDouble(newValue));
+                refreshNatija();
             }
         });
+        TextField textField2 = treeItemClass.getKursTextField();
+        textField2.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                refreshNatija();
+            }
+        });
+        Button calculator = treeItemClass.getButton();
+        if (calculator != null) {
+            calculator.setOnAction(event -> {
+                Double somDouble = jamiTovarNarhiniOl() - (chegirmaniOl() + naqdUsdDouble + plasticDouble);
+                if (valuta.getStatus().equals(1)) {
+                    somDouble *= getDoubleFromTextField(textField2);
+                }
+                naqdMilliyDouble = somDouble;
+                textField.setText(decimalFormat.format(naqdMilliyDouble));
+            });
+        }
+        Button calculator2 = treeItemClass.getButton2();
+        if (calculator2 != null) {
+            calculator2.setOnAction(event -> {
+                Double som1Double = jamiTovarNarhiniOl() - (chegirmaniOl() + naqdUsdDouble + plasticDouble);
+                if (valuta.getStatus().equals(1)) {
+                    som1Double *= getDoubleFromTextField(textField2);
+                }
+                Double kursSom1Double = getDoubleFromTextField(textField2);
+                Double usdDouble = som1Double / kursSom1Double;
+                Double som2Double = getDoubleFromTextField(textField);
+                Double kursSom2Double = som2Double / usdDouble;
+                naqdMilliyDouble = som2Double;
+                textField2.setText(decimalFormat.format(kursSom2Double));
+            });
+        }
         return treeItem;
     }
 
     private TreeItem<TreeItemClass> getPlastikTreeItem() {
         Valuta valuta1 = GetDbData.getValuta(2);
-        TreeItemClass treeItemClass = new TreeItemClass(93, plasticTextField, plasticKurs, valuta1);
+        TreeItemClass treeItemClass = new TreeItemClass(93, plasticTextField, plasticKurs, valuta1, true);
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         TextField textField = treeItemClass.getTextField();
         textField.setPromptText("PLASTIK");
@@ -1109,17 +1023,92 @@ public class Sotuvchi extends Application {
         label.setFont(font);
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                jamiHisob(tableViewObservableList);
+                String newValue2 = StringNumberUtils.replaceSymbols(newValue);
+                if (StringNumberUtils.isNumeric(newValue2)) {
+                    setTolovFoizXarajat(textToDouble(newValue2));
+                    refreshNatija();
+                }
+            }
+        });
+        TextField textField2 = treeItemClass.getKursTextField();
+        textField2.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                refreshNatija();
             }
         });
         textField.setFont(font1);
+        Button calculator = treeItemClass.getButton();
+        calculator.setOnAction(event -> {
+            Double somDouble = jamiTovarNarhiniOl() - (chegirmaniOl() + naqdUsdDouble + naqdMilliyDouble);
+            if (valuta.getStatus().equals(1)) {
+                somDouble *= getDoubleFromTextField(textField2);
+            }
+            plasticDouble = somDouble;
+            textField.setText(decimalFormat.format(plasticDouble));
+        });
+        return treeItem;
+    }
+
+    private void setTolovFoizXarajat(Double plasticTolov) {
+        if (plasticTolov>0) {
+            tolovFoizTextField.setDisable(false);
+            tolovBankXarajatiTextField.setDisable(false);
+            setTolovBankXizmati(plasticTolov);
+        } else {
+            tolovFoizTextField.setDisable(true);
+            tolovBankXarajatiTextField.setDisable(true);
+            setTolovBankXizmati(plasticTolov);
+        }
+    }
+
+    private TreeItem<TreeItemClass> getPlastikBankItem() {
+        TreeItemClass treeItemClass = new TreeItemClass(94, tolovFoizTextField, tolovBankXarajatiTextField);
+        TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
+        TextField textField = treeItemClass.getTextField();
+        textField.setPromptText("FOIZ");
+        TextField textField2 = treeItemClass.getTextField2();
+        textField2.setPromptText("XARAJAT");
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                String newValue2 = StringNumberUtils.replaceSymbols(newValue);
+                if (!Alerts.isNumeric(newValue2)) {
+                    textField2.setText("");
+                    textField2.setDisable(true);
+                } else {
+                    textField.setDisable(false);
+                    textField2.setText(""+textToDouble(newValue) * getDoubleFromTextField(plasticTextField));
+                    textField2.setDisable(false);
+                }
+            }
+        });
+        textField.setFont(font1);
+        textField2.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                String newValue2 = StringNumberUtils.replaceSymbols(newValue);
+                if (!Alerts.isNumeric(newValue2)) {
+                    textField2.setText("");
+                } else {
+                    textField.setDisable(false);
+                    textField.setText(""+textToDouble(newValue2) / getDoubleFromTextField(plasticTextField));
+                    textField2.setDisable(false);
+                }
+            }
+
+        });
+        textField2.setFont(font1);
         return treeItem;
     }
 
     private TreeItem<TreeItemClass> getQaytimLabelTreeItem() {
         TreeItemClass treeItemClass = new TreeItemClass(100, new Label("Qaytim: "));
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
-        treeItem.getChildren().add(getQaytimTreeItem());
+        treeItem.getChildren().addAll(
+                getQaytimUsdTreeItem(),
+                getQaytimMilliyTreeItem(),
+                getQaytimPlasticTreeItem(),
+                getQaytimPlastikBankItem(),
+                getQaytimTreeItem()
+                );
         treeItem.setExpanded(true);
         Label label = treeItemClass.getLabel();
         label.setFont(font);
@@ -1131,6 +1120,188 @@ public class Sotuvchi extends Application {
         TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
         Label label = treeItemClass.getLabel();
         label.setFont(font1);
+        return treeItem;
+    }
+
+    private TreeItem<TreeItemClass> getQaytimUsdTreeItem() {
+        TreeItemClass treeItemClass = new TreeItemClass(102, qaytimUsdTextField);
+        TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
+        TextField textField = treeItemClass.getTextField();
+        Valuta valuta1 = GetDbData.getValuta(1);
+        textField.setPromptText(valuta1.getValuta());
+        textField.setFont(font1);
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            refreshQaytim();
+        });
+        return treeItem;
+    }
+
+    private TreeItem<TreeItemClass> getQaytimMilliyTreeItem() {
+        Valuta valuta1 = GetDbData.getValuta(2);
+        TreeItemClass treeItemClass = new TreeItemClass(103, qaytimMilliyTextField, qaytimMilliyKursTextField, valuta1, true);
+        TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
+        TextField textField = treeItemClass.getTextField();
+        textField.setPromptText(valuta1.getValuta());
+        textField.setFont(font1);
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                refreshQaytim();
+            }
+        });
+        TextField textField2 = treeItemClass.getKursTextField();
+        textField2.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                refreshQaytim();
+            }
+        });
+        Button calculator = treeItemClass.getButton();
+        calculator.setOnAction(event -> {
+            Double valutaKursi = getKurs(valuta.getId(), new Date()).getKurs();
+            Double jamiTovar = jamiTovarNarhiniOl();
+            Double chegirma = chegirmaniOl();
+            Double tolov = jamiTolovniOl();
+            Double qaytimUsd = getDoubleFromTextField(qaytimUsdTextField);
+            if (valuta.getStatus() > 1) {
+                qaytimUsd = getDoubleFromTextField(qaytimUsdTextField) * valutaKursi;
+            }
+            if (valuta.getStatus() == 1) {
+                qaytimUsd = getDoubleFromTextField(qaytimUsdTextField) / valutaKursi;
+            }
+            Double qaytimPlastic = mablagOl(qaytimPlasticTextField, qaytimPlasticKursTextField);
+            Double somDouble = tolov - jamiTovar + chegirma - qaytimUsd - qaytimPlastic;
+            if (valuta.getStatus().equals(1)) {
+                somDouble *= getDoubleFromTextField(textField2);
+            }
+            textField.setText(decimalFormat.format(somDouble));
+        });
+        Button calculator2 = treeItemClass.getButton2();
+        if (calculator2 != null) {
+            calculator2.setOnAction(event -> {
+                Double jamiTovar = jamiTovarNarhiniOl();
+                Double chegirma = chegirmaniOl();
+                Double tolov = jamiTolovniOl();
+                Double qaytimUsd = getDoubleFromTextField(qaytimUsdTextField);
+                if (valuta.getStatus() > 1) {
+                    Double kursDouble = getKurs(valuta.getId(), new Date()).getKurs();
+                    qaytimUsd *= kursDouble;
+                }
+                Double qaytimPlastic = mablagOl(qaytimPlasticTextField, qaytimPlasticKursTextField);
+                Double som1Double = tolov - jamiTovar + chegirma - qaytimUsd - qaytimPlastic;
+                if (valuta.getStatus().equals(1)) {
+                    som1Double *= getDoubleFromTextField(textField2);
+                }
+                Double kursSom1Double = getDoubleFromTextField(textField2);
+                Double usdDouble = som1Double / kursSom1Double;
+                Double som2Double = getDoubleFromTextField(textField);
+                Double kursSom2Double = som2Double / usdDouble;
+                textField2.setText(decimalFormat.format(kursSom2Double));
+            });
+        }
+        return treeItem;
+    }
+
+    private TreeItem<TreeItemClass> getQaytimPlasticTreeItem() {
+        Valuta valuta1 = GetDbData.getValuta(2);
+        TreeItemClass treeItemClass = new TreeItemClass(104, qaytimPlasticTextField, qaytimPlasticKursTextField, valuta1, true);
+        TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
+        TextField textField = treeItemClass.getTextField();
+        textField.setPromptText("PLASTIK");
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                qaytimPlasticDouble = getDoubleFromTextField(qaytimPlasticTextField);
+                qaytimFoizTextField.setDisable(false);
+                qaytimBankXarajatiTextField.setDisable(false);
+                qaytimPlasticXarajatiDouble = qaytimPlasticDouble * qaytimPlasticFoiziDouble;
+                qaytimBankXarajatiTextField.setText(qaytimPlasticXarajatiDouble.toString());
+                refreshQaytim();
+            } else {
+                Alerts.AlertString("Nulllll");
+            }
+        });
+        TextField textField2 = treeItemClass.getKursTextField();
+        textField2.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                refreshQaytim();
+            }
+        });
+        textField.setFont(font1);
+        Button calculator = treeItemClass.getButton();
+        calculator.setOnAction(event -> {
+            Double valutaKursi = getKurs(valuta.getId(), new Date()).getKurs();
+            Double jamiTovar = jamiTovarNarhiniOl();
+            Double chegirma = chegirmaniOl();
+            Double tolov = jamiTolovniOl();
+            Double qaytimUsd = getDoubleFromTextField(qaytimUsdTextField);
+            if (valuta.getStatus() > 1) {
+                qaytimUsd = getDoubleFromTextField(qaytimUsdTextField) * valutaKursi;
+            }
+            Double qaytimSom = mablagOl(qaytimMilliyTextField, qaytimMilliyKursTextField);
+            Double somDouble = tolov - jamiTovar + chegirma - qaytimUsd - qaytimSom;
+            if (valuta.getStatus().equals(1)) {
+                somDouble *= getDoubleFromTextField(textField2);
+            }
+            textField.setText(decimalFormat.format(somDouble));
+        });
+        Button calculator2 = treeItemClass.getButton2();
+        if (calculator2 != null) {
+            calculator2.setOnAction(event -> {
+                Double kursDouble = getKurs(valuta.getId(), new Date()).getKurs();
+                Double jamiTovar = jamiTovarNarhiniOl();
+                Double chegirma = chegirmaniOl();
+                Double tolov = jamiTolovniOl();
+                Double qaytimUsd = getDoubleFromTextField(qaytimUsdTextField);
+                if (valuta.getStatus() > 1) {
+                    qaytimUsd *= kursDouble;
+                }
+
+                Double qaytimMilliy = mablagOl(qaytimMilliyTextField, qaytimMilliyKursTextField);
+                Double som1Double = tolov - jamiTovar + chegirma - qaytimUsd - qaytimMilliy;
+                if (valuta.getStatus().equals(1)) {
+                    som1Double *= getDoubleFromTextField(textField2);
+                }
+                Double kursSom1Double = getDoubleFromTextField(textField2);
+                Double usdDouble = som1Double / kursSom1Double;
+                Double som2Double = getDoubleFromTextField(textField);
+                Double kursSom2Double = som2Double / usdDouble;
+                textField2.setText(decimalFormat.format(kursSom2Double));
+            });
+        }
+        return treeItem;
+    }
+
+    private TreeItem<TreeItemClass> getQaytimPlastikBankItem() {
+        Double plasticFoizi = GetDbData.getPlasticFoizi().getFoiz();
+        TreeItemClass treeItemClass = new TreeItemClass(105, qaytimFoizTextField, qaytimBankXarajatiTextField);
+        TreeItem<TreeItemClass> treeItem = new TreeItem(treeItemClass);
+        TextField textField = treeItemClass.getTextField();
+        textField.setPromptText("FOIZ");
+        TextField textField2 = treeItemClass.getTextField2();
+        textField.setText(decimalFormat.format(plasticFoizi));
+        textField2.setPromptText("XARAJAT");
+        textField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                String newValue2 = StringNumberUtils.replaceSymbols(newValue);
+                if (!StringNumberUtils.isNumeric(newValue2)) {
+                    textField2.setText("");
+                } else {
+                    textField.setDisable(false);
+                    textField2.setText(""+textToDouble(newValue2) * getDoubleFromTextField(qaytimPlasticTextField));
+                    textField2.setDisable(false);
+                }
+            }
+        });
+        textField.setFont(font1);
+        textField2.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                if (!Alerts.isNumeric(newValue)) {
+                    textField.setText("");
+                } else {
+                    textField.setText(decimalFormat.format(textToDouble(newValue) / getDoubleFromTextField(qaytimPlasticTextField)));
+                }
+            }
+
+        });
+        textField2.setFont(font1);
         return treeItem;
     }
 
@@ -1163,13 +1334,6 @@ public class Sotuvchi extends Application {
         stage.setY(bounds.getMinY());
         stage.setWidth(bounds.getWidth());
         stage.setHeight(bounds.getHeight());
-//        stage.initStyle(StageStyle.UNDECORATED);
-        stage.setOnCloseRequest(event -> {
-            barCodeOff();
-            Platform.exit();
-            System.exit(0);
-            stage.close();
-        });
         stage.setScene(scene);
     }
     private void login() {
@@ -1179,6 +1343,14 @@ public class Sotuvchi extends Application {
             System.exit(0);
         } else {
             user = loginUserController.getUser();
+            String serialNumber = Sotuvchi.getSerialNumber();
+            Kassa kassa = Sotuvchi.getKassaData(connection, serialNumber);
+            if (kassa != null) {
+                user.setPulHisobi(kassa.getPulHisobi());
+                user.setTovarHisobi(kassa.getTovarHisobi());
+                user.setXaridorHisobi(kassa.getXaridorHisobi());
+                user.setValuta(kassa.getValuta());
+            }
         }
     }
 
@@ -1228,24 +1400,81 @@ public class Sotuvchi extends Application {
         HBox.setHgrow(hisob1HBox, Priority.ALWAYS);
         TextField textField = hisob1HBox.getTextField();
         textField.setText(hisob1.getText());
-        textField.setEditable(false);
         TextFields.bindAutoCompletion(textField, hisobObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
             Hisob newValue = autoCompletionEvent.getCompletion();
             if (newValue != null) {
                 hisob1 = newValue;
                 hisob2HBox.setDisable(false);
+                kassa.setTovarHisobi(hisob1.getId());
+                user.setTovarHisobi(hisob1.getId());
+                Integer xaridorHisobiInteger = yordamchHisob(hisob1.getId(), "Xaridor1");
+                Integer pulHisobiInteger = yordamchHisob(hisob1.getId(), "PulHisobi1");
+                if (xaridorHisobiInteger>0) {
+                    hisob2 = GetDbData.getHisob(xaridorHisobiInteger);
+                    hisob2HBox.getTextField().setText(hisob2.getText());
+                    kassa.setXaridorHisobi(xaridorHisobiInteger);
+                    user.setXaridorHisobi(xaridorHisobiInteger);
+                }
+                if (pulHisobiInteger>0) {
+                    kassa.setPulHisobi(pulHisobiInteger);
+                    user.setPulHisobi(pulHisobiInteger);
+                }
+                tovarBoxRefresh();
+
+/*
+                tovarBinding.dispose();
+                tovarBox.setAutoCompletion(textField, tovarObservableList);
+*/
             }
         });
 
         Button addButton = hisob1HBox.getPlusButton();
-        addButton.setDisable(true);
+        if (user.getStatus().equals(99)) {
+            addButton.setDisable(false);
+            textField.setDisable(false);
+        } else {
+            addButton.setDisable(true);
+            textField.setDisable(true);
+        }
         addButton.setOnAction(event -> {
             Hisob newHisob = addHisob();
             if (newHisob != null) {
                 hisob1 = newHisob;
                 textField.setText(hisob1.getText());
+                kassa.setTovarHisobi(hisob1.getId());
+                user.setTovarHisobi(hisob1.getId());
+//                initTovarBox();
             }
         });
+    }
+
+    private void tovarBoxRefresh() {
+        tovarObservableList = hisobKitobModels.getTovarCount(connection, user.getTovarHisobi(), new Date());
+        tovarBox.setNewList(tovarObservableList);
+        AutoCompletionBinding<Standart> tovarBinding = tovarBox.getTovarBinding();
+        EventHandler<AutoCompletionBinding.AutoCompletionEvent<Standart>> bindingHandler = new EventHandler<AutoCompletionBinding.AutoCompletionEvent<Standart>>() {
+            @Override
+            public void handle(AutoCompletionBinding.AutoCompletionEvent<Standart> event) {
+                Standart newValue = event.getCompletion();
+                if (newValue != null) {
+                    tovar = newValue;
+                    tovarniYangila(tovar);
+                }
+            }
+        };
+
+        tovarBox.setBindingEvent(bindingHandler);
+    }
+
+    private Integer yordamchHisob(Integer hisobId, String tableName) {
+        Standart3Models standart3Models = new Standart3Models(tableName);
+        Integer hisobInteger = 0;
+        ObservableList<Standart3> standart3ObservableList = standart3Models.getAnyData(connection, "id3 = " + hisobId,"");
+        if (standart3ObservableList.size()>0) {
+            hisobInteger = standart3ObservableList.get(0).getId2();
+        }
+
+        return hisobInteger;
     }
 
     private void initHisob2HBox() {
@@ -1257,6 +1486,8 @@ public class Sotuvchi extends Application {
             Hisob newValue = autoCompletionEvent.getCompletion();
             if (newValue != null) {
                 hisob2 = newValue;
+                kassa.setXaridorHisobi(hisob2.getId());
+                user.setXaridorHisobi(hisob2.getId());
             }
         });
 
@@ -1266,36 +1497,34 @@ public class Sotuvchi extends Application {
             if (newHisob != null) {
                 hisob2 = newHisob;
                 textField.setText(hisob2.getText());
+                kassa.setXaridorHisobi(hisob2.getId());
+                user.setXaridorHisobi(hisob2.getId());
             }
         });
     }
 
-    private void initTovarHBox() {
-        tovarObservableList = hisobKitobModels.getTovarCount(connection, user.getTovarHisobi(), new Date());
-        HBox.setHgrow(tovarHBox, Priority.ALWAYS);
-        TextField textField = tovarHBox.getTextField();
-        TextFields.bindAutoCompletion(textField, tovarObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Standart> autoCompletionEvent) -> {
-            Standart newValue = autoCompletionEvent.getCompletion();
-            if (newValue != null) {
-                tovar = newValue;
-                tovarniYangila(tovar);
+    private TovarBox initTovarBox() {
+        ObservableList<Standart> tovarObservableList=hisobKitobModels.getTovarCount(connection, user.getTovarHisobi(), new Date());
+        tovarBox = new TovarBox(tovarObservableList, user);
+        TextField textField = tovarBox.getTextField();
+        AutoCompletionBinding<Standart> tovarBinding = tovarBox.getTovarBinding();
+        EventHandler<AutoCompletionBinding.AutoCompletionEvent<Standart>> bindingHandler = new EventHandler<AutoCompletionBinding.AutoCompletionEvent<Standart>>() {
+            @Override
+            public void handle(AutoCompletionBinding.AutoCompletionEvent<Standart> event) {
+                Standart newValue = event.getCompletion();
+                if (newValue != null) {
+                    tovar = newValue;
+                    tovarniYangila(tovar);
+                }
             }
-        });
-
-        Button addButton = tovarHBox.getPlusButton();
+        };
+        tovarBinding.setOnAutoCompleted(bindingHandler);
+        Button addButton = tovarBox.getPlusButton();
         addButton.setOnAction(event -> {
-/*
-            Standart newValue = addTovar();
-            if (newValue != null) {
-                tovar = newValue;
-                textField.setText(tovar.getText());
-                tovarniYangila(tovar);
-            }
-*/
             TovarXaridi tovarXaridi = new TovarXaridi(connection, user);
             qaydnomaData = tovarXaridi.display();
-            initTovarHBox();
         });
+        return tovarBox;
     }
 
     private void tovarniYangila(Standart tovar) {
@@ -1394,7 +1623,6 @@ public class Sotuvchi extends Application {
         navbatdagiXaridorButton.setPrefWidth(150);
         navbatdagiXaridorButton.setOnAction(event -> {
             barCodeOn();
-            initTovarHBox();
             setDisable(false);
         });
     }
@@ -1414,7 +1642,7 @@ public class Sotuvchi extends Application {
     private void initXaridniYakunlaButton() {
         HBox.setHgrow(xaridniYakunlaButton, Priority.ALWAYS);
         xaridniYakunlaButton.setFont(buttonFont1);
-        xaridniYakunlaButton.setMaxWidth(2000);
+        xaridniYakunlaButton.setMaxWidth(3000);
         xaridniYakunlaButton.setPrefWidth(150);
         xaridniYakunlaButton.setOnAction(event -> {
             xaridniYakunla();
@@ -1424,39 +1652,37 @@ public class Sotuvchi extends Application {
     private void xaridniYakunla() {
         Boolean tolovSahih = tolovSahih();
         boolean nasiyagaSot = true;
+        if (StringNumberUtils.yaxlitla(refreshQaytim(),-2) > 0) {
+            Alerts.AlertString("Qaytim to`liq berilmadi");
+            return;
+        }
+        if (StringNumberUtils.yaxlitla(refreshQaytim(),-2) < 0) {
+            Alerts.AlertString("Ortiqcha qaytim berilmoqda");
+            return;
+        }
         if (!tolovSahih) {
             nasiyagaSot = Alerts.nasiyagaSot(balansDouble, valutaHBox.getTextField().getText());
         }
         if (nasiyagaSot) {
             qaydnomaData = yangiQaydnoma();
-            tovarSot(tableViewObservableList);
-            jamiMablag = 0.0;
-            for (HisobKitob hk: tableViewObservableList) {
-                hk.setDateTime(qaydnomaData.getSana());
-                jamiMablag += hk.getDona() * hk.getNarh();
-            }
-            double uKurs =1d;
-            double mKurs = getDoubleFromTextField(milliyKurs);
-            if (valuta.getId().equals(1)) {
-                naqdDouble = getDoubleFromTextField(naqdTextField) * uKurs;
-                naqdMilliyDouble = getDoubleFromTextField(naqdMilliyTextField) / mKurs;
-            } else if (valuta.getId().equals(2)) {
-                naqdDouble = getDoubleFromTextField(naqdTextField) * mKurs;
-                naqdMilliyDouble = getDoubleFromTextField(naqdMilliyTextField) / uKurs;
-            }
-            plasticDouble = getDoubleFromTextField(plasticTextField);
-            Double pKurs = getDoubleFromTextField(plasticKurs);
+            hisobKitobModels.insert_data(connection, initSavdoXususiyatlari(qaydnomaData));
+            jamiMablag = tovarSot(tableViewObservableList);;
+            Double tolandi = tolandi();
             chegirmaDouble = getDoubleFromTextField(chegirmaTextField);
-            Double tolandi = naqdDouble + naqdMilliyDouble + plasticDouble/pKurs;
             kassagaDouble = jamiMablag - chegirmaDouble;
             Double jamiDouble = tolandi - kassagaDouble;
-            qaytimDouble = jamiDouble > 0 ? jamiDouble: 0d;
-            balansDouble = kassagaDouble - tolandi + qaytimDouble;
+            if (jamiDouble > 0d) {
+                qaytimDouble = jamiDouble;
+            }
+            if (jamiDouble == 0d) {}
+            if (jamiDouble < 0d) {
+                balansDouble = -jamiDouble;
+            }
             ObservableList<HisobKitob> hkList = FXCollections.observableArrayList();
             if (chegirmaDouble > 0) {
                 hkList.add(chegirmaniQaydEt());
             }
-            if (naqdDouble > 0) {
+            if (naqdUsdDouble > 0) {
                 hkList.add(naqdUsdTolovniQaydEt());
             }
             if (naqdMilliyDouble > 0) {
@@ -1464,10 +1690,26 @@ public class Sotuvchi extends Application {
             }
             if (plasticDouble > 0) {
                 hkList.add(plasticToloviniQaydEt());
-                hkList.add(bankXizmatiniQaydEt());
+                HisobKitob bankXizmati = bankXizmatiniQaydEt();
+                if (bankXizmati != null) {
+                    hkList.add(bankXizmati);
+                }
             }
+            usdQaytim(hkList);
+            milliyQaytim(hkList);
+            plasticQaytim(hkList);
+            qaytimDouble = refreshQaytim();
             if (qaytimDouble > 0) {
-                hkList.add(qaytimniQaydEt());
+                hkList.add( qaytimniQaydEt());
+            }
+            if (qaytimDouble<0) {
+                balansDouble += -qaytimDouble;
+            }
+            if (balansDouble > 0) {
+                HisobKitob hk1 = balansniZarargaUr();
+                if (hk1!=null) {
+                    hkList.add(hk1);
+                }
             }
             hisobKitobModels.addBatch(connection, hkList);
             String printerNomi = printerim().toLowerCase();
@@ -1476,11 +1718,32 @@ public class Sotuvchi extends Application {
             } else if (printerNomi.contains("XP-80C".toLowerCase())) {
                 tolovChiptasiniBerXP80(printerNomi);
             }
-        }
+        } else {return;}
         kassaniTozala();
         setDisable(true);
         barCodeOff();
     }
+
+    private Double tolandi() {
+        Double tolandi = 0d;
+        Double naqdUsdDouble = 0d;
+        Double naqdMilliyDouble = 0d;
+        Double plasticDouble = 0d;
+        double mKurs = getDoubleFromTextField(milliyKurs);
+        if (valuta.getStatus().equals(1)) {
+            naqdUsdDouble = getDoubleFromTextField(naqdTextField);
+            naqdMilliyDouble = getDoubleFromTextField(naqdMilliyTextField) / mKurs;
+            Double pKurs = getDoubleFromTextField(plasticKurs);
+            plasticDouble = getDoubleFromTextField(plasticTextField) / pKurs;
+        } else if (valuta.getStatus().equals(2)) {
+            naqdUsdDouble = getDoubleFromTextField(naqdTextField) * mKurs;
+            naqdMilliyDouble = getDoubleFromTextField(naqdMilliyTextField);
+            plasticDouble = getDoubleFromTextField(plasticTextField);
+        }
+        tolandi = naqdUsdDouble + naqdMilliyDouble + plasticDouble;
+        return tolandi;
+    }
+
     private String printerim() {
         Connection printersConnection = new SqliteDB().getDbConnection();
         StandartModels printerModels = new StandartModels("Printers");
@@ -1519,15 +1782,15 @@ public class Sotuvchi extends Application {
     private boolean tolovSahih() {
         boolean sahih = false;
         if (tableViewObservableList.size() > 0) {
-            jamiHisob(tableViewObservableList);
-            if (balansDouble == 0) {
+            if (StringNumberUtils.yaxlitla(balansDouble,-2) == 0) {
                 sahih = true;
             }
         }
         return sahih;
     }
 
-    public void tovarSot(ObservableList<HisobKitob> hk) {
+    public Double tovarSot(ObservableList<HisobKitob> hk) {
+        Double jamiMablag = 0d;
         double jami = 0.00;
         boolean yetarliAdad = false;
         Savdo savdo = new Savdo(connection);
@@ -1545,10 +1808,13 @@ public class Sotuvchi extends Application {
             } else {
                 Alerts.AlertString("Tovar adadi yetarsiz");
             }
+            jamiMablag += h.getDona() * h.getNarh();
+
         }
         qaydnomaData.setJami(jami);
         qaydnomaData.setDateTime(new Date());
         qaydnomaModel.update_data(connection, qaydnomaData);
+        return jamiMablag;
     }
 
     private HisobKitob chegirmaniQaydEt() {
@@ -1668,6 +1934,10 @@ public class Sotuvchi extends Application {
     private HisobKitob bankXizmatiniQaydEt() {
         HisobKitob hisobKitob = null;
         Valuta valuta = GetDbData.getValuta(2);
+        PlasticFoizi plasticFoizi = GetDbData.getPlasticFoizi();
+        if (plasticFoizi == null) {
+            return  null;
+        }
         if (plasticDouble > 0) {
             Integer bankHisobiInteger = hisobKitobModels.yordamchiHisob(connection, hisob1.getId(), "Bank1"," Bank");
             Integer bankXizmatiHisobiInteger = hisobKitobModels.yordamchiHisob(connection, bankHisobiInteger, "BankXizmati1", "BankXizmati");
@@ -1684,7 +1954,7 @@ public class Sotuvchi extends Application {
                     kurs,
                     "",
                     .0,
-                    plasticDouble * 0.002,
+                    plasticDouble * plasticFoizi.getFoiz(),
                     0,
                     "Bank xizmati : " + valuta.getValuta() +  "\n Xarid № " + qaydnomaData.getHujjat().toString().trim(),
                     user.getId(),
@@ -1695,25 +1965,185 @@ public class Sotuvchi extends Application {
     }
 
     private HisobKitob qaytimniQaydEt() {
+        Standart standart;
+        Integer pulHisobiInteger = 0;
+        Integer amal = 0;
+        Hisob pulHisobi = null;
         HisobKitob hisobKitob = null;
-        if (qaytimDouble > 0) {
-            Hisob pulHisobi = GetDbData.getHisob(kassa.getPulHisobi());
+        String izohText = "";
+        amal = 17;
+        String eskiJadval = standartModels.getTABLENAME();
+        standartModels.setTABLENAME("Amal");
+        standart = standartModels.getDataId(connection, amal);
+        standartModels.setTABLENAME(eskiJadval);
+        pulHisobiInteger = hisobKitobModels.yordamchiHisob(connection, hisob1.getId(), "FoydaHisobiGuruhi", "FoydaHisobi");
+        pulHisobi = GetDbData.getHisob(pulHisobiInteger);
+        izohText = standart.getText().trim() + " : " + valuta.getValuta() +  "\n Xarid № " + qaydnomaData.getHujjat().toString().trim();
+        double kurs = getKurs(valuta.getId(), new Date()).getKurs();
+        hisobKitob = new HisobKitob(
+                null,
+                qaydnomaData.getId(),
+                qaydnomaData.getHujjat(),
+                amal,
+                pulHisobi.getId(),
+                hisob2.getId(),
+                valuta.getId(),
+                0,
+                kurs,
+                "",
+                .0,
+                qaytimDouble,
+                0,
+                izohText,
+                user.getId(),
+                qaydnomaData.getSana()
+        );
+        return hisobKitob;
+    }
+
+    private HisobKitob usdQaytim(ObservableList<HisobKitob> hkList) {
+        Double qaytim = getDoubleFromTextField(qaytimUsdTextField);
+        if (qaytim==0) {
+            return null;
+        }
+        Integer amal = 8;
+        Valuta usdValuta = GetDbData.getValuta(1);
+        Hisob pulHisobi = GetDbData.getHisob(user.getPulHisobi());
+        String izohText = "Qaytim " + usdValuta.getValuta().trim() + ". Xarid №" + qaydnomaData.getHujjat();
+        Double kurs = 1d;
+        HisobKitob hisobKitob = new HisobKitob(
+                null,
+                qaydnomaData.getId(),
+                qaydnomaData.getHujjat(),
+                amal,
+                pulHisobi.getId(),
+                hisob2.getId(),
+                1,
+                0,
+                kurs,
+                "",
+                .0,
+                qaytim,
+                0,
+                izohText,
+                user.getId(),
+                qaydnomaData.getSana()
+        );
+        hkList.add(hisobKitob);
+        return hisobKitob;
+    }
+
+    private HisobKitob milliyQaytim(ObservableList<HisobKitob> hkList) {
+        Double qaytim = getDoubleFromTextField(qaytimMilliyTextField);
+        if (qaytim==0) {
+            return null;
+        }
+        Integer amal = 8;
+        Valuta milliyValuta = GetDbData.getValuta(2);
+        Hisob pulHisobi = GetDbData.getHisob(user.getPulHisobi());
+        String izohText = "Qaytim " + milliyValuta.getValuta().trim() + ". Xarid №" + qaydnomaData.getHujjat();
+        Double kurs = getDoubleFromTextField(qaytimMilliyKursTextField);
+        HisobKitob hisobKitob = new HisobKitob(
+                null,
+                qaydnomaData.getId(),
+                qaydnomaData.getHujjat(),
+                amal,
+                pulHisobi.getId(),
+                hisob2.getId(),
+                2,
+                0,
+                kurs,
+                "",
+                .0,
+                qaytim,
+                0,
+                izohText,
+                user.getId(),
+                qaydnomaData.getSana()
+        );
+        hkList.add(hisobKitob);
+        return hisobKitob;
+    }
+
+    private HisobKitob plasticQaytim(ObservableList<HisobKitob> hkList) {
+        Double qaytim = getDoubleFromTextField(qaytimPlasticTextField);
+        if (qaytim == 0) {
+            return null;
+        }
+        Integer bankHisobiInteger = hisobKitobModels.yordamchiHisob(connection, hisob1.getId(), "Bank1"," Bank");
+        Integer bankXizmatiHisobiInteger = hisobKitobModels.yordamchiHisob(connection, bankHisobiInteger, "BankXizmati1", "BankXizmati");
+        Integer amal = 15;
+        Valuta milliyValuta = GetDbData.getValuta(2);
+        String izohText = "Qaytim plastik " + milliyValuta.getValuta().trim()+" . Xarid №" + qaydnomaData.getHujjat();
+        Double kurs = getDoubleFromTextField(qaytimPlasticKursTextField);
+        Double xizmatHaqqi = getDoubleFromTextField(qaytimBankXarajatiTextField);
+        HisobKitob hisobKitob = new HisobKitob(
+                null,
+                qaydnomaData.getId(),
+                qaydnomaData.getHujjat(),
+                amal,
+                bankHisobiInteger,
+                hisob2.getId(),
+                2,
+                0,
+                kurs,
+                "",
+                .0,
+                qaytim,
+                0,
+                izohText,
+                user.getId(),
+                qaydnomaData.getSana()
+        );
+        HisobKitob hisobKitob2 = new HisobKitob(
+                null,
+                qaydnomaData.getId(),
+                qaydnomaData.getHujjat(),
+                14,
+                bankHisobiInteger,
+                bankXizmatiHisobiInteger,
+                2,
+                0,
+                kurs,
+                "",
+                .0,
+                xizmatHaqqi,
+                0,
+                "Xarid № "+qaydnomaData.getHujjat()+". Bank xizmati uchun to`lov",
+                user.getId(),
+                qaydnomaData.getSana()
+        );
+        hkList.add(hisobKitob);
+        hkList.add(hisobKitob2);
+        return hisobKitob;
+    }
+
+    private HisobKitob balansniZarargaUr() {
+        Integer pulHisobiInteger = 0;
+        Hisob pulHisobi = null;
+        HisobKitob hisobKitob = null;
+        String izohText = "";
+        if (StringNumberUtils.yaxlitla(balansDouble, -2) == 0d) {
+            pulHisobiInteger = hisobKitobModels.yordamchiHisob(connection, hisob1.getId(), "ZararGuruhi", "Zarar");
+            pulHisobi = GetDbData.getHisob(pulHisobiInteger);
+            izohText = "Yaxlitlash tafovuti: " + valuta.getValuta() +  "\n Xarid № " + qaydnomaData.getHujjat().toString().trim();
             double kurs = getKurs(valuta.getId(), new Date()).getKurs();
+            //97 400 63 32
             hisobKitob = new HisobKitob(
                     null,
                     qaydnomaData.getId(),
                     qaydnomaData.getHujjat(),
-                    8,
-                    pulHisobi.getId(),
+                    17,
                     hisob2.getId(),
+                    pulHisobi.getId(),
                     valuta.getId(),
                     0,
                     kurs,
                     "",
                     .0,
-                    qaytimDouble,
+                    balansDouble,
                     0,
-                    "Qaytim: " + valuta.getValuta() +  "\n Xarid № " + qaydnomaData.getHujjat().toString().trim(),
+                    izohText,
                     user.getId(),
                     qaydnomaData.getSana()
             );
@@ -1762,8 +2192,14 @@ public class Sotuvchi extends Application {
             printStringBuffer.append(line);
         }
 
-        if (naqdDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdDouble));
+        if (naqdUsdDouble > 0) {
+            Valuta v1 = GetDbData.getValuta(1);
+            String line = String.format("%-15s %5s %10s\n", "Naqd " + v1.getValuta(), " ", decimalFormat.format(naqdUsdDouble));
+            printStringBuffer.append(line);
+        }
+        if (naqdMilliyDouble > 0) {
+            Valuta v1 = GetDbData.getValuta(2);
+            String line = String.format("%-15s %5s %10s\n", "Naqd " + v1.getValuta(), " ", decimalFormat.format(naqdMilliyDouble));
             printStringBuffer.append(line);
         }
         if (plasticDouble > 0) {
@@ -1835,8 +2271,14 @@ public class Sotuvchi extends Application {
             printStringBuffer.append(line);
         }
 
-        if (naqdDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdDouble));
+        if (naqdUsdDouble > 0) {
+            Valuta v1 = GetDbData.getValuta(1);
+            String line = String.format("%-15s %5s %10s\n", "Naqd " + v1.getValuta(), " ", decimalFormat.format(naqdUsdDouble));
+            printStringBuffer.append(line);
+        }
+        if (naqdMilliyDouble > 0) {
+            Valuta v1 = GetDbData.getValuta(2);
+            String line = String.format("%-15s %5s %10s\n", "Naqd " + v1.getValuta(), " ", decimalFormat.format(naqdMilliyDouble));
             printStringBuffer.append(line);
         }
         if (plasticDouble > 0) {
@@ -1906,8 +2348,8 @@ public class Sotuvchi extends Application {
             printStringBuffer.append(line);
         }
 
-        if (naqdDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdDouble));
+        if (naqdUsdDouble > 0) {
+            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdUsdDouble));
             printStringBuffer.append(line);
         }
         if (plasticDouble > 0) {
@@ -1940,18 +2382,23 @@ public class Sotuvchi extends Application {
         jamiMablag = 0.0;
         kassagaDouble = 0.0;
         chegirmaDouble = 0.0;
-        naqdDouble = 0.0;
+        naqdUsdDouble = 0.0;
+        qaytimDouble = 0d;
         naqdMilliyDouble = 0.0;
         plasticDouble = 0.0;
         balansDouble = 0.0;
-        qaytimDouble = 0.0;
         vaznDouble = .0;
+        initChegirma();
+        initTolov();
+        initQaytim();
         chegirmaTextField.setText("");
         naqdTextField.setText("");
         naqdMilliyTextField.setText("");
         plasticTextField.setText("");
-        jamiHisob(tableViewObservableList);
+        refreshTableData();
+//        jamiHisob(tableViewObservableList);
         kassa = getKassaData(connection, getSerialNumber());
+        setUser(kassa);
         hisob1 = GetDbData.getHisob(kassa.getTovarHisobi());
         hisob1HBox.getTextField().setText(hisob1.getText());
         hisob2 = GetDbData.getHisob(kassa.getXaridorHisobi());
@@ -2001,7 +2448,7 @@ public class Sotuvchi extends Application {
 
     private Standart addTovar() {
         Standart tovar1 = null;
-        TovarController1 tovarController = new TovarController1(connection, user);
+        TovarController tovarController = new TovarController(connection, user);
         tovarController.display();
         if (tovarController.getDoubleClick()) {
             tovar1 = tovarController.getDoubleClickedRow();
@@ -2014,7 +2461,7 @@ public class Sotuvchi extends Application {
             }
             if (yangi) {
                 tovarObservableList.add(tovar1);
-                TextField textField = tovarHBox.getTextField();
+                TextField textField = tovarBox.getTextField();
                 TextFields.bindAutoCompletion(textField, tovarObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Standart> autoCompletionEvent) -> {
                     Standart newValue = autoCompletionEvent.getCompletion();
                     if (newValue != null) {
@@ -2056,193 +2503,276 @@ public class Sotuvchi extends Application {
         return valuta1;
     }
 
-    public class TreeItemClass extends HBox{
-        private Integer itemId;
-        private Double aDouble;
-        private Label label = new Label();
-        private Label label2 = new Label();
-        private Standart standart;
-        private HBoxTextFieldPlusButton hisobHBox;
-        private Button button;
-        private TextField textField;
-        private TextField kursTextField;
-        private ComboBox<Standart> comboBox;
-        private Separator separator;
-        Valuta valuta;
+    private void initQaytim() {
+        qaytimPlasticFoiziDouble = GetDbData.plasticFoizi.getFoiz();
+        qaytimPlasticXarajatiDouble = 0d;
+        qaytimFoizTextField.setText("");
+        qaytimBankXarajatiTextField.setText("");
+        qaytimLabel.setText("");
+        qaytimUsdTextField.setText("");
+        qaytimMilliyTextField.setText("");
+        qaytimPlasticTextField.setText("");
+    }
 
-        public TreeItemClass(Integer itemId, String string, Double aDouble) {
-            super(5);
-            this.itemId = itemId;
-            this.aDouble = aDouble;
-            label.setText(string);
-            label2.setText(decimalFormat.format(aDouble));
-
-            this.getChildren().addAll(label, label2);
-            this.setAlignment(Pos.CENTER_LEFT);
+    private Double refreshQaytim() {
+        Double qaytimBalance = 0d;
+        Double jamiQaytimDouble = 0d;
+        Double qaytimUsdDouble = getDoubleFromTextField(qaytimUsdTextField);
+        Double qaytimMilliyDouble = getDoubleFromTextField(qaytimMilliyTextField);
+        Double qaytimMilliyKursDouble = getDoubleFromTextField(qaytimMilliyKursTextField);
+        Double qaytimPlasticDouble = getDoubleFromTextField(qaytimPlasticTextField);
+        Double qaytimPlasticKursDouble = getDoubleFromTextField(qaytimPlasticKursTextField);
+        if (valuta.getStatus().equals(1)) {
+            qaytimMilliyDouble /= qaytimMilliyKursDouble;
+            qaytimPlasticDouble /= qaytimPlasticKursDouble;
+        } else {
+            Double sistemaKursi = getKurs(valuta.getId(), new Date()).getKurs();
+            qaytimUsdDouble *= sistemaKursi;
         }
+        jamiQaytimDouble = qaytimUsdDouble  + qaytimMilliyDouble  + qaytimPlasticDouble;
+        qaytimBalance = qaytimDouble - jamiQaytimDouble;
+        qaytimLabel.setText(decimalFormat.format(qaytimDouble - jamiQaytimDouble));
+        return qaytimBalance;
+    }
 
-        public TreeItemClass(Integer itemId, TextField textField) {
-            super(5);
-            this.itemId = itemId;
-            this.textField = textField;
-            textField.setMaxWidth(200);
+    private void initChegirma() {
+        chegirmaTextField.setText("");
+        chegirmaDouble = 0d;
+    }
 
-            this.getChildren().addAll(textField);
-            this.setAlignment(Pos.CENTER_LEFT);
+    private void refreshChegirma() {
+        kassagaDouble = jamiMablag - chegirmaDouble;
+        kassagaLabel.setText(decimalFormat.format(kassagaDouble));
+    }
+
+    private void refreshChegirma(Double chegirmaDouble) {
+        this.chegirmaDouble = chegirmaDouble;
+        kassagaDouble = jamiMablag - chegirmaDouble;
+        initTolov();
+        initQaytim();
+        initBalans();
+        kassagaLabel.setText(decimalFormat.format(kassagaDouble));
+        balansDouble = -kassagaDouble;
+        balansLabel.setText(decimalFormat.format(balansDouble));
+    }
+
+    private void initTolov() {
+        kassagaDouble = jamiMablag - chegirmaDouble;
+        kassagaLabel.setText(decimalFormat.format(kassagaDouble));
+        naqdTextField.setText("");
+        naqdMilliyTextField.setText("");
+        plasticTextField.setText("");
+        tolovFoizTextField.setText("");
+        tolovBankXarajatiTextField.setText("");
+    }
+
+    private Double setUsdTolov(Double naqdUsdDouble) {
+        Double kursMilliyDouble = getDoubleFromTextField(milliyKurs);
+        Double kursPlasticDouble = getDoubleFromTextField(plasticKurs);
+        this.naqdUsdDouble = naqdUsdDouble;
+        naqdMilliyDouble = getDoubleFromTextField(naqdMilliyTextField);
+        plasticDouble = getDoubleFromTextField(plasticTextField);
+        if (valuta.getStatus() > 1) {
+            naqdUsdDouble = naqdUsdDouble * kursMilliyDouble;
         }
+        if (valuta.getStatus() == 1) {
+            naqdMilliyDouble = naqdMilliyDouble / kursMilliyDouble;
+            plasticDouble = plasticDouble / kursPlasticDouble;
+        }
+        Double jamiTolov = naqdUsdDouble + naqdMilliyDouble + plasticDouble;
+        return jamiTolov;
+    }
 
-        public TreeItemClass(Integer itemId, TextField textField, TextField kursTextField, Valuta valuta) {
-            super(2);
-            this.itemId = itemId;
-            this.textField = textField;
-            this.kursTextField = kursTextField;
-            textField.setMaxWidth(135);
-            kursTextField.setMaxWidth(59);
-            Kurs kurs = getKurs(valuta.getId(), new Date());
-            Double kursDouble = 0d;
-            if (kurs != null) {
-                kursDouble = kurs.getKurs();
+    private Double setMilliyTolov(Double naqdMilliyDouble) {
+        Double kursMilliyDouble = getDoubleFromTextField(milliyKurs);
+        Double kursPlasticDouble = getDoubleFromTextField(plasticKurs);
+        naqdUsdDouble = getDoubleFromTextField(naqdTextField);
+        this.naqdMilliyDouble = naqdMilliyDouble;
+        plasticDouble = getDoubleFromTextField(plasticTextField);
+        if (valuta.getStatus() > 1) {
+            naqdUsdDouble = naqdUsdDouble * kursMilliyDouble;
+        }
+        if (valuta.getStatus() == 1) {
+            naqdMilliyDouble = naqdMilliyDouble / kursMilliyDouble;
+            plasticDouble = plasticDouble / kursPlasticDouble;
+        }
+        Double jamiTolov = naqdUsdDouble + naqdMilliyDouble + plasticDouble;
+        return jamiTolov;
+    }
+
+    private Double setPlasticTolov(Double plasticDouble) {
+        Double kursMilliyDouble = getDoubleFromTextField(milliyKurs);
+        Double kursPlasticDouble = getDoubleFromTextField(plasticKurs);
+        naqdUsdDouble = getDoubleFromTextField(naqdTextField);
+        naqdMilliyDouble = getDoubleFromTextField(naqdMilliyTextField);
+        this.plasticDouble = plasticDouble;
+        if (valuta.getStatus() > 1) {
+            naqdUsdDouble = naqdUsdDouble * kursMilliyDouble;
+        }
+        if (valuta.getStatus() == 1) {
+            naqdMilliyDouble = naqdMilliyDouble / kursMilliyDouble;
+            plasticDouble = plasticDouble / kursPlasticDouble;
+        }
+        Double jamiTolov = naqdUsdDouble + naqdMilliyDouble + plasticDouble;
+        return jamiTolov;
+    }
+
+    private Double getUsdTolov(Double naqdUsdDouble) {
+        this.naqdUsdDouble = naqdUsdDouble;
+        Double valutaKursi = getKurs(valuta.getId(), new Date()).getKurs();
+        Double kursMilliyDouble = getDoubleFromTextField(milliyKurs);
+        Double kursPlasticDouble = getDoubleFromTextField(plasticKurs);
+        naqdMilliyDouble = getDoubleFromTextField(naqdMilliyTextField);
+        plasticDouble = getDoubleFromTextField(plasticTextField);
+        naqdMilliyDouble /= kursMilliyDouble;
+        plasticDouble /= kursPlasticDouble;
+        Double jamiTolov = naqdUsdDouble + naqdMilliyDouble + plasticDouble;
+        Double natijaDouble = kassagaDouble - jamiTolov;
+        if (natijaDouble > 0) {
+            initQaytim();
+            qaytimDisable(true);
+            balansDouble = natijaDouble;
+            balansLabel.setDisable(false);
+            balansLabel.setText(decimalFormat.format(balansDouble));
+        } else if(natijaDouble < 0) {
+            balansLabel.setDisable(true);
+            balansDouble = 0d;
+            balansLabel.setText("");
+            initQaytim();
+            qaytimDisable(false);
+            qaytimUsdTextField.setText(decimalFormat.format(natijaDouble));
+        } else {}
+        return jamiTolov;
+    }
+
+    private void refreshNatija() {
+        Double jamiTolovDouble = jamiTolovniOl();
+        Double natijaDouble = kassagaDouble - jamiTolovDouble;
+        initQaytim();
+        initBalans();
+        if (natijaDouble > 0) {
+            balansDouble = natijaDouble;
+            qaytimDisable(true);
+            balansLabel.setDisable(false);
+            balansLabel.setText(decimalFormat.format(balansDouble));
+        } else if(natijaDouble < 0) {
+            qaytimDouble = -natijaDouble;
+            if (valuta.getStatus().equals(1)) {
+                qaytimUsdTextField.setText(decimalFormat.format(qaytimDouble));
+            } else {
+                qaytimMilliyTextField.setText(decimalFormat.format(qaytimDouble));
             }
-            kursTextField.setText(decimalFormat.format(kursDouble));
-            this.getChildren().addAll(textField, kursTextField);
-            this.setAlignment(Pos.CENTER_LEFT);
-            kursTextField.textProperty().addListener((observable, oldValue, newValue) -> {
-                if (newValue != null) {
-                    jamiHisob(tableViewObservableList);
-                }
-            });
-        }
-
-        public TreeItemClass(Integer itemId, ComboBox comboBox) {
-            super(5);
-            this.itemId = itemId;
-            this.comboBox = comboBox;
-            comboBox.setMaxWidth(200);
-
-            this.getChildren().addAll(comboBox);
-            this.setAlignment(Pos.CENTER_LEFT);
-        }
-
-        public TreeItemClass(Integer itemId, Label label) {
-            super();
-            this.itemId = itemId;
-            this.label = label;
-            label.setMaxWidth(200);
-
-            this.getChildren().add(label);
-            this.setAlignment(Pos.CENTER_LEFT);
-        }
-
-        public TreeItemClass(Integer itemId, Separator separator) {
-            super();
-            this.itemId = itemId;
-            this.separator = separator;
-            SetHVGrow.VerticalHorizontal(separator);
-
-            this.getChildren().add(separator);
-            this.setAlignment(Pos.CENTER_LEFT);
-        }
-
-        public TreeItemClass(Standart standart) {
-            super();
-            this.standart = standart;
-            itemId = standart.getId();
-            label.setText(standart.getText());
-            label.setMaxWidth(200);
-            this.getChildren().add(label);
-            this.setAlignment(Pos.CENTER_LEFT);
-        }
-
-        public TreeItemClass(Integer itemId, HBoxTextFieldPlusButton hisobHBox) {
-            super();
-            this.itemId = itemId;
-            this.hisobHBox = hisobHBox;
-            hisobHBox.setMaxWidth(200);
-            this.getChildren().add(hisobHBox);
-            this.setAlignment(Pos.CENTER_LEFT);
-        }
-
-        public TreeItemClass(Integer itemId, Button button) {
-            super();
-            this.itemId = itemId;
-            this.button = button;
-            button.setMaxWidth(210);
-            this.getChildren().add(button);
-            this.setAlignment(Pos.CENTER_LEFT);
-        }
-
-        public Integer getItemId() {
-            return itemId;
-        }
-
-        public void setItemId(Integer itemId) {
-            this.itemId = itemId;
-        }
-
-        public TextField getTextField() {
-            return textField;
-        }
-
-        public void setTextField(TextField textField) {
-            this.textField = textField;
-        }
-
-        public Label getLabel() {
-            return label;
-        }
-
-        public void setLabel(Label label) {
-            this.label = label;
-        }
-
-        public TextField getKursTextField() {
-            return kursTextField;
-        }
-
-        public void setKursTextField(TextField kursTextField) {
-            this.kursTextField = kursTextField;
+            qaytimDisable(false);
+            balansLabel.setDisable(true);
+        } else {
+            qaytimDisable(true);
+            balansLabel.setDisable(true);
         }
     }
 
-    private void jamiHisob(ObservableList<HisobKitob> hisobKitobViewObservableList) {
+    private void initBalans() {
+        balansDouble = 0d;
+        balansLabel.setText("");
+    }
+
+    private Double jamiTovarNarhiniOl() {
+        Double jamiDouble = 0d;
+        ObservableList<HisobKitob> observableList = tovarTableView.getItems();
+        Double kursDouble = getKurs(valuta.getId(), new Date()).getKurs();
+        for (HisobKitob hisobKitob: observableList) {
+            jamiDouble += hisobKitob.getDona() * hisobKitob.getNarh() * hisobKitob.getKurs() / kursDouble;
+
+        }
+        return jamiDouble;
+    }
+
+    private Double chegirmaniOl() {
+        Double chegirma = 0d;
+        chegirma = getDoubleFromTextField(chegirmaTextField);
+        return chegirma;
+    }
+
+    private Double jamiTolovniOl() {
         Double kursMilliyDouble = getDoubleFromTextField(milliyKurs);
         Double kursPlasticDouble = getDoubleFromTextField(plasticKurs);
-        chegirmaDouble = getDoubleFromTextField(chegirmaTextField);
-        naqdDouble = getDoubleFromTextField(naqdTextField);
-        if (valuta.getId() == 2) {
-            naqdDouble = naqdDouble * kursMilliyDouble;
-        }
+        naqdUsdDouble = getDoubleFromTextField(naqdTextField);
         naqdMilliyDouble = getDoubleFromTextField(naqdMilliyTextField);
-        if (valuta.getId() == 1) {
-            naqdMilliyDouble = naqdMilliyDouble / kursMilliyDouble;
-        }
         plasticDouble = getDoubleFromTextField(plasticTextField);
-        if (valuta.getId() == 1) {
+        if (valuta.getStatus() > 1) {
+            naqdUsdDouble = naqdUsdDouble * kursMilliyDouble;
+        }
+        if (valuta.getStatus() == 1) {
+            naqdMilliyDouble = naqdMilliyDouble / kursMilliyDouble;
             plasticDouble = plasticDouble / kursPlasticDouble;
         }
+        Double jamiTolov = naqdUsdDouble + naqdMilliyDouble + plasticDouble;
+        return jamiTolov;
+    }
 
-        Double jamiMablag = 0.0;
-        for (HisobKitob hk : hisobKitobViewObservableList) {
-            jamiMablag += hk.getDona() * hk.getNarh();
+    private  Double mablagOl(TextField mablag, TextField kurs) {
+        Double jamiMablag = 0d;
+        Double valutaKursi = getKurs(valuta.getId(), new Date()).getKurs();
+        jamiMablag = getDoubleFromTextField(mablag);
+        if (valuta.getStatus().equals(1)) {
+            jamiMablag /= getDoubleFromTextField(kurs);
         }
-        jamiMablagLabel.setText(decimalFormat.format(jamiMablag));
-        kassagaDouble = jamiMablag - chegirmaDouble;
-        kassagaLabel.setText(decimalFormat.format(kassagaDouble));
-        Double jamiTolov = naqdDouble + naqdMilliyDouble + plasticDouble;
-        Double jamiDouble = jamiTolov - kassagaDouble;
-        if (jamiDouble > 0) {
-            qaytimDouble = jamiDouble;
+        return jamiMablag;
+    }
+
+    private Double jamiQaytimniOl() {
+        Double qaytim = 0d;
+        Double kursMilliyDouble = getDoubleFromTextField(qaytimMilliyKursTextField);
+        Double kursPlasticDouble = getDoubleFromTextField(qaytimPlasticKursTextField);
+        Double qaytimUsdDouble = getDoubleFromTextField(qaytimUsdTextField);
+        Double qaytimMilliyDouble = getDoubleFromTextField(qaytimMilliyTextField);
+        Double qaytimPlasticDouble = getDoubleFromTextField(qaytimPlasticTextField);
+        if (valuta.getStatus() > 1) {
+            qaytimUsdDouble = qaytimUsdDouble * kursMilliyDouble;
+        }
+        if (valuta.getStatus() == 1) {
+            qaytimMilliyDouble = qaytimMilliyDouble / kursMilliyDouble;
+            qaytimPlasticDouble = qaytimPlasticDouble / kursPlasticDouble;
+        }
+        qaytim = qaytimUsdDouble + qaytimMilliyDouble + qaytimPlasticDouble;
+        return qaytim;
+    }
+
+    private Double refreshTableData() {
+        Double jamiDouble = 0d;
+        Boolean tovarBor = false;
+        ObservableList<HisobKitob> observableList = tovarTableView.getItems();
+        Double kursDouble = getKurs(valuta.getId(), new Date()).getKurs();
+        for (HisobKitob hisobKitob: observableList) {
+            jamiDouble += hisobKitob.getDona() * hisobKitob.getNarh() * hisobKitob.getKurs() / kursDouble;
+            tovarBor = true;
+
+        }
+        initTolov();
+        initQaytim();
+        qaytimDisable(true);
+        if (tovarBor) {
+            tolovDisable(false);
         } else {
-            qaytimDouble = 0.0;
+            tolovDisable(true);
         }
-        qaytimLabel.setText(decimalFormat.format(qaytimDouble));
-        balansDouble = (jamiTolov - qaytimDouble) - kassagaDouble;
+        jamiMablag = jamiDouble;
+        jamiMablagLabel.setText(decimalFormat.format(jamiDouble));
+        kassagaDouble = jamiDouble;
+        balansDouble = -jamiDouble;
+        kassagaLabel.setText(decimalFormat.format(kassagaDouble));
         balansLabel.setText(decimalFormat.format(balansDouble));
+        return jamiDouble;
     }
 
     public static Double getDoubleFromTextField(TextField textField) {
         Double doubleValue = 0d;
         String textValue = textField.getText();
+        doubleValue = textToDouble(textValue);
+        return doubleValue;
+    }
+
+    public static Double textToDouble(String textValue) {
+        Double doubleValue = 0d;
         if (textValue != null) {
             textValue = textValue.replaceAll(",", ".");
             textValue = textValue.replaceAll(" ", "");
@@ -2250,60 +2780,6 @@ public class Sotuvchi extends Application {
         }
         return doubleValue;
     }
-
-/*
-    private void jamiHisob(ObservableList<HisobKitob> hisobKitobViewObservableList, String value, int valueId) {
-        Double kursMilliyDouble = getDoubleFromTextField(milliyKurs);
-        Double kursPlasticDouble = getDoubleFromTextField(plasticKurs);
-        if (value == null) {
-            value = "0.0";
-        }
-        if (value.isEmpty()) {
-            value = "0.0";
-        }
-        jamiMablag = 0.0;
-        for (HisobKitob hk : hisobKitobViewObservableList) {
-            jamiMablag += hk.getDona() * hk.getNarh();
-        }
-        jamiMablagLabel.setText(decimalFormat.format(jamiMablag));
-
-        switch (valueId) {
-            case 1: //chegirma
-                chegirmaDouble = Double.valueOf(value);
-                break;
-            case 2: //naqd usd
-                naqdDouble = Double.valueOf(value);
-                if (valuta.getId() == 2) {
-                    naqdDouble = naqdDouble * kursMilliyDouble;
-                }
-                break;
-            case 3:
-                naqdMilliyDouble = Double.valueOf(value);
-                if (valuta.getId() == 1) {
-                    naqdMilliyDouble = naqdMilliyDouble / kursMilliyDouble;
-                }
-                break;
-            case 4: //plastic
-                plasticDouble = Double.valueOf(value);
-                if (valuta.getId() == 1) {
-                    plasticDouble = plasticDouble / kursPlasticDouble;
-                }
-                break;
-        }
-        kassagaDouble = jamiMablag - chegirmaDouble;
-        kassagaLabel.setText(decimalFormat.format(kassagaDouble));
-        Double jamiTolov = naqdDouble + naqdMilliyDouble + plasticDouble;
-        Double jamiDouble = jamiTolov - kassagaDouble;
-        if (jamiDouble > 0) {
-            qaytimDouble = jamiDouble;
-        } else {
-            qaytimDouble = 0.0;
-        }
-        qaytimLabel.setText(decimalFormat.format(qaytimDouble));
-        balansDouble = (jamiTolov - qaytimDouble) - kassagaDouble;
-        balansLabel.setText(decimalFormat.format(balansDouble));
-    }
-*/
 
     private Kurs getKurs(int valutaId, Date sana) {
         Valuta v = GetDbData.getValuta(valutaId);
@@ -2353,13 +2829,16 @@ public class Sotuvchi extends Application {
         scene.getAccelerators().put(kcP, runPlastic);
 
         Runnable runTovar = () -> {
-            TextField textField  = tovarHBox.getTextField();
+            TextField textField  = tovarBox.getTextField();
             textField.requestFocus();
         };
         scene.getAccelerators().put(kcT, runTovar);
 
+        Runnable runNaqdMilliy = () -> naqdMilliyTextField.requestFocus();
+        scene.getAccelerators().put(kcS, runNaqdMilliy);
+
         Runnable runBarCode = () -> barCodeTextField.requestFocus();
-        scene.getAccelerators().put(kcS, runBarCode);
+        scene.getAccelerators().put(kcB, runBarCode);
 
         Runnable runEditCell = ()-> {
             HisobKitob hk = tovarTableView.getSelectionModel().getSelectedItem();
@@ -2385,7 +2864,7 @@ public class Sotuvchi extends Application {
                                 birlikObservableList.removeAll(birlikObservableList);
                                 tovarTextField.setText("");
                                 addTovar(barCode);
-                                jamiHisob(tableViewObservableList);
+                                refreshTableData();
                             }
                         } else {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -2415,7 +2894,7 @@ public class Sotuvchi extends Application {
                                 birlikObservableList.removeAll(birlikObservableList);
                                 tovarTextField.setText("");
                                 addTovar(barCode);
-                                jamiHisob(tableViewObservableList);
+                                refreshTableData();
                             }
                         } else {
                             Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -2528,7 +3007,7 @@ public class Sotuvchi extends Application {
             Alerts.showKamomat(tovar, adad, barCode.getBarCode(), zaxiradagiAdad);
         }
         tovarTableView.refresh();
-        tovarHBox.getTextField().setText("");
+        tovarBox.getTextField().setText("");
     }
 
     private void addTovarYangi(BarCode barCode) {
@@ -2556,7 +3035,7 @@ public class Sotuvchi extends Application {
             Alerts.showKamomat(tovar, adad, barCode.getBarCode(), zaxiradagiAdad);
         }
         tovarTableView.refresh();
-        tovarHBox.getTextField().setText("");
+        tovarBox.getTextField().setText("");
     }
 
     private void narhOl(BarCode barCode, HisobKitob hisobKitob, Integer narhTuri) {
@@ -2569,16 +3048,6 @@ public class Sotuvchi extends Application {
 
         double narhDouble = 0d;
         double narhDoubleFinal = 0d;
-/*
-        ObservableList<HisobKitob> narhList = hisobKitobModels.getAnyData(connection, "hisob2 = " + hisobKitob.getHisob2() + " and amal = 4 and barcode = '" + hisobKitob.getBarCode() + "'", "id desc limit 1");
-        if (narhList.size()>0) {
-            HisobKitob hk = narhList.get(0);
-            Double eskiNarh = hk.getNarh()/hk.getKurs();
-            Double yangiNarh = eskiNarh * hisobKitob.getKurs();
-            hisobKitob.setNarh(yangiNarh);
-            return;
-        }
-*/
         Standart3Models standart3Models = new Standart3Models();
         standart3Models.setTABLENAME("TGuruh2");
         Standart3 s3 = null;
@@ -2669,7 +3138,8 @@ public class Sotuvchi extends Application {
                 hk1.setDona(adad);
                 tovarTableView.refresh();
             }
-            jamiHisob(tableViewObservableList);
+            refreshTableData();
+//            jamiHisob(tableViewObservableList);
         }
         return adad;
     }
@@ -2749,11 +3219,324 @@ public class Sotuvchi extends Application {
         TovarNarhi tovarNarhi = null;
         TovarNarhiModels tovarNarhiModels = new TovarNarhiModels();
         ObservableList<TovarNarhi> observableList = tovarNarhiModels.getAnyData(
-                connection, "tovar = " + tovarId + " AND narhTuri = " + narhTuri, "sana desc"
+                connection, "tovar = " + tovarId + " AND narhTuri = " + narhTuri, "id desc"
         );
         if (observableList.size()>0) {
             tovarNarhi = observableList.get(0);
         }
         return tovarNarhi;
+    }
+    private void setUser(Kassa kassa) {
+        String serialNumber = ConnectionType.getAloqa().getText().trim();
+        if (kassa != null) {
+            user.setPulHisobi(kassa.getPulHisobi());
+            user.setTovarHisobi(kassa.getTovarHisobi());
+            user.setXaridorHisobi(kassa.getXaridorHisobi());
+            user.setValuta(kassa.getValuta());
+        }
+    }
+
+    private void qaytimDisable(Boolean disable) {
+        qaytimUsdTextField.setDisable(disable);
+        qaytimMilliyTextField.setDisable(disable);
+        qaytimPlasticTextField.setDisable(disable);
+        qaytimMilliyKursTextField.setDisable(disable);
+        qaytimPlasticKursTextField.setDisable(disable);
+        qaytimFoizTextField.setDisable(true);
+        qaytimBankXarajatiTextField.setDisable(true);
+    }
+
+    private void tolovDisable(Boolean disable) {
+        chegirmaTextField.setDisable(disable);
+        naqdTextField.setDisable(disable);
+        naqdMilliyTextField.setDisable(disable);
+        plasticTextField.setDisable(disable);
+        milliyKurs.setDisable(disable);
+        plasticKurs.setDisable(disable);
+        tolovFoizTextField.setDisable(true);
+        tolovBankXarajatiTextField.setDisable(true);
+    }
+
+    private void setTolovBankXizmati(Double plasticDouble) {
+        PlasticFoizi plasticFoizi = GetDbData.getPlasticFoizi();
+        if (plasticFoizi.getFoiz()>0) {
+            tolovFoizTextField.setText(decimalFormat.format(plasticFoizi.getFoiz()));
+            tolovBankXarajatiTextField.setText(decimalFormat.format(plasticDouble * plasticFoizi.getFoiz()));
+        } else {
+            tolovFoizTextField.setText("");
+            tolovBankXarajatiTextField.setText("");
+        }
+    }
+
+    public class TreeItemClass extends HBox{
+        private Integer itemId;
+        private Double aDouble;
+        private Label label = new Label();
+        private Label label2 = new Label();
+        private Standart standart;
+        private HBoxTextFieldPlusButton hisobHBox;
+        private TovarBox tovarBox;
+        private Button button;
+        private Button button2;
+        private TextField textField;
+        private TextField textField2;
+        private TextField kursTextField;
+        private ComboBox<Standart> comboBox;
+        private Separator separator;
+        Valuta valuta;
+        TextFieldButton textFieldButton;
+        TextFieldButton textFieldButton1;
+
+        public TreeItemClass(Integer itemId, String string, Double aDouble) {
+            super(5);
+            this.itemId = itemId;
+            this.aDouble = aDouble;
+            label.setText(string);
+            label2.setText(decimalFormat.format(aDouble));
+
+            this.getChildren().addAll(label, label2);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, TextField textField) {
+            super(5);
+            this.itemId = itemId;
+            this.textField = textField;
+            textField.setMaxWidth(200);
+
+            this.getChildren().addAll(textField);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, TextField textField, TextField kursTextField, Valuta valuta) {
+            super(2);
+            this.itemId = itemId;
+            this.textField = textField;
+            this.kursTextField = kursTextField;
+            textField.setMaxWidth(135);
+            kursTextField.setMaxWidth(59);
+            Kurs kurs = getKurs(valuta.getId(), new Date());
+            Double kursDouble = 0d;
+            initTextField(textField);
+            if (kurs != null) {
+                kursDouble = kurs.getKurs();
+            }
+            kursTextField.setText(decimalFormat.format(kursDouble));
+            this.getChildren().addAll(textField, kursTextField);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, TextField textField, TextField kursTextField, Valuta valuta, Boolean calculatorBormi) {
+            super(2);
+            HBox hBox = new HBox();
+            HBox hBox2 = new HBox();
+            VBox vBox = new VBox();
+
+            this.itemId = itemId;
+            this.textField = textField;
+            this.kursTextField = kursTextField;
+            hBox.getChildren().addAll(textField, kursTextField);
+            vBox.getChildren().add(hBox);
+            if (calculatorBormi) {
+                button = new Button("", new PathToImageView("/sample/images/Icons/calculator.png").getImageView());
+                button.setMaxWidth(97);
+                button.setPrefWidth(150);
+                HBox.setHgrow(button, Priority.ALWAYS);
+                button2 = new Button("<=>");
+                button2.setMaxWidth(97);
+                HBox.setHgrow(button2, Priority.ALWAYS);
+                hBox2.getChildren().addAll(button, button2);
+                vBox.getChildren().add(hBox2);
+            }
+            textField.setMaxWidth(135);
+            kursTextField.setMaxWidth(59);
+            Kurs kurs = getKurs(valuta.getId(), new Date());
+            Double kursDouble = 0d;
+            initTextField(textField);
+            if (kurs != null) {
+                kursDouble = kurs.getKurs();
+            }
+            kursTextField.setText(decimalFormat.format(kursDouble));
+            this.getChildren().add(vBox);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, TextField textField, TextField textField2) {
+            super(2);
+            this.itemId = itemId;
+            this.textField = textField;
+            this.textField2 = textField2;
+            textField.setMaxWidth(97);
+            textField2.setMaxWidth(97);
+            textField.setAlignment(Pos.CENTER);
+            textField2.setAlignment(Pos.CENTER);
+            this.getChildren().addAll(textField, textField2);
+        }
+
+        public TreeItemClass(Integer itemId, ComboBox comboBox) {
+            super(5);
+            this.itemId = itemId;
+            this.comboBox = comboBox;
+            comboBox.setMaxWidth(200);
+
+            this.getChildren().addAll(comboBox);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, Label label) {
+            super();
+            this.itemId = itemId;
+            this.label = label;
+            label.setMaxWidth(200);
+
+            this.getChildren().add(label);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, Separator separator) {
+            super();
+            this.itemId = itemId;
+            this.separator = separator;
+            SetHVGrow.VerticalHorizontal(separator);
+
+            this.getChildren().add(separator);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Standart standart) {
+            super();
+            this.standart = standart;
+            itemId = standart.getId();
+            label.setText(standart.getText());
+            label.setMaxWidth(200);
+            this.getChildren().add(label);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, HBoxTextFieldPlusButton hisobHBox) {
+            super();
+            this.itemId = itemId;
+            this.hisobHBox = hisobHBox;
+            hisobHBox.setMaxWidth(200);
+            this.getChildren().add(hisobHBox);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, TovarBox tovarBox) {
+            super();
+            this.itemId = itemId;
+            this.tovarBox = tovarBox;
+            tovarBox.setMaxWidth(200);
+            this.getChildren().add(tovarBox);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, Button button) {
+            super();
+            this.itemId = itemId;
+            this.button = button;
+            button.setMaxWidth(210);
+            this.getChildren().add(button);
+            this.setAlignment(Pos.CENTER_LEFT);
+        }
+
+        public TreeItemClass(Integer itemId, TextFieldButton textFieldButton, TextFieldButton textFieldButton1) {
+            super();
+            this.itemId = itemId;
+            this.textFieldButton = textFieldButton;
+            this.textFieldButton1 = textFieldButton1;
+            textFieldButton.setMaxWidth(97);
+            textFieldButton1.setMaxWidth(97);
+            getChildren().addAll(textFieldButton, textFieldButton1);
+        }
+
+        public void initTextField(TextField textField) {
+            textField.focusedProperty().addListener((observable, oldValue, newValue) -> {
+                if (newValue != null) {
+                    if (!newValue) {
+                        Double aDouble = getDoubleFromTextField(textField);
+                        textField.setText(decimalFormat.format(aDouble));
+                    }
+                }
+            });
+        }
+
+        public Integer getItemId() {
+            return itemId;
+        }
+
+        public void setItemId(Integer itemId) {
+            this.itemId = itemId;
+        }
+
+        public TextField getTextField() {
+            return textField;
+        }
+
+        public void setTextField(TextField textField) {
+            this.textField = textField;
+        }
+
+        public Label getLabel() {
+            return label;
+        }
+
+        public void setLabel(Label label) {
+            this.label = label;
+        }
+
+        public TextField getKursTextField() {
+            return kursTextField;
+        }
+
+        public void setKursTextField(TextField kursTextField) {
+            this.kursTextField = kursTextField;
+        }
+
+        public TextField getTextField2() {
+            return textField2;
+        }
+
+        public void setTextField2(TextField textField2) {
+            this.textField2 = textField2;
+        }
+
+        public Button getButton() {
+            return button;
+        }
+
+        public void setButton(Button button) {
+            this.button = button;
+        }
+
+        public Button getButton2() {
+            return button2;
+        }
+
+        public void setButton2(Button button2) {
+            this.button2 = button2;
+        }
+    }
+
+    private HisobKitob initSavdoXususiyatlari(QaydnomaData qaydnomaData) {
+        HisobKitob hisobKitob = new HisobKitob();
+        hisobKitob.setQaydId(qaydnomaData.getId());
+        hisobKitob.setHujjatId(qaydnomaData.getHujjat());
+        Standart savdoTuri = narhComboBox.getValue();
+        Integer savdoTuriInteger = savdoTuri.getId();
+        hisobKitob.setAmal(4);
+        hisobKitob.setHisob1(qaydnomaData.getChiqimId());
+        hisobKitob.setHisob2(qaydnomaData.getKirimId());
+        hisobKitob.setValuta(valuta.getId());
+        hisobKitob.setTovar(0);
+        hisobKitob.setKurs(1d);
+        hisobKitob.setBarCode("");
+        hisobKitob.setDona(0d);
+        hisobKitob.setNarh(0d);
+        hisobKitob.setManba(0);
+        hisobKitob.setIzoh("Savdo №: " + qaydnomaData.getHujjat());
+        hisobKitob.setUserId(user.getId());
+        hisobKitob.setDateTime(qaydnomaData.getSana());
+        return hisobKitob;
     }
 }

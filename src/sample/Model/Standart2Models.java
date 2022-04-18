@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Standart2;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
@@ -20,7 +21,15 @@ public class Standart2Models {
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     QueryHelper queryHelper;
 
+    public Standart2Models() {
+    }
+
+    public Standart2Models(String TABLENAME) {
+        this.TABLENAME = TABLENAME;
+    }
+
     public ObservableList<Standart2> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart2> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -46,6 +55,7 @@ public class Standart2Models {
     }
 
     public ObservableList<Standart2> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart2> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -72,6 +82,7 @@ public class Standart2Models {
     }
 
     public Integer insert_data(Connection connection, Standart2 standart2) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -100,6 +111,7 @@ public class Standart2Models {
         return insertedID;
     }
     public void copyDataBatch(Connection connection, ObservableList<Standart2> standart2List) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -126,6 +138,7 @@ public class Standart2Models {
         }
     }
     public void delete_data(Connection connection, Standart2 standart2) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -138,6 +151,7 @@ public class Standart2Models {
         }
     }
     public void update_data(Connection connection, Standart2 standart2) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + ID_FIELD2 + " = ?, "
                 + TEXT + " = ? WHERE "

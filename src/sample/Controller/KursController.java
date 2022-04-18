@@ -15,10 +15,7 @@ import sample.Data.User;
 import sample.Data.Valuta;
 import sample.Model.KursModels;
 import sample.Model.ValutaModels;
-import sample.Tools.Alerts;
-import sample.Tools.CustomWindow;
-import sample.Tools.PathToImageView;
-import sample.Tools.Tugmachalar;
+import sample.Tools.*;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -49,6 +46,8 @@ public class KursController {
         decimalFormat.setDecimalFormatSymbols(decimalFormatSymbols);
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         valutalar = valutaModels.get_data(connection);
         customWindow.setStageTitle("Kurslar");
         tugmachalar.getAdd().setOnAction(event -> {

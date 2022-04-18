@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Sanoq3;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
@@ -25,6 +26,7 @@ public class Sanoq3Models {
     QueryHelper queryHelper;
 
     public ObservableList<Sanoq3> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Sanoq3> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -54,6 +56,7 @@ public class Sanoq3Models {
     }
 
     public ObservableList<Sanoq3> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy){
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Sanoq3> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -84,6 +87,7 @@ public class Sanoq3Models {
     }
 
     public Integer insert_data(Connection connection, Sanoq3 sanoq3) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -117,6 +121,7 @@ public class Sanoq3Models {
     }
 
     public void delete_data(Connection connection, Sanoq3 sanoq3) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -129,6 +134,7 @@ public class Sanoq3Models {
         }
     }
     public void update_data(Connection connection, Sanoq3 sanoq3){
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + HISOB + " = ?, "
                 + TOVAR + " = ?, "
@@ -151,6 +157,7 @@ public class Sanoq3Models {
     }
 
     public ObservableList<Sanoq3> getTovarAdad(Connection connection, Integer sanoqId, Integer hisobId, User user) {
+        MySqlStatus.checkMyConnection(connection);
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
         ObservableList<Sanoq3> sanoq3List = FXCollections.observableArrayList();
             ObservableList<HisobKitob> kirimList = hisobKitobModels.getAnyData(connection, "hisob2 = " + hisobId + " AND tovar > 0", "tovar asc");
@@ -194,6 +201,7 @@ public class Sanoq3Models {
     }
 
     public void addBatch(Connection connection, ObservableList<Sanoq3> sanoq3List){
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + HISOB + ", "
@@ -221,6 +229,7 @@ public class Sanoq3Models {
         }
     }
     public void copyDataBatch(Connection connection, ObservableList<Sanoq3> sanoq3List){
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "

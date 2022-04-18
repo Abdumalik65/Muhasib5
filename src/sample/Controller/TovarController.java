@@ -1,7 +1,7 @@
 package sample.Controller;
 
-import com.itextpdf.text.*;
 import com.itextpdf.text.Rectangle;
+import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.Barcode128;
 import com.itextpdf.text.pdf.PdfContentByte;
 import com.itextpdf.text.pdf.PdfWriter;
@@ -37,18 +37,20 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
+import sample.Excel.ExportToExcel;
 import sample.Model.*;
-import sample.Temp.PrintingExample;
 import sample.Tools.*;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.print.*;
+import java.awt.print.PageFormat;
+import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.*;
 import java.sql.Connection;
 import java.text.DecimalFormat;
@@ -97,6 +99,7 @@ public class TovarController extends Application {
     ObservableList<Standart> birlikObservableList = FXCollections.observableArrayList();
 
     StandartModels standartModels = new StandartModels();
+    Standart3Models standart3Models = new Standart3Models();
     NarhModels narhModels = new NarhModels();
     BarCodeModels barCodeModels = new BarCodeModels();
     TovarNarhiModels tovarNarhiModels = new TovarNarhiModels();
@@ -113,6 +116,7 @@ public class TovarController extends Application {
     TextField barCodeTextField2 = new TextField();
     TextField adadTextField = new TextField();
     Button barCodeImageViewButton = new Button("");
+    Label guruhLabel = new Label();
 
     Button newBarCodeButton = new Button("Yangi kod");
     Button qaydEtButton = new Button("Qayd et");
@@ -126,15 +130,18 @@ public class TovarController extends Application {
     }
 
     public TovarController() {
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
     }
 
     public TovarController(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
-    private void ibtido() {    HBox buttonsHBox = new HBox();
-
+    private void ibtido() {
+        HBox buttonsHBox = new HBox();
         initSplitPane();
         initData();
         initButtons();
@@ -154,7 +161,6 @@ public class TovarController extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         ibtido();
         initStage(primaryStage);
@@ -162,8 +168,6 @@ public class TovarController extends Application {
     }
 
     public void display(Connection connection, User user) {
-        this.connection = connection;
-        this.user = user;
         stage = new Stage();
         ibtido();
         initStage(stage);
@@ -182,7 +186,25 @@ public class TovarController extends Application {
     }
 
     private void initSplitPane() {
-        splitPane.setDividerPositions(.37);
+        splitPane.setDividerPositions(.25);
+    }
+
+    private Standart6 guruhniTop(int tovarId) {
+        Standart6 s6 = null;
+        standart3Models.setTABLENAME("TGuruh2");
+        System.out.println(tovarId);
+        ObservableList<Standart3> s3List = standart3Models.getAnyData(connection, "id3 = " + tovarId, "");
+        guruhLabel.setText("");
+        if (s3List.size()>0) {
+            Standart3 s3 = s3List.get(0);
+            Standart6Models standart6Models = new Standart6Models("TGuruh1");
+            ObservableList<Standart6> s6List = standart6Models.getAnyData(connection, "id = " + s3.getId2(), "");
+            if (s6List.size()>0) {
+                s6 = s6List.get(0);
+                guruhLabel.setText(s6.getText());
+            }
+        }
+        return s6;
     }
 
     private void initData() {
@@ -380,7 +402,7 @@ public class TovarController extends Application {
         HBox.setHgrow(barCodeTextField, Priority.ALWAYS);
         barCodeHBox.getChildren().addAll(barCodeTextField, newBarCodeButton);
         newBarCodeButton.setOnAction(event -> {
-            ObservableList<BarCode> bcList = barCodeModels.getAnyData(connection, "SUBSTR(barCode,1,2) = 'BP'", "id desc");
+            ObservableList<BarCode> bcList = barCodeModels.getAnyData(connection, "SUBSTR(barCode,1,2) = '" + ConnectionType.getAloqa().getDbPrefix().trim() + "'", "id desc");
             if (bcList.size()>0) {
                 String string = bcList.get(0).getBarCode();
                 Integer number = Integer.valueOf(string.substring(2));
@@ -396,7 +418,12 @@ public class TovarController extends Application {
         sarlawhaLabel.setWrapText(true);
     }
 
+
     private void initTextFields() {
+/*
+        HBox.setHgrow(tovarNomiTextField, Priority.ALWAYS);
+        HBox.setHgrow(barCodeTextField, Priority.ALWAYS);
+*/
         HBox.setHgrow(tovarNomiTextField, Priority.ALWAYS);
         HBox.setHgrow(qidirBarCodeTextField, Priority.ALWAYS);
         qidirBarCodeTextField.setPromptText("Shtrix kod");
@@ -427,12 +454,17 @@ public class TovarController extends Application {
                 }
             }
         });
-
-        tovarNomiTextField.setOnAction(event -> {
-            String newValue = tovarNomiTextField.getText();
-            if (newValue != null) {
-                Taftish(newValue);
-            }
+/*
+        tovarNomiTextField.setPromptText("Tovar nomi");
+        TextFields.bindAutoCompletion(tovarNomiTextField, tovarObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Standart> autoCompletionEvent) -> {
+            Standart tovar = autoCompletionEvent.getCompletion();
+            tovarTableView.getSelectionModel().select(tovar);
+            tovarTableView.scrollTo(tovar);
+            tovarNomiTextField.setText("");
+        });
+*/
+        tovarNomiTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            Taftish(oldValue, newValue);
         });
 
         barCodeTextField.setPromptText("Shtrix kod");
@@ -458,7 +490,7 @@ public class TovarController extends Application {
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 }
-                com.itextpdf.text.Rectangle one = new com.itextpdf.text.Rectangle(156,85);
+                Rectangle one = new Rectangle(156,85);
                 one.rotate();
                 document.setPageSize(one);
                 document.setMargins(0, 0, 0, 0);
@@ -479,8 +511,8 @@ public class TovarController extends Application {
                     com.itextpdf.text.Image code128Image = barcode128.createImageWithBarcode(pdfContentByte, BaseColor.BLACK, BaseColor.BLACK);
                     code128Image.scalePercent(100);
                     code128Image.setAlignment(Element.ALIGN_CENTER);
-                    paragraph.add(code128Image);
                     document.add(paragraph);
+                    document.add(code128Image);
                 } catch (DocumentException e) {
                     e.printStackTrace();
                 }
@@ -514,11 +546,12 @@ public class TovarController extends Application {
     private void initTovarTableView() {
         HBox.setHgrow(tovarTableView, Priority.ALWAYS);
         VBox.setVgrow(tovarTableView, Priority.ALWAYS);
-        tovarTableView.getColumns().addAll(getIdColumn(), getTextColumn(), getXaridNarhiColumn(), getUlgurjiNarhColumn(), getChakanaNarhColumn());
+        tovarTableView.getColumns().addAll(getIdColumn(), getTextColumn()/*, getXaridNarhiColumn(), getUlgurjiNarhColumn(), getChakanaNarhColumn()*/);
         tovarTableView.setItems(tovarObservableList);
         tovarTableView.setEditable(true);
         if (tovarObservableList.size()>0) {
             tovarCursor = tovarObservableList.get(0);
+            guruhniTop(tovarCursor.getId());
             chakanaNarh = sotishNarhi(tovarCursor.getId(), 1);
             ulgurjiNarh = sotishNarhi(tovarCursor.getId(), 2);
             sarlawhaLabel.setText(tovarCursor.getText());
@@ -535,6 +568,8 @@ public class TovarController extends Application {
         tovarTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue !=  null) {
                 tovarCursor = newValue;
+                guruhniTop(tovarCursor.getId());
+                standart3Models.setTABLENAME("TGuruh2");
                 chakanaNarh = sotishNarhi(tovarCursor.getId(), 1);
                 ulgurjiNarh = sotishNarhi(tovarCursor.getId(), 2);
                 sarlawhaLabel.setText(tovarCursor.getText());
@@ -1015,7 +1050,14 @@ public class TovarController extends Application {
         adad.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
             @Override
             public String toString(Double object) {
-                return decimalFormat.format(object);
+
+                NumberFormat numberFormat = NumberFormat.getInstance();
+                numberFormat.setMinimumIntegerDigits (1);
+                numberFormat.setMaximumIntegerDigits (8);
+
+                numberFormat.setMinimumFractionDigits (0);
+                numberFormat.setMaximumFractionDigits (5);
+                return numberFormat.format(object);
             }
 
             @Override
@@ -1222,7 +1264,7 @@ public class TovarController extends Application {
         rightPane.setPadding(new Insets(padding));
         HBox.setHgrow(rightPane, Priority.ALWAYS);
         VBox.setVgrow(rightPane, Priority.ALWAYS);
-        rightPane.getChildren().addAll(sarlawhaLabel, rightButtons, barCodesTableView, barCodeImageViewButton, barCodeLabel);
+        rightPane.getChildren().addAll(sarlawhaLabel, guruhLabel, rightButtons, barCodesTableView, barCodeImageViewButton, barCodeLabel);
     }
 
     private void initImagePane() {
@@ -1532,8 +1574,7 @@ public class TovarController extends Application {
      */
     public static BufferedImage toBufferedImage(java.awt.Image img)
     {
-        if (img instanceof BufferedImage)
-        {
+        if (img instanceof BufferedImage) {
             return (BufferedImage) img;
         }
 
@@ -1591,19 +1632,6 @@ public class TovarController extends Application {
         if ( oldValue != null && (newValue.length() < oldValue.length()) ) {
             tovarTableView.setItems( tovarObservableList );
         }
-
-        for ( Standart s: tovarObservableList ) {
-            if (s.getText().toLowerCase().contains(newValue)) {
-                subentries.add(s);
-            }
-        }
-        tovarTableView.setItems(subentries);
-    }
-
-    private void Taftish(String newValue) {
-        ObservableList<Standart> subentries = FXCollections.observableArrayList();
-        newValue = newValue.toLowerCase();
-        tovarTableView.setItems( tovarObservableList );
 
         for ( Standart s: tovarObservableList ) {
             if (s.getText().toLowerCase().contains(newValue)) {

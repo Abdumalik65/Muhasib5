@@ -17,20 +17,19 @@ import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.controlsfx.control.textfield.AutoCompletionBinding;
-import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.Hisob;
 import sample.Data.HisobKitob;
 import sample.Data.QaydnomaData;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Model.QaydnomaModel;
 import sample.Tools.*;
 
 import java.sql.Connection;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
 import java.util.Date;
 
 public class HisobBalans extends Application {
@@ -41,7 +40,7 @@ public class HisobBalans extends Application {
     VBox rightPane = new VBox();
     TableView<Hisob> hisobTableView = new TableView<>();
     TableView<HisobKitob> hisobKitobTableView = new TableView<>();
-    GetTableView2 getTableView2 = new GetTableView2();
+    TableViewAndoza tableViewAndoza = new TableViewAndoza();
     ObservableList<HisobKitob> rightObservableList = FXCollections.observableArrayList();
     ObservableList<QaydnomaData> qaydnomaDataObservableList = FXCollections.observableArrayList();
     HisobKitob hisobKitob;
@@ -62,13 +61,15 @@ public class HisobBalans extends Application {
     }
 
     public HisobBalans() {
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         ibtido();
     }
 
     public HisobBalans(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
@@ -91,37 +92,48 @@ public class HisobBalans extends Application {
         SetHVGrow.VerticalHorizontal(hisobTableView);
         hisobTableView.setMaxWidth(210);
         hisobTableView.setPadding(new Insets(padding));
-        TableColumn<Hisob, String> hisobText = getTableView2.getHisobTextColumn();
+        TableColumn<Hisob, String> hisobText = tableViewAndoza.getHisobTextColumn();
         hisobText.setMinWidth(200);
         hisobTableView.getColumns().add(hisobText);
         hisobTableView.setItems(hisobObservableList);
         hisobTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 refreshHisobKitobTable(newValue);
-                Double balansDouble = hisobBalans(newValue.getId());
-                balansLabel.setText(decimalFormat.format(balansDouble));
-
             }
         });
     }
 
     private void initHisobKitobTable() {
-        getTableView2.getAdadColumn().setMinWidth(80);
-        TableColumn<HisobKitob, Integer> amalColumn = getTableView2.getAmalColumn();
+        tableViewAndoza.getAdadColumn().setMinWidth(80);
+        TableColumn<HisobKitob, Integer> amalColumn = tableViewAndoza.getAmalColumn();
         amalColumn.setStyle( "-fx-alignment: CENTER;");
 
-        TableColumn<HisobKitob, Integer> valutaColumn = getTableView2.getValutaColumn();
+        TableColumn<HisobKitob, Integer> valutaColumn = tableViewAndoza.getValutaColumn();
         valutaColumn.setStyle( "-fx-alignment: CENTER;");
 
-        hisobKitobTableView.getColumns().addAll(getTableView2.getDateTimeColumn(), getCustom2Column(), amalColumn,
-                getTableView2.getIzoh2Column(), valutaColumn, getTableView2.getKursColumn(),
-                getTableView2.getAdadColumn(), getTableView2.getNarhColumn(), getTableView2.getSummaColumn(),
-                getTableView2.getBalans2Column());
+        hisobKitobTableView.getColumns().addAll(tableViewAndoza.getDateTimeColumn(), tableViewAndoza.hisob1Hisob2(), amalColumn,
+                tableViewAndoza.getIzoh2Column(), tableViewAndoza.valutaKurs(),
+                tableViewAndoza.adadNarh(), tableViewAndoza.getSummaColumn(),
+                tableViewAndoza.getBalans2Column());
         HBox.setHgrow(hisobKitobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobKitobTableView, Priority.ALWAYS);
         hisobKitobTableView.setItems(rightObservableList);
         hisobKitobTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
+            }
+        });
+        hisobKitobTableView.setRowFactory(tv -> new TableRow<HisobKitob>() {
+            @Override
+            protected void updateItem(HisobKitob hisobKitob, boolean empty) {
+                super.updateItem(hisobKitob, empty);
+                if (hisobKitob == null || hisobKitob.getId() == null)
+                    setStyle("");
+                else if (hisobKitob.getId() == 2)
+                    setStyle("-fx-background-color: white;");
+                else if (hisobKitob.getId() == 1)
+                    setStyle("-fx-background-color: #baffba;");
+                else
+                    setStyle("");
             }
         });
     }
@@ -265,16 +277,18 @@ public class HisobBalans extends Application {
     }
 
     private void refreshHisobKitobTable(Hisob hisob) {
-        ObservableList<HisobKitob> balansList = FXCollections.observableArrayList();
         rightObservableList.removeAll(rightObservableList);
         if (hisob != null) {
             rightObservableList.addAll(hisobKitobModels.getAnyData(connection, "hisob1 = " + hisob.getId() + " OR hisob2 = " + hisob.getId(), "id asc"));
             setDateTime();
             hkKirimChiqim(hisob);
         }
+        Double balansDouble = hisobBalans(hisob.getId());
+        balansLabel.setText(decimalFormat.format(balansDouble));
         hisobKitobTableView.setItems(rightObservableList);
         hisobKitobTableView.refresh();
     }
+
     private void setDateTime() {
         for (HisobKitob hk: rightObservableList) {
             hk.setDateTime(getQaydDate(hk.getQaydId()));
@@ -327,6 +341,23 @@ public class HisobBalans extends Application {
             }
         }
         hisobTableView.setItems(subentries);
+    }
+
+    public TableView<HisobKitob> getHisobKitobTableView() {
+        return hisobKitobTableView;
+    }
+
+    public void display(LocalDate localDate, Integer hisobId) {
+        borderpane = null;
+        centerPane = null;
+
+        Hisob hisob = GetDbData.getHisob(hisobId);
+        refreshHisobKitobTable(hisob);
+        stage = new Stage();
+        Scene scene = new Scene(rightPane, 1000, 600);
+        stage.setScene(scene);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.showAndWait();
     }
 
 }

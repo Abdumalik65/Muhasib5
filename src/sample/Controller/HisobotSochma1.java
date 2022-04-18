@@ -22,7 +22,6 @@ import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
 import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
@@ -30,11 +29,8 @@ import sample.Model.HisobKitobModels;
 import sample.Model.HisobModels;
 import sample.Model.QaydnomaModel;
 import sample.Model.Standart3Models;
-import sample.Tools.ExportToExcel;
-import sample.Tools.GetDbData;
-import sample.Tools.GetTableView2;
-import sample.Tools.MoneyShow;
-import sample.Tools.PathToImageView;
+import sample.Excel.ExportToExcel;
+import sample.Tools.*;
 
 import java.sql.Connection;
 import java.text.SimpleDateFormat;
@@ -57,7 +53,7 @@ public class HisobotSochma1 extends Application {
 
     TableView<Hisob> hisobTableView = new TableView<>();
     TableView<HisobKitob> hisobKitobTableView = new TableView<>();
-    GetTableView2 getTableView2 = new GetTableView2();
+    TableViewAndoza tableViewAndoza = new TableViewAndoza();
 
     ObservableList<Hisob> hisobObservableList;
     ObservableList<Hisob> hisobListForTable = FXCollections.observableArrayList();
@@ -97,12 +93,14 @@ public class HisobotSochma1 extends Application {
     public HisobotSochma1(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
     private void ibtido() {
         initDataYangi();
-        getTableView2.initTableViews();
+        tableViewAndoza.initTableViews();
         initHisobTableView();
         initButtons();
         initTextFields();
@@ -170,7 +168,7 @@ public class HisobotSochma1 extends Application {
 
         hisoblarToExcelButton.setOnAction(event -> {
             ExportToExcel exportToExcel = new ExportToExcel();
-            exportToExcel.hisobMufassal(connection);
+            exportToExcel.hisoblar(hisobListForTable);
         });
 
         hisobToExcelButton.setOnAction(event -> {
@@ -208,7 +206,7 @@ public class HisobotSochma1 extends Application {
     }
 
     private void initHisobTableView() {
-        hisobTableView = getTableView2.getHisobTableView();
+        hisobTableView = tableViewAndoza.getHisobTableView();
         HBox.setHgrow(hisobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobTableView, Priority.ALWAYS);
         hisobTableView.getColumns().get(1).setMinWidth(150);
@@ -324,17 +322,17 @@ public class HisobotSochma1 extends Application {
     }
 
     private void initHisobKitobTable() {
-        getTableView2.getAdadColumn().setMinWidth(80);
-        TableColumn<HisobKitob, Integer> amalColumn = getTableView2.getAmalColumn();
+        tableViewAndoza.getAdadColumn().setMinWidth(80);
+        TableColumn<HisobKitob, Integer> amalColumn = tableViewAndoza.getAmalColumn();
         amalColumn.setStyle( "-fx-alignment: CENTER;");
 
-        TableColumn<HisobKitob, Integer> valutaColumn = getTableView2.getValutaColumn();
+        TableColumn<HisobKitob, Integer> valutaColumn = tableViewAndoza.getValutaColumn();
         valutaColumn.setStyle( "-fx-alignment: CENTER;");
 
-        hisobKitobTableView.getColumns().addAll(getTableView2.getDateTimeColumn(), getCustom2Column(), amalColumn,
-                getTableView2.getIzoh2Column(), valutaColumn, getTableView2.getKursColumn(),
-                getTableView2.getAdadColumn(), getTableView2.getNarhColumn(), getTableView2.getSummaColumn(),
-                getTableView2.getBalans2Column());
+        hisobKitobTableView.getColumns().addAll(tableViewAndoza.getDateTimeColumn(), getCustom2Column(), amalColumn,
+                tableViewAndoza.getIzoh2Column(), valutaColumn, tableViewAndoza.getKursColumn(),
+                tableViewAndoza.getAdadColumn(), tableViewAndoza.getNarhColumn(), tableViewAndoza.getSummaColumn(),
+                tableViewAndoza.getBalans2Column());
         HBox.setHgrow(hisobKitobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobKitobTableView, Priority.ALWAYS);
         hisobKitobTableView.setItems(rightObservableList);

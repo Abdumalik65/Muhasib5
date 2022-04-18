@@ -18,13 +18,20 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
+import sample.Config.MySqlStatus;
+import sample.Controller.TextFieldKeyBoard;
 import sample.Data.Hisob;
+import sample.Data.Standart;
 import sample.Data.User;
 import sample.Enums.ServerType;
 import sample.Model.HisobModels;
+import sample.Model.StandartModels;
 import sample.Tools.GetDbData;
+import sample.Tools.PulBox;
 
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.SortedSet;
 
 public class BirPanel extends Application {
     Stage stage;
@@ -35,7 +42,7 @@ public class BirPanel extends Application {
     VBox centerPane = new VBox();
     VBox rightPane = new VBox();
     HBox bottomPane = new HBox();
-    Button button;
+    Button button = new Button ("12345");
     Connection connection;
     User user;
     int padding = 3;
@@ -46,7 +53,7 @@ public class BirPanel extends Application {
     }
 
     public BirPanel() {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -101,7 +108,8 @@ public class BirPanel extends Application {
         HBox.setHgrow(centerPane, Priority.ALWAYS);
         VBox.setVgrow(centerPane, Priority.ALWAYS);
         centerPane.setPadding(new Insets(padding));
-        centerPane.getChildren().addAll();
+        TextFieldKeyBoard textFieldKeyBoard = new TextFieldKeyBoard();
+        centerPane.getChildren().addAll(textFieldKeyBoard);
     }
 
     private void initRightPane() {

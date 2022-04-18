@@ -107,6 +107,8 @@ public class KassagaPulKirimi extends Application {
     public KassagaPulKirimi(Connection connection, User user, Hisob hisob) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         this.hisob2 = hisob;
     }
 

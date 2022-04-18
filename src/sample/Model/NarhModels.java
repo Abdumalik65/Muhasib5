@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Narh;
 import sample.Data.Standart4;
 import sample.Tools.Alerts;
@@ -25,6 +26,7 @@ public class NarhModels {
     QueryHelper queryHelper;
 
     public ObservableList<Narh> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Narh> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -53,6 +55,7 @@ public class NarhModels {
     }
 
     public ObservableList<Narh> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Narh> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -82,6 +85,7 @@ public class NarhModels {
     }
 
     public Narh getTartibForDate(Connection connection, Integer tovar, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Narh> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE "+ TOVAR +" = ? AND sana <= ? ORDER BY " + DATETIME + " DESC";
@@ -115,6 +119,7 @@ public class NarhModels {
         return narh;
     }
     public Integer insert_data(Connection connection, Narh narh) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -146,6 +151,7 @@ public class NarhModels {
     }
 
     public ObservableList<Narh> getDate(Connection connection, Integer tovarId, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Narh> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE " + TOVAR + " = ? AND sana <= ? ORDER BY " + sqlOrderBy;
@@ -176,6 +182,7 @@ public class NarhModels {
     }
 
     public void addBatch(Connection connection, ObservableList<Narh> narhObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + TOVAR + ", "
@@ -200,6 +207,7 @@ public class NarhModels {
         }
     }
     public void copyDataBatch(Connection connection, ObservableList<Narh> narhObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -229,6 +237,7 @@ public class NarhModels {
     }
 
     public void delete_data(Connection connection, Narh narh) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -241,6 +250,7 @@ public class NarhModels {
         }
     }
     public void update_data(Connection connection, Narh narh) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + TOVAR + " = ?, "
                 + SANA + " = ?, "

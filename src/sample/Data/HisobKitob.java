@@ -188,6 +188,10 @@ public class HisobKitob {
         return summaCol;
     }
 
+    public Double getSummaColumn() {
+        return summaCol;
+    }
+
     public void setSummaCol(Double summaCol) {
         this.summaCol = summaCol;
     }
@@ -198,5 +202,10 @@ public class HisobKitob {
 
     public void setBalans(Double balans) {
         this.balans = balans;
+    }
+
+    @Override
+    public String toString() {
+        return izoh;
     }
 }

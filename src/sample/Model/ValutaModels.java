@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Valuta;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
@@ -21,6 +22,7 @@ public class ValutaModels {
     QueryHelper queryHelper;
 
     public ObservableList<Valuta> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Valuta> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -46,7 +48,37 @@ public class ValutaModels {
         return books;
     }
 
+    public Valuta getValuta(Connection connection, Integer valutaId) {
+        MySqlStatus.checkMyConnection(connection);
+        Valuta valuta = null;
+        ResultSet rs = null;
+        String select = "SELECT * FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
+        PreparedStatement prSt = null;
+        try {
+            prSt = connection.prepareStatement(select);
+            prSt.setInt(1, valutaId);
+            rs = prSt.executeQuery();
+            if (rs.next()) {
+                valuta = new Valuta(rs.getInt(1),
+                        rs.getString(2),
+                        rs.getInt(3),
+                        rs.getInt(4),
+                        sdf.parse(rs.getString(5))
+                );
+            }
+            rs.close();
+            prSt.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            Alerts.losted();
+        } catch (ParseException e) {
+            Alerts.parseError();
+        }
+        return valuta;
+    }
+
     public ObservableList<Valuta> getAnyData(Connection connection, String whereString, String orderByString) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Valuta> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(whereString, orderByString);
@@ -72,6 +104,7 @@ public class ValutaModels {
     }
 
     public Integer insert_data(Connection connection, Valuta valuta) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -100,6 +133,7 @@ public class ValutaModels {
         return insertedID;
     }
     public void copyDataBatch(Connection connection, ObservableList<Valuta> valutaList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -127,6 +161,7 @@ public class ValutaModels {
         }
     }
     public void delete_data(Connection connection, Valuta valuta) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
             PreparedStatement prSt = null;
             try {
@@ -139,6 +174,7 @@ public class ValutaModels {
             }
     }
     public void update_data(Connection connection, Valuta valuta) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + VALUTA + " = ?,"
                 + STATUS + " = ? WHERE "

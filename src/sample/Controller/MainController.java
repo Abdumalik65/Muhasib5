@@ -1,7 +1,6 @@
 package sample.Controller;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
@@ -14,13 +13,11 @@ import javafx.scene.layout.*;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import sample.Config.*;
-import sample.Data.Kassa;
+import sample.Data.Standart;
 import sample.Enums.ServerType;
-import sample.Tools.PathToImageView;
+import sample.Model.StandartModels;
+import sample.Tools.*;
 import sample.Data.User;
-import sample.Model.UserModels;
-import sample.Tools.GetDbData;
-import sample.Tools.SetHVGrow;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -34,6 +31,8 @@ public class MainController extends Application {
     FlowPane flowPane = new FlowPane();
     FlowPane centerPane;
     Connection connection;
+    ObservableList<Standart> mavqeList = FXCollections.observableArrayList();
+    LoginUserController loginUserController;
     User user;
 
     public static void main(String[] args) {
@@ -43,8 +42,10 @@ public class MainController extends Application {
     public MainController() {
         connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
-        user = GetDbData.getUser(1);
-        login();
+        loginUserController = new LoginUserController(connection);
+        user = loginUserController.login();
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     @Override
@@ -60,7 +61,7 @@ public class MainController extends Application {
 
     private void initStage(Stage stage) {
         stage.setOnCloseRequest(event -> {
-            logOut();
+            loginUserController.logOut();
         });
         Screen screen = Screen.getPrimary();
         Rectangle2D bounds = screen.getVisualBounds();
@@ -77,12 +78,17 @@ public class MainController extends Application {
     }
 
     private void ibtido() {
+        initData();
         initTopPane();
         initLeftPane();
         initCenterPane();
-        initRightPane();
         initBottomPane();
         initBorderPane();
+    }
+
+    private void initData() {
+        StandartModels standartModels = new StandartModels("XodimMavqesi");
+        mavqeList = standartModels.get_data(connection);
     }
 
     private void initTopPane() {
@@ -92,9 +98,10 @@ public class MainController extends Application {
     private void initLeftPane() {}
 
     private void initCenterPane() {
-//        centerPane = initCenterFlowPane();
-//        EngKopSotildi engKopSotildi = new EngKopSotildi(connection, user);
-//        centerPane.getChildren().add(engKopSotildi.getTable());
+        if (user.getStatus().equals(99)) {
+//            centerPane = initCenterFlowPane();
+//            SetHVGrow.VerticalHorizontal(centerPane);
+        }
     }
 
     private VBox initRightPane() {
@@ -129,33 +136,36 @@ public class MainController extends Application {
         ImageView imageView1 = new PathToImageView("/sample/images/Icons/loan.png", 64, 64).getImageView();
         flowPane.getChildren().add(imageView1);
         imageView1.setOnMouseClicked(event -> {
-            show(1);
+            PulOldiBerdi pulOldiBerdi = new PulOldiBerdi(connection, user);
+            pulOldiBerdi.display();
         });
 
         ImageView imageView2 = new PathToImageView("/sample/images/Icons/shopping_cart.png", 64, 64).getImageView();
         flowPane.getChildren().add(imageView2);
         imageView2.setOnMouseClicked(event -> {
-            show(2);
+            TovarOldiBerdi tovarOldiBerdi = new TovarOldiBerdi(connection, user);
+            tovarOldiBerdi.display();
         });
 
         ImageView imageView3 = new PathToImageView("/sample/images/Icons/wire_transfer.png", 64, 64).getImageView();
         flowPane.getChildren().add(imageView3);
         imageView3.setOnMouseClicked(event -> {
-            show(3);
+            TovarNaqliyotlari tovarNaqliyotlari = new TovarNaqliyotlari(connection, user);
+            tovarNaqliyotlari.display();
         });
 
         ImageView imageView4 = new PathToImageView("/sample/images/Icons/uzs.jpg", 64, 64).getImageView();
         flowPane.getChildren().add(imageView4);
         imageView4.setOnMouseClicked(event -> {
-            ConvertController convertController = new ConvertController(connection, user);
-            convertController.display();
+            PulAyriboshlash pulAyriboshlash = new PulAyriboshlash(connection, user);
+            pulAyriboshlash.display();
         });
 
         ImageView imageView5 = new PathToImageView("/sample/images/Icons/container.png", 64, 64).getImageView();
         flowPane.getChildren().add(imageView5);
         imageView5.setOnMouseClicked(event -> {
-            ContainerController containerController = new ContainerController(connection, user);
-            containerController.display();
+            ImportController importController = new ImportController(connection, user);
+            importController.display();
         });
 
 
@@ -169,6 +179,7 @@ public class MainController extends Application {
     }
 
     private void initBorderPane() {
+        SetHVGrow.VerticalHorizontal(borderpane);
         borderpane.setTop(mainMenu);
         borderpane.setLeft(null);
         borderpane.setCenter(centerPane);
@@ -179,47 +190,50 @@ public class MainController extends Application {
     private void initMainMenu() {
         mainMenu = new MenuBar();
         mainMenu.setPadding(new Insets(5));
-        mainMenu.getMenus().addAll(
-                getDasturMenu(),
-                getHisobMenu(),
-                getPulMenu(),
-                getTovarMenu(),
-                getAmalMenu(),
-                getSavdoMenu(),
-                getHisobotMenu()
-        );
+        mainMenu.getMenus().add(getDasturMenu());
+        mainMenu.getMenus().add(getUserMenu());
+        mainMenu.getMenus().add(getHisobMenu());
+        mainMenu.getMenus().add(getPulMenu());
+        mainMenu.getMenus().add(getTovarMenu());
+        mainMenu.getMenus().add(getAmalMenu());
+        mainMenu.getMenus().add(getSavdoMenu());
+        mainMenu.getMenus().add(getHisobotMenu());
     }
 
     private Menu getDasturMenu() {
         Connection printerConnection = new SqliteDB().getDbConnection();
         Menu dasturMenu = new Menu("Dastur");
-        SeparatorMenuItem separatorMenuItem = new SeparatorMenuItem();
         MenuItem printerMenuItem = new MenuItemStandart(printerConnection, "Printers", "Printerlar");
         if (user.getStatus().equals(99)) {
+            dasturMenu.getItems().add(getDasturlarRoyxatiMenuItem());
             dasturMenu.getItems().add(serverSozlashMenu());
+            dasturMenu.getItems().add(getSozlovMenuItem());
         }
-        dasturMenu.getItems().addAll(
-                getUserMenuItem(),
-                getChangeUserMenuItem(),
-                separatorMenuItem,
-                printerMenuItem
-        );
+        dasturMenu.getItems().add(printerMenuItem);
         return dasturMenu;
+    }
+
+    private Menu getUserMenu() {
+        Menu menu = new Menu("Xodim");
+        if (user.getStatus().equals(99)) {
+            menu.getItems().add(getXodimMavqesiMenuItem());
+            menu.getItems().add(getUserMenuItem());
+        }
+        menu.getItems().add(getChangeUserMenuItem());
+        return menu;
     }
 
     private Menu getHisobMenu() {
         Menu hisobMenu = new Menu("Hisob");
         MenuItem korxonaMenuItem = new MenuItem("Bizning korxona...");
         SeparatorMenuItem separatorHisobGuruhlariItem = new SeparatorMenuItem();
-
-
-        hisobMenu.getItems().addAll(
-                getHisobMenuItem(),
-                kirshCheklanganHisoblar(),
-                getHisobGuruhlariMenuItem(),
-                separatorHisobGuruhlariItem,
-                getYordamchiHisoblarMenu()
-        );
+        hisobMenu.getItems().add(getHisobMenuItem());
+        hisobMenu.getItems().add(kirshCheklanganHisoblar());
+        hisobMenu.getItems().add(getMurakkabHisobMenuItem());
+        hisobMenu.getItems().add(getBizningDokonlarMenuItem());
+        hisobMenu.getItems().add(getHisobGuruhlariMenuItem());
+        hisobMenu.getItems().add(separatorHisobGuruhlariItem);
+        hisobMenu.getItems().add(getYordamchiHisoblarMenu());
         return hisobMenu;
     }
 
@@ -230,6 +244,24 @@ public class MainController extends Application {
             hisobController.display(connection, user);
         });
         return hisobMenuItem;
+    }
+
+    private MenuItem getMurakkabHisobMenuItem() {
+        MenuItem menuItem = new MenuItem("Murakkab hisob");
+        menuItem.setOnAction(e -> {
+            MurakkabHisob murakkabHisob = new MurakkabHisob(connection, user);
+            murakkabHisob.display();
+        });
+        return menuItem;
+    }
+
+    private MenuItem getBizningDokonlarMenuItem() {
+        MenuItem menuItem = new MenuItem("Bizning do`konlar");
+        menuItem.setOnAction(e -> {
+            BizningDokonlar bizningDokonlar = new BizningDokonlar(connection, user);
+            bizningDokonlar.display();
+        });
+        return menuItem;
     }
 
     private MenuItem getHisobot1MenuItem() {
@@ -274,8 +306,18 @@ public class MainController extends Application {
     private MenuItem getHisobot4MenuItem() {
         MenuItem hisobot4MenuItem = new MenuItem("Sochma hisobot");
         hisobot4MenuItem.setOnAction(event -> {
-            HisobotSochma1 hisobotSochma = new HisobotSochma1(connection, user);
+            HisobotSochma2 hisobotSochma = new HisobotSochma2(connection, user);
             hisobotSochma.display();
+        });
+
+        return hisobot4MenuItem;
+    }
+
+    private MenuItem getZaxiraMenuItem() {
+        MenuItem hisobot4MenuItem = new MenuItem("Zaxiradagi tovarlar");
+        hisobot4MenuItem.setOnAction(event -> {
+            Zaxira zaxira = new Zaxira(connection, user);
+            zaxira.display();
         });
 
         return hisobot4MenuItem;
@@ -295,6 +337,15 @@ public class MainController extends Application {
         menuItem.setOnAction(event -> {
             XaridlarJadvali xaridlarJadvali = new XaridlarJadvali(connection, user);
             xaridlarJadvali.display();
+        });
+        return menuItem;
+    }
+
+    private MenuItem getSavdoMenuItem() {
+        MenuItem menuItem = new MenuItem("Savdo");
+        menuItem.setOnAction(event -> {
+            Sotuvchi sotuvchi = new Sotuvchi(connection, user);
+            sotuvchi.display();
         });
         return menuItem;
     }
@@ -323,11 +374,15 @@ public class MainController extends Application {
                 getTransitHisobMenuItem(),
                 getFoydaHisobiMenuItem(),
                 getZararHisobiMenuItem(),
+                getXaridorHisobiMenuItem(),
+                getPulHisobiMenuItem(),
                 getNdsHisobiMenuItem(),
                 getChegirmaHisobiMenuItem(),
                 getBankHisobiMenuItem(),
                 getBankXizmatiMenuItem(),
-                getBojxonaMenuItem()
+                getBojxonaMenuItem(),
+                getTasdiqMenuItem(),
+                getQoshimchaDaromadMenuItem()
         );
         return yordamchiHisoblarMenu;
     }
@@ -376,6 +431,32 @@ public class MainController extends Application {
         MenuItem ndsHisobiMenuItem = new MenuItem("NDS hisobi");
         ndsHisobiMenuItem.setOnAction(event -> {
             Standart2Controller standart2Controller = new Standart2Controller("NDS1", "NDS2", "NDS hisoblari");
+            try {
+                standart2Controller.start(connection);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        return ndsHisobiMenuItem;
+    }
+
+    private MenuItem getXaridorHisobiMenuItem() {
+        MenuItem ndsHisobiMenuItem = new MenuItem("Xaridor hisobi");
+        ndsHisobiMenuItem.setOnAction(event -> {
+            Standart2Controller standart2Controller = new Standart2Controller("Xaridor", "Xaridor1", "Xaridor hisobi");
+            try {
+                standart2Controller.start(connection);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        return ndsHisobiMenuItem;
+    }
+
+    private MenuItem getPulHisobiMenuItem() {
+        MenuItem ndsHisobiMenuItem = new MenuItem("Pul hisobi");
+        ndsHisobiMenuItem.setOnAction(event -> {
+            Standart2Controller standart2Controller = new Standart2Controller("PulHisobi", "PulHisobi1", "Pul hisobi");
             try {
                 standart2Controller.start(connection);
             } catch (Exception e) {
@@ -437,6 +518,32 @@ public class MainController extends Application {
         return bojXonaSoligi;
     }
 
+    private MenuItem getTasdiqMenuItem() {
+        MenuItem tasdiq = new MenuItem("Tasdiq kutish hisobi");
+        tasdiq.setOnAction(event -> {
+            Standart2Controller standart2Controller = new Standart2Controller("Tasdiq", "Tasdiq2", "Tasdiq kutish hisobi");
+            try {
+                standart2Controller.start(connection);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        return tasdiq;
+    }
+
+    private MenuItem getQoshimchaDaromadMenuItem() {
+        MenuItem tasdiq = new MenuItem("Qo`shimcha daromad hisobi");
+        tasdiq.setOnAction(event -> {
+            Standart2Controller standart2Controller = new Standart2Controller("QoshimchaDaromad", "QoshimchaDaromad2", "Qo`shimcha daromad hisobi");
+            try {
+                standart2Controller.start(connection);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+        return tasdiq;
+    }
+
     private MenuItem getUserMenuItem() {
         MenuItem userMenuItem = new MenuItem("Dastur yurituvchilar");
         userMenuItem.setOnAction(event -> {
@@ -444,6 +551,33 @@ public class MainController extends Application {
             usersController.display();
         });
         return userMenuItem;
+    }
+
+    private MenuItem getXodimMavqesiMenuItem() {
+        MenuItem userMenuItem = new MenuItem("Xodim mavqesi");
+        userMenuItem.setOnAction(event -> {
+            StandartController standartController = new StandartController(connection, user, "XodimMavqesi");
+            standartController.showAndWait();
+        });
+        return userMenuItem;
+    }
+
+    private MenuItem getDasturlarRoyxatiMenuItem() {
+        MenuItem menuItem = new MenuItem("Dasturlar ro`yxati");
+        menuItem.setOnAction(event -> {
+            StandartController standartController = new StandartController(connection, user, "Dasturlar");
+            standartController.showAndWait();
+        });
+        return menuItem;
+    }
+
+    private MenuItem getSozlovMenuItem() {
+        MenuItem menuItem = new MenuItem("Sozlovlar");
+        menuItem.setOnAction(event -> {
+            Sozlovlar sozlovlar = new Sozlovlar(connection, user);
+            sozlovlar.display();
+        });
+        return menuItem;
     }
 
     private MenuItem kirshCheklanganHisoblar() {
@@ -458,8 +592,8 @@ public class MainController extends Application {
     private MenuItem getChangeUserMenuItem() {
         MenuItem changeUserMenuItem = new MenuItem("Dastur yurituvchini alishtir");
         changeUserMenuItem.setOnAction(event -> {
-            logOut();
-            login();
+            loginUserController.logOut();
+            loginUserController.login();
         });
         return changeUserMenuItem;
     }
@@ -485,11 +619,16 @@ public class MainController extends Application {
     private Menu getPulMenu() {
         Menu pulMenu = new Menu("Pul");
         MenuItem pulMenuItem = new MenuItem("Pullar");
+        MenuItem pulMavqesiMenuItem = new MenuItemStandart("PulMavqesi", "Pul mavqesi");
         MenuItem kurslarMenuItem = new MenuItem("Kurslar");
         SeparatorMenuItem separatorPulGuruhlariItem = new SeparatorMenuItem();
         MenuItem valutaGuruhlariMenuItem = new MenuItemStandart("ValutaGuruhlari", "Pul guruhlari");
         MenuItem pulHarakatlariMenuItem = new MenuItem("Pul harakatlari");
-        pulMenu.getItems().addAll(pulMenuItem, separatorPulGuruhlariItem, kurslarMenuItem, pulHarakatlariMenuItem, valutaGuruhlariMenuItem);
+        pulMenu.getItems().add(pulMenuItem);
+        pulMenu.getItems().add(pulMavqesiMenuItem);
+        pulMenu.getItems().add(kurslarMenuItem);
+        pulMenu.getItems().add(pulHarakatlariMenuItem);
+        pulMenu.getItems().add(valutaGuruhlariMenuItem);
 
         pulMenuItem.setOnAction(e -> {
             ValutaController valutaController = new ValutaController();
@@ -510,7 +649,8 @@ public class MainController extends Application {
         });
 
         pulHarakatlariMenuItem.setOnAction(event -> {
-            show(1);
+            PulOldiBerdi pulOldiBerdi = new PulOldiBerdi(connection, user);
+            pulOldiBerdi.display();
         });
 
         return pulMenu;
@@ -527,14 +667,14 @@ public class MainController extends Application {
         MenuItem tovarNarhlariMenuItem = new MenuItem("TovarNarhlari");
         MenuItem tovarGuruhlariMenuItem = new MenuItem("Tovar guruhlari");
         MenuItem tovarXaridiMenuItem = new MenuItem("Tovar xaridi");
-        MenuItem tovarHarakatlariMenuItem = new MenuItem("Tovar harakatlari");
+        MenuItem tovarHarakatlariMenuItem = new MenuItem("Tovar naqliyoti");
         MenuItem birlikMenuItem = new MenuItemStandart("Birlik", "O`lchov birliklari");
         MenuItem jumlaMenuItem = new MenuItemStandart("Jumla", "Tovar jamlanmasi");
         MenuItem serialNumberMenuItem = new MenuItem("Seriya raqami");
         tovarMenu.getItems().addAll(tovarMenuItem, yangiTovarMenuItem, tartibMenuItem, ndsMenuItem, separatorTovarGuruhlariItem, birlikMenuItem, tovarNarhlariMenuItem, tovarXaridiMenuItem, tovarHarakatlariMenuItem, tovarGuruhlariMenuItem, serialNumberMenuItem);
 
         tovarMenuItem.setOnAction(e -> {
-            TovarController1 tovarController = new TovarController1(connection, user);
+            TovarController tovarController = new TovarController(connection, user);
             tovarController.display();
         });
         yangiTovarMenuItem.setOnAction(event ->{
@@ -550,11 +690,13 @@ public class MainController extends Application {
             ndsController.display();
         });
         tovarXaridiMenuItem.setOnAction(event -> {
-            show(2);
+            TovarOldiBerdi tovarOldiBerdi = new TovarOldiBerdi(connection, user);
+            tovarOldiBerdi.display();
         });
 
         tovarHarakatlariMenuItem.setOnAction(event -> {
-            show(3);
+            TovarNaqliyotlari tovarNaqliyotlari = new TovarNaqliyotlari(connection, user);
+            tovarNaqliyotlari.display();
         });
 
         tovarNarhlariMenuItem.setOnAction(event -> {
@@ -594,7 +736,7 @@ public class MainController extends Application {
     private Menu getSavdoMenu() {
         Menu savdoMenu = new Menu("Savdo");
         MenuItem mijozTurlariMenu = new MenuItemStandart("MijozTuri", "Mijoz turlari");
-        MenuItem narhTurlariMenu = new MenuItemStandart("NarhTuri", "Narh turlari");
+        MenuItem narhTurlariMenu = new MenuItemStandart("NarhTuri", "Savdo turlari");
         MenuItem savdoTurlariMenu = new MenuItemStandart("SavdoTuri", "Savdo turlari");
         MenuItem chiqimShakliMenuItem = new MenuItemStandart("ChiqimShakli", "Chiqim shakli");
         MenuItem tolovShakliMenuItem = new MenuItemStandart("TolovShakli", "To`lov shakli");
@@ -617,30 +759,15 @@ public class MainController extends Application {
     private Menu getHisobotMenu() {
         Menu menu = new Menu("Hisobot");
         menu.getItems().addAll(
-                getHisobot1MenuItem(),
                 getHisobotPulMenuItem(),
                 getHisobot2MenuItem(),
                 getHisobot3MenuItem(),
                 getHisobot4MenuItem(),
+                getZaxiraMenuItem(),
                 getFoydaTaqsimoti(),
                 getTaminotchi()
                 );
         return menu;
-    }
-
-    public void show(Integer amalTuri) {
-        try {
-            HKCont hkCont = new HKCont(connection, user, amalTuri);
-            hkCont.start();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParseException e) {
-            e.printStackTrace();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
     }
 
     /*************************************************
@@ -664,8 +791,8 @@ public class MainController extends Application {
             this.titleName = titleName;
             setText(titleName);
             setOnAction(e -> {
-                StandartController standartController = new StandartController(connection, user, tableName);
-                standartController.showAndWait();
+                PrintersController printersController = new PrintersController(connection, user, tableName);
+                printersController.showAndWait();
             });
         }
     }
@@ -684,33 +811,20 @@ public class MainController extends Application {
         }
     }
 
-    private void login() {
-        LoginUserController loginUserController = new LoginUserController(connection);
-        if (!loginUserController.display()) {
-            Platform.exit();
-            System.exit(0);
-        } else {
-            user = loginUserController.getUser();
-            String serialNumber = Sotuvchi3.getSerialNumber();
-            Kassa kassa = Sotuvchi3.getKassaData(connection, serialNumber);
-            if (kassa != null) {
-                user.setPulHisobi(kassa.getPulHisobi());
-                user.setTovarHisobi(kassa.getTovarHisobi());
-                user.setXaridorHisobi(kassa.getXaridorHisobi());
-            }
-        }
-    }
-
-    private void logOut() {
-        UserModels userModels = new UserModels();
-        user.setOnline(0);
-        userModels.changeUser(connection, user);
-    }
-
     private FlowPane initCenterFlowPane() {
         FlowPane flowPane = new FlowPane();
-        flowPane.setPadding(new Insets(5));
-        SetHVGrow.VerticalHorizontal(flowPane);
+        flowPane.setMinHeight(500);
+        Sotilgan sotilgan = new Sotilgan(connection, user);
+        flowPane.getChildren().addAll(sotilgan.getCenterPane());
+
+        SotilmaganTovarlar sotilmaganTovarlar = new SotilmaganTovarlar(connection, user);
+        flowPane.getChildren().add(sotilmaganTovarlar.getCenterPane());
+
+        Haqdor haqdor = new Haqdor(connection, user);
+        flowPane.getChildren().add(haqdor.getCenterPane());
+
+        Qarzdor qarzdor = new Qarzdor(connection, user);
+        flowPane.getChildren().add(qarzdor.getCenterPane());
         return flowPane;
     }
 }

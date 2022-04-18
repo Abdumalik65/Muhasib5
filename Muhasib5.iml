@@ -16,5 +16,7 @@
     <orderEntry type="library" name="curvesapi-1.06" level="project" />
     <orderEntry type="library" name="pdfbox-app-2.0.22" level="project" />
     <orderEntry type="library" name="mysql-connector-java-8.0.27" level="project" />
+    <orderEntry type="library" name="emoji-java-5.1.1" level="project" />
+    <orderEntry type="library" name="fontawesomefx-8.2" level="project" />
   </component>
 </module>

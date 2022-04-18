@@ -30,6 +30,7 @@ import sample.Model.HisobModels;
 import sample.Model.KassaModels;
 import sample.Model.StandartModels;
 import sample.Model.ValutaModels;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.Encryptor;
 import sample.Tools.GetDbData;
 import sample.Tools.Tugmachalar;
@@ -72,6 +73,8 @@ public class Kassalarim extends Application {
     public Kassalarim(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         initSystemMenu();
         initData();
         initTable();

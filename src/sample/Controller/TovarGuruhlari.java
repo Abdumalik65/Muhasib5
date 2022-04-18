@@ -23,10 +23,10 @@ import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
+import sample.Excel.ExportToExcel;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -87,6 +87,8 @@ public class TovarGuruhlari extends Application {
     public TovarGuruhlari(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 

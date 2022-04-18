@@ -15,9 +15,12 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
+import sample.Data.Standart;
 import sample.Data.User;
 import sample.Enums.ServerType;
+import sample.Model.StandartModels;
 import sample.Model.UserModels;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.Tugmachalar;
 import java.io.File;
 import java.sql.Connection;
@@ -46,6 +49,7 @@ public class UsersController extends Application {
     Button qaydEtButton = new Button("Qayd et");
     Button cancelButton = new Button("<<");
     HBox hBoxButtons = new HBox();
+    ComboBox<Standart> mavqeComboBox;
 
     public static void main(String[] args) {
         launch(args);
@@ -58,6 +62,8 @@ public class UsersController extends Application {
     public UsersController(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         initUserGridPane();
     }
 
@@ -76,7 +82,7 @@ public class UsersController extends Application {
     }
 
     private TableColumn<User, Integer> onlineColumn() {
-        TableColumn<User, Integer> onlineColumn = new TableColumn<>("Status");
+        TableColumn<User, Integer> onlineColumn = new TableColumn<>("Online");
         onlineColumn.setCellValueFactory(new PropertyValueFactory<>("online"));
         onlineColumn.setCellFactory(column -> {
             TableCell<User, Integer> cell = new TableCell<User, Integer>() {
@@ -106,6 +112,32 @@ public class UsersController extends Application {
         return onlineColumn;
     }
 
+    private TableColumn<User, Integer> statusColumn() {
+        TableColumn<User, Integer> onlineColumn = new TableColumn<>("Mavqe");
+        onlineColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+        onlineColumn.setCellFactory(column -> {
+            TableCell<User, Integer> cell = new TableCell<User, Integer>() {
+                @Override
+                protected void updateItem(Integer item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if(empty) {
+                        setText(null);
+                    }
+                    else {
+                        Standart standart = xodimMavqesi(item);
+                        if (standart != null) {
+                            setText(standart.getText());
+                        } else {
+                            setText("");
+                        }
+                    }
+                    setAlignment(Pos.CENTER);
+                }
+            };
+            return cell;
+        });
+        return onlineColumn;
+    }
 
     private TableColumn<User, Integer> idColumn()  {
         TableColumn<User, Integer> idColumn = new TableColumn<>("N");
@@ -117,22 +149,20 @@ public class UsersController extends Application {
     public void initUserTableView() {
         HBox.setHgrow(userTableView, Priority.ALWAYS);
         VBox.setVgrow(userTableView, Priority.ALWAYS);
-        userTableView.getColumns().addAll(idColumn(), ismColumn(), parolColumn(), onlineColumn());
+        userTableView.getColumns().addAll(idColumn(), ismColumn(), parolColumn(), statusColumn(), onlineColumn());
         userTableView.setItems(userObservableList);
     }
 
     @Override
     public void start(Stage primaryStage) throws Exception {
         initStage(primaryStage);
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         ibtido();
         stage.show();
     }
 
     private void ibtido() {
         initData();
-        initButtons();
-        initUserTableView();
         initCenterPane();
         initBorderPane();
     }
@@ -196,6 +226,8 @@ public class UsersController extends Application {
         HBox.setHgrow(centerPane, Priority.ALWAYS);
         VBox.setVgrow(centerPane, Priority.ALWAYS);
         centerPane.setPadding(new Insets(padding));
+        initButtons();
+        initUserTableView();
         centerPane.getChildren().addAll(tugmachalar, userTableView);
     }
 
@@ -258,6 +290,11 @@ public class UsersController extends Application {
         userGridPane.add(telefonTextField, 1, rowIndex, 1, 1);
 
         rowIndex++;
+        mavqeComboBox = initMavqeComboBox();
+        userGridPane.add(new Label("Mavqe"), 0, rowIndex, 1, 1);
+        userGridPane.add(mavqeComboBox, 1, rowIndex, 1, 1);
+
+        rowIndex++;
         userGridPane.add(new Label("Jins"), 0, rowIndex, 1, 1);
         userGridPane.add(jinsTextField, 1, rowIndex, 1, 1);
 
@@ -268,6 +305,7 @@ public class UsersController extends Application {
     }
 
     private User getUserFromGrid() {
+        Standart standart = xodimMavqesi(mavqeComboBox.getValue().getId());
         User newUser = new User(
                 null,
                 ismTextField.getText(),
@@ -275,7 +313,7 @@ public class UsersController extends Application {
                 parolTextField.getText(),
                 emailTextField.getText(),
                 telefonTextField.getText(),
-                1,
+                standart.getId(),
                 jinsTextField.getText(),
                 0,
                 user.getId(),
@@ -291,6 +329,7 @@ public class UsersController extends Application {
         emailTextField.setText(user.geteMail());
         telefonTextField.setText(user.getPhone());
         jinsTextField.setText(user.getJins());
+        mavqeComboBox.getSelectionModel().select(xodimMavqesi(user));;
     }
 
     private User addNewUser() {
@@ -310,6 +349,7 @@ public class UsersController extends Application {
         selectedItem.seteMail(emailTextField.getText());
         selectedItem.setPhone(telefonTextField.getText());
         selectedItem.setJins(jinsTextField.getText());
+        selectedItem.setStatus(xodimMavqesi(selectedItem).getId());
         UserModels userModels = new UserModels();
         userModels.changeUser(connection, selectedItem);
         return selectedItem;
@@ -325,5 +365,54 @@ public class UsersController extends Application {
             }
         }
         return valid;
+    }
+
+    private ComboBox<Standart> initMavqeComboBox() {
+        ComboBox<Standart> comboBox = new ComboBox<>();
+        StandartModels standartModels = new StandartModels("XodimMavqesi");
+        ObservableList<Standart> mavqeList = standartModels.get_data(connection);
+        comboBox = new ComboBox<>(mavqeList);
+        if (mavqeList.size()>0) {
+            comboBox.getSelectionModel().select(mavqeList.get(0));
+        }
+        comboBox.setMaxWidth(2000);
+        comboBox.setPrefWidth(150);
+        comboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                user.setStatus(newValue.getId());
+            }
+        });
+        return comboBox;
+    }
+
+    private Standart xodimMavqesi() {
+        Standart standart = null;
+        for (Standart s: mavqeComboBox.getItems()) {
+            if (s.getId().equals(user.getStatus())) {
+                standart = s;
+                break;
+            }
+        }
+        return standart;
+    }
+    private Standart xodimMavqesi(User user) {
+        Standart standart = null;
+        for (Standart s: mavqeComboBox.getItems()) {
+            if (s.getId().equals(user.getStatus())) {
+                standart = s;
+                break;
+            }
+        }
+        return standart;
+    }
+    private Standart xodimMavqesi(Integer id) {
+        Standart standart = null;
+        for (Standart s: mavqeComboBox.getItems()) {
+            if (s.getId().equals(id)) {
+                standart = s;
+                break;
+            }
+        }
+        return standart;
     }
 }

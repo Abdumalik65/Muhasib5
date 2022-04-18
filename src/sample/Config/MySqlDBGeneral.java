@@ -1,5 +1,7 @@
 package sample.Config;
 
+import jdk.nashorn.internal.ir.GetSplitState;
+import sample.Controller.SetServer;
 import sample.Data.Aloqa;
 import sample.Model.AloqaModels;
 import sample.Tools.ConnectionType;
@@ -24,7 +26,7 @@ public class MySqlDBGeneral {
             "&createDatabaseIfNotExist=true";
 
     Connection dbConnection;
-    private Integer hostId;
+    private static Integer hostId;
     private ServerType serverType;
 
     public MySqlDBGeneral() {
@@ -40,6 +42,7 @@ public class MySqlDBGeneral {
         } else if(serverType.equals(ServerType.REMOTE)) {
             this.hostId = 2;
         }
+        MyServer.setId(hostId);
         setValues();
     }
 
@@ -49,12 +52,10 @@ public class MySqlDBGeneral {
         Aloqa aloqa = aloqaModels.getWithId(connectionSqlite, hostId);
         if (aloqa!=null) {
             dbHost = aloqa.getDbHost();
-//            dbHost = "192.168.1.108";
             dbPort= aloqa.getDbPort();
             dbUser= aloqa.getDbUser();
             dbPass = aloqa.getDbPass();
             dataBaseName = aloqa.getDbName() ;
-//            dataBaseName = "BestParfumery" ;
             System.out.println(dataBaseName + " | " + dbHost + " | " + dbPort + " | " + dbUser + " | " + dbPass);
             ConnectionType.setIsRemoteConnection(false);
             ConnectionType.setAloqa(aloqa);
@@ -83,7 +84,7 @@ public class MySqlDBGeneral {
             System.out.println("MySql serverga ulana olmadik");
         } catch (SQLException e) {
             e.printStackTrace();
-            LostConnection.losted();
+//            LostConnection.losted();
             System.out.println("MySql serverga ulana olmadik");
         }
         return dbConnection;
@@ -130,5 +131,13 @@ public class MySqlDBGeneral {
 
     public void setDbConnection(Connection dbConnection) {
         this.dbConnection = dbConnection;
+    }
+
+    public static Integer getHostId() {
+        return hostId;
+    }
+
+    public static void setHostId(Integer hostId) {
+        MySqlDBGeneral.hostId = hostId;
     }
 }

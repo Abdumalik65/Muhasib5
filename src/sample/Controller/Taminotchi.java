@@ -21,9 +21,9 @@ import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -61,7 +61,7 @@ public class Taminotchi extends Application {
     TableView<Hisob> sotuvchiTable = new TableView<>();
     TableView<Hisob> taminotchiTable = new TableView<>();
     TableView<HisobKitob> tovarTable = new TableView<>();
-    GetTableView2 tableMaker = new GetTableView2();
+    TableViewAndoza tableMaker = new TableViewAndoza();
 
     GridPane gridPane = new GridPane();
 
@@ -87,7 +87,7 @@ public class Taminotchi extends Application {
     }
 
     public Taminotchi() {
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         ibtido();
     }
@@ -95,6 +95,8 @@ public class Taminotchi extends Application {
     public Taminotchi(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
@@ -338,10 +340,10 @@ public class Taminotchi extends Application {
     }
 
     private void initTaminotchiTable() {
-        GetTableView2 getTableView2 = new GetTableView2();
-        taminotchiTable = getTableView2.getHisobTableView();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
+        taminotchiTable = tableViewAndoza.getHisobTableView();
         SetHVGrow.VerticalHorizontal(taminotchiTable);
-        TableColumn<Hisob, String> hisobNomi = getTableView2.getHisobTextColumn();
+        TableColumn<Hisob, String> hisobNomi = tableViewAndoza.getHisobTextColumn();
         hisobNomi.setMinWidth(230);
         taminotchiTable.getColumns().addAll(hisobNomi);
         taminotchiTable.setItems(taminotchilar);

@@ -15,6 +15,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
 import sample.Tools.MoneyShow;
 import sample.Data.*;
@@ -73,6 +74,8 @@ public class HisoblarHisoboti {
     public HisoblarHisoboti(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         initData();
         initHisobTableView();
         initHisoKitobTableView();

@@ -1,7 +1,6 @@
 package sample.Controller;
 
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -76,6 +75,8 @@ public class YangiSeriyaRaqami extends Application {
     public YangiSeriyaRaqami(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
@@ -218,7 +219,7 @@ public class YangiSeriyaRaqami extends Application {
 
     private Standart addTovar() {
         Standart tovar = null;
-        TovarController1 tovarController = new TovarController1(connection, user);
+        TovarController tovarController = new TovarController(connection, user);
         tovarController.display();
         if (tovarController.getDoubleClick()) {
             tovar = tovarController.getDoubleClickedRow();

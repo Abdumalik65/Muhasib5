@@ -11,10 +11,12 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.util.Callback;
 import sample.Data.*;
 
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -83,6 +85,22 @@ public class GetTableView2 {
             return cell;
         });
         return hisobBalansColumn;
+    }
+
+    public TableColumn<Hisob, Double> getHisobKirimColumn() {
+        TableColumn<Hisob, Double> column = new TableColumn<>("Kirim");
+        column.setMinWidth(90);
+        column.setCellValueFactory(new PropertyValueFactory<>("kirim"));
+        column.setStyle( "-fx-alignment: CENTER;");
+        return column;
+    }
+
+    public TableColumn<Hisob, Double> getHisobChiqimColumn() {
+        TableColumn<Hisob, Double> column = new TableColumn<>("Chiqim");
+        column.setMinWidth(90);
+        column.setCellValueFactory(new PropertyValueFactory<>("chiqim"));
+        column.setStyle( "-fx-alignment: CENTER;");
+        return column;
     }
 
     public TableView<Hisob> getHisobTableView() {
@@ -355,10 +373,14 @@ public class GetTableView2 {
                     }
                     else {
                         Standart amal = GetDbData.getAmal(item);
-                        Text text = new Text(amal.getText());
-                        text.setStyle("-fx-text-alignment:justify;");
-                        text.wrappingWidthProperty().bind(getTableColumn().widthProperty().subtract(2));
-                        setGraphic(text);
+                        if (amal != null) {
+                            Text text = new Text(amal.getText());
+                            text.setStyle("-fx-text-alignment:justify;");
+                            text.wrappingWidthProperty().bind(getTableColumn().widthProperty().subtract(2));
+                            setGraphic(text);
+                        } else {
+                            setText("Amalda xato");
+                        }
                     }
                 }
             };
@@ -408,7 +430,8 @@ public class GetTableView2 {
                     else {
                         Valuta valuta = GetDbData.getValuta(item);
                         if (valuta != null) {
-                            setText(valuta.getValuta());
+                            Text text = new Text(valuta.getValuta());
+                            setGraphic(text);
                         } else {
                             setText("");
                         }
@@ -434,7 +457,8 @@ public class GetTableView2 {
                         setText(null);
                     }
                     else {
-                        setText(new MoneyShow().format(item));
+                        Text text = new Text(new MoneyShow().format(item));
+                        setGraphic(text);
                     }
                 }
             };
@@ -459,8 +483,8 @@ public class GetTableView2 {
                     else {
                         Standart tovar = GetDbData.getTovar(item);
                         if (tovar != null) {
-
-                            setText(tovar.getText());
+                            Text text = new Text(tovar.getText());
+                            setGraphic(text);
                         } else {
                             setText("");
                         }
@@ -561,7 +585,8 @@ public class GetTableView2 {
                         setText(null);
                     }
                     else {
-                        setText(new MoneyShow().format(item));
+                        Text text = new Text(new MoneyShow().format(item));
+                        setGraphic(text);
                     }
                 }
             };
@@ -585,7 +610,8 @@ public class GetTableView2 {
                         setText(null);
                     }
                     else {
-                        setText(new MoneyShow().format(item));
+                        Text text = new Text(new MoneyShow().format(item));
+                        setGraphic(text);
                     }
                 }
             };
@@ -608,7 +634,8 @@ public class GetTableView2 {
                         setText(null);
                     }
                     else {
-                        setText(new MoneyShow().format(item));
+                        Text text = new Text(new MoneyShow().format(item));
+                        setGraphic(text);
                     }
                 }
             };
@@ -631,11 +658,8 @@ public class GetTableView2 {
                         setText(null);
                     }
                     else {
-                        String itemString = new MoneyShow().format(item);
-                        if (itemString.trim().equals("-0")) {
-                            itemString = "0";
-                        }
-                        setText(itemString);
+                        Text text = new Text(new MoneyShow().format(StringNumberUtils.yaxlitla(item, -2)));
+                        setGraphic(text);
                     }
                 }
             };
@@ -659,7 +683,8 @@ public class GetTableView2 {
                         setText(null);
                     } else {
                         if (item != null) {
-                            setText(format.format(item));
+                            Text text = new Text(format.format(item));
+                            setGraphic(text);
                         }
                     }
                 }
@@ -711,6 +736,128 @@ public class GetTableView2 {
         hajmColumn.setMinWidth(50);
         hajmColumn.setStyle( "-fx-alignment: CENTER;");
         return hajmColumn;
+    }
+
+    public TableColumn<HisobKitob, DoubleTextBox> valutaKurs() {
+        TableColumn<HisobKitob, DoubleTextBox> valutaKurs = new TableColumn<>("Valuta/Kurs");
+        valutaKurs.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
+
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                DecimalFormat decimalFormat = new MoneyShow();
+                HisobKitob hisobKitob = param.getValue();
+                Valuta valuta = GetDbData.getValuta(hisobKitob.getValuta());
+                Double narhKurs = hisobKitob.getTovar() > 0 ? hisobKitob.getDona()*hisobKitob.getNarh() : hisobKitob.getNarh();
+                Text text1 = new Text(valuta.getValuta());
+                text1.setFill(Color.GREEN);
+                Text text2 = new Text(decimalFormat.format(hisobKitob.getKurs()));
+                text2.setFill(Color.BLACK);
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                b.setAlignment(Pos.CENTER);
+                b.setMaxWidth(2000);
+                b.setPrefWidth(150);
+                b.setMaxHeight(2000);
+                b.setPrefHeight(20);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        valutaKurs.setCellFactory(column -> {
+            TableCell<HisobKitob, DoubleTextBox> cell = new TableCell<HisobKitob, DoubleTextBox>() {
+                @Override
+                protected void updateItem(DoubleTextBox item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if(empty) {
+                        setText(null);
+                    } else {
+                        setText(null);
+                        setGraphic(item);
+                    }
+                }
+            };
+            cell.setAlignment(Pos.CENTER);
+            return cell;
+        });
+        valutaKurs.setMinWidth(20);
+        valutaKurs.setMinWidth(100);
+        valutaKurs.setStyle( "-fx-alignment: CENTER;");
+        return valutaKurs;
+    }
+    public TableColumn<HisobKitob, DoubleTextBox> adadNarh() {
+        TableColumn<HisobKitob, DoubleTextBox> valutaKurs = new TableColumn<>("Dona/Narh");
+        valutaKurs.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
+
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                DecimalFormat decimalFormat = new MoneyShow();
+                HisobKitob hisobKitob = param.getValue();
+                Text text1 = new Text(decimalFormat.format(hisobKitob.getDona()));
+                Text text2 = new Text(decimalFormat.format(hisobKitob.getNarh()));
+                text1.setFill(Color.GREEN);
+                text2.setFill(Color.BLUE);
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                b.setAlignment(Pos.CENTER);
+                b.setMaxWidth(2000);
+                b.setPrefWidth(150);
+                b.setMaxHeight(2000);
+                b.setPrefHeight(20);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        valutaKurs.setMinWidth(20);
+        valutaKurs.setMinWidth(100);
+        valutaKurs.setStyle( "-fx-alignment: CENTER;");
+        return valutaKurs;
+    }
+    public TableColumn<HisobKitob, DoubleTextBox> hisob1Hisob2() {
+        TableColumn<HisobKitob, DoubleTextBox> hisoblar = new TableColumn<>("Chiqim/Kirim");
+        hisoblar.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
+
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                HisobKitob hisobKitob = param.getValue();
+                Hisob hisob1= GetDbData.getHisob(hisobKitob.getHisob1());
+                Hisob hisob2= GetDbData.getHisob(hisobKitob.getHisob2());
+                Text text1 = new Text(hisob1.getText());
+                text1.setFill(Color.GREEN);
+                Text text2 = new Text(hisob2.getText());
+                text2.setFill(Color.BLUE);
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                b.setAlignment(Pos.CENTER);
+                b.setMaxWidth(2000);
+                b.setPrefWidth(150);
+                b.setMaxHeight(2000);
+                b.setPrefHeight(20);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        hisoblar.setMinWidth(20);
+        hisoblar.setMaxWidth(100);
+        hisoblar.setStyle( "-fx-alignment: CENTER;");
+        return hisoblar;
     }
 
     public void initStandart2TableView() {

@@ -22,13 +22,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import org.controlsfx.control.textfield.AutoCompletionBinding;
-import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.*;
-import sample.Temp.Hisobot2;
 import sample.Tools.*;
 
 import java.io.IOException;
@@ -36,11 +33,7 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
-
-import static sample.Tools.GetDbData.getValuta;
 
 public class PochkaBuzish2 extends Application {
     Stage stage;
@@ -94,7 +87,7 @@ public class PochkaBuzish2 extends Application {
     }
 
     public PochkaBuzish2() {
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         hisob1 = GetDbData.getHisob(13);
     }
@@ -102,6 +95,8 @@ public class PochkaBuzish2 extends Application {
     public PochkaBuzish2(Connection connection, User user, Hisob hisob) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         this.hisob1 = hisob;
     }
 
@@ -171,9 +166,9 @@ public class PochkaBuzish2 extends Application {
 
     private void initHisob1TarkibTableView() {
         SetHVGrow.VerticalHorizontal(hisob1TarkibTableView);
-        GetTableView2 getTableView2 = new GetTableView2();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
         hisob1TarkibTableView.getColumns().removeAll(hisob1TarkibTableView.getColumns());
-        hisob1TarkibTableView.getColumns().addAll(getTableView2.getIzoh2Column(), getTableView2.getAdadColumn());
+        hisob1TarkibTableView.getColumns().addAll(tableViewAndoza.getIzoh2Column(), tableViewAndoza.getAdadColumn());
         refreshHisob1TarkibList();
         hisob1TarkibTableView.setItems(hisob1TarkibList);
         hisob1TarkibTableView.setRowFactory( tv -> {
@@ -276,10 +271,10 @@ public class PochkaBuzish2 extends Application {
 
     private void initMaydaTarkibTableView() {
         SetHVGrow.VerticalHorizontal(maydaTarkibTableView);
-        GetTableView2 getTableView2 = new GetTableView2();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
         maydaTarkibTableView.getColumns().removeAll(maydaTarkibTableView.getColumns());
         maydaTarkibTableView.getColumns().addAll(
-                getTableView2.getIzoh2Column(),
+                tableViewAndoza.getIzoh2Column(),
                 getAdadColumn(),
                 getDeleteColumn()
         );

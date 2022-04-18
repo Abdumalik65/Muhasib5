@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Tovar;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
@@ -21,6 +22,7 @@ public class TovarModels {
     QueryHelper queryHelper;
 
     public ObservableList<Tovar> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Tovar> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -48,6 +50,7 @@ public class TovarModels {
     }
 
     public ObservableList<Tovar> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Tovar> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -76,6 +79,7 @@ public class TovarModels {
     }
 
     public Integer insert_data(Connection connection, Tovar tovar) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -104,6 +108,7 @@ public class TovarModels {
         return insertedID;
     }
     public void copyDataBatch(Connection connection, ObservableList<Tovar> tovarList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -130,6 +135,7 @@ public class TovarModels {
     }
 
     public void delete_data(Connection connection, Tovar tovar) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -143,6 +149,7 @@ public class TovarModels {
     }
 
     public void deleteAll(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME;
         PreparedStatement prSt = null;
         try {
@@ -155,6 +162,7 @@ public class TovarModels {
     }
 
     public void update_data(Connection connection, Tovar tovar) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET " +
                 TOVAR + " = ?," +
                 NDS + " = ? WHERE "

@@ -100,6 +100,8 @@ public class TovarEditor extends Application {
     public TovarEditor(Connection connection, User user, QaydnomaData qaydnomaData, HisobKitob hisobKitob) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         this.qaydnomaData = qaydnomaData;
         this.hisobKitob = hisobKitob;
         initData();
@@ -130,7 +132,7 @@ public class TovarEditor extends Application {
 
     private void initData() {
         Aloqa aloqa = ConnectionType.getAloqa();
-        kassa = Sotuvchi3.getKassaData(connection, aloqa.getText().trim());
+        kassa = Sotuvchi.getKassaData(connection, aloqa.getText().trim());
         hisobObservableList = GetDbData.getHisobObservableList();
         StandartModels standartModels = new StandartModels("Tovar");
         tovarObservableList = standartModels.get_data(connection);
@@ -142,6 +144,7 @@ public class TovarEditor extends Application {
     @Override
     public void start(Stage primaryStage) throws Exception {
         initStage(primaryStage);
+        add();
         stage.show();
     }
 
@@ -216,9 +219,9 @@ public class TovarEditor extends Application {
         }
         yakunlaButton = new Tugmachalar().getDelete();
         disable(true);
-        hkToForm(this.hisobKitob);
         ibtido();
         initGridPane();
+        hkToForm(this.hisobKitob);
         centerPane.getChildren().addAll(gridPane);
 
         yakunlaButton.setOnAction(event -> {
@@ -331,13 +334,13 @@ public class TovarEditor extends Application {
 
     public void tolov() {
         yakunlaButton = new Button("To`lovni yakunla");
+        ibtido();
+        initGridPane2();
         qaydToForm(qaydnomaData);
         yakunlaButton.setOnAction(event -> {
             saveHisobKitob();
             stage.close();
         });
-        ibtido();
-        initGridPane2();
         centerPane.getChildren().addAll(gridPane);
         stage = new Stage();
         initStage(stage);
@@ -389,7 +392,7 @@ public class TovarEditor extends Application {
     private void initStage(Stage primaryStage) {
         stage = primaryStage;
         stage.setTitle("Yangi tovar");
-        scene = new Scene(borderpane, 400, 265);
+        scene = new Scene(borderpane, 400, 350);
         stage.setScene(scene);
     }
 
@@ -744,7 +747,7 @@ public class TovarEditor extends Application {
 
     private Standart addTovar() {
         Standart tovar1 = null;
-        TovarController1 tovarController = new TovarController1(connection, user);
+        TovarController tovarController = new TovarController(connection, user);
         tovarController.display();
         if (tovarController.getDoubleClick()) {
             tovar1 = tovarController.getDoubleClickedRow();
@@ -828,6 +831,25 @@ public class TovarEditor extends Application {
             }
             kursTextField.setDisable(true);
         }
+        tovar = GetDbData.getTovar(hk.getTovar());
+        if (tovar != null) {
+            tovarHBox.getTextField().setText(tovar.getText());
+            BarCode bc = GetDbData.getBarCode(hk.getBarCode());
+            if (bc != null) {
+                birlikObservableList.removeAll(birlikObservableList);
+                barCodeList = GetDbData.getBarCodeList(tovar.getId());
+                for (BarCode b : barCodeList) {
+                    if (b.getBarCode().equals(hk.getBarCode())) {
+                        Standart birlik = GetDbData.getBirlik(bc.getBirlik());
+                        if (birlik == null) {
+                            return;
+                        }
+                        birlikComboBox.getSelectionModel().select(birlik);
+                        break;
+                    }
+                }
+            }
+        }
         adadTextField.setText(decimalFormat.format(hk.getDona()));
         narhTextField.setText(decimalFormat.format(hk.getNarh()));
         System.out.println(hk.getKurs());
@@ -856,7 +878,6 @@ public class TovarEditor extends Application {
             narh = converter(narhTextField);
         }
         hk.setNarh(narh);
-        hk.setKurs(1d);
         hk.setIzoh(tovar.getText());
     }
 
@@ -986,8 +1007,15 @@ public class TovarEditor extends Application {
         }
         if (hisobKitob == null) {
             Double kursDouble = converter(kursMilliyTextField);
-            Kurs kurs = new Kurs(null, null, hisobKitob.getValuta(), kursDouble, user.getId(), null);
-            Valuta valuta = GetDbData.getValuta(hisobKitob.getValuta());
+            Kurs kurs = null;
+            if (kursDouble>0d) {
+                kurs = new Kurs(null, qaydnomaData.getSana(), 2, kursDouble, user.getId(), null);
+            } else {
+                KursModels kursModels = new KursModels();
+
+                kurs = kursModels.getKurs(connection, 2, qaydnomaData.getSana(), "sana desc");
+            }
+            Valuta valuta = GetDbData.getValuta(2);
             hisobKitob = yangiHisob(kurs, amal);
             hisobKitob.setHisob1(qaydnomaData.getKirimId());
             hisobKitob.setHisob2(kassa.getPulHisobi());
@@ -1049,7 +1077,11 @@ public class TovarEditor extends Application {
                 hisobKitobModels.insert_data(connection, chegirmaHisobKitob);
             }
         } else {
-            hisobKitobModels.update_data(connection, chegirmaHisobKitob);
+            if (converter(chegirmaTextField).equals(0d)) {
+                hisobKitobModels.delete_data(connection, chegirmaHisobKitob);
+            } else {
+                hisobKitobModels.update_data(connection, chegirmaHisobKitob);
+            }
         }
         HisobKitob naqdHisobKitob = naqdHisobi();
         if (naqdHisobKitob.getId() == 0) {
@@ -1057,7 +1089,11 @@ public class TovarEditor extends Application {
                 hisobKitobModels.insert_data(connection, naqdHisobKitob);
             }
         } else {
-            hisobKitobModels.update_data(connection, naqdHisobKitob);
+            if (converter(naqdTextField).equals(0d)) {
+                hisobKitobModels.delete_data(connection, naqdHisobKitob);
+            } else {
+                hisobKitobModels.update_data(connection, naqdHisobKitob);
+            }
         }
         HisobKitob naqdMilliyHisobKitob = naqdMilliyHisobi();
         if (naqdMilliyHisobKitob.getId() == 0) {
@@ -1065,7 +1101,11 @@ public class TovarEditor extends Application {
                 hisobKitobModels.insert_data(connection, naqdMilliyHisobKitob);
             }
         } else {
-            hisobKitobModels.update_data(connection, naqdMilliyHisobKitob);
+            if (converter(naqdMilliyTextField).equals(0d)) {
+                hisobKitobModels.delete_data(connection, naqdMilliyHisobKitob);
+            } else {
+                hisobKitobModels.update_data(connection, naqdMilliyHisobKitob);
+            }
         }
         HisobKitob plasticHisobKitob = plasticHisobi();
         if (plasticHisobKitob.getId() == 0) {
@@ -1073,7 +1113,11 @@ public class TovarEditor extends Application {
                 hisobKitobModels.insert_data(connection, plasticHisobKitob);
             }
         } else {
-            hisobKitobModels.update_data(connection, plasticHisobKitob);
+            if (converter(plasticTextField).equals(0d)) {
+                hisobKitobModels.delete_data(connection, plasticHisobKitob);
+            } else {
+                hisobKitobModels.update_data(connection, plasticHisobKitob);
+            }
         }
     }
 

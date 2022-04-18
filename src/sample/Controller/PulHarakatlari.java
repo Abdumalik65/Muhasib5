@@ -33,10 +33,7 @@ import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.*;
-import sample.Tools.MoneyShow;
-import sample.Tools.Alerts;
-import sample.Tools.PathToImageView;
-import sample.Tools.SetHVGrow;
+import sample.Tools.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -82,9 +79,7 @@ public class PulHarakatlari extends Application {
 
     Hisob hisob1;
     Hisob hisob2;
-    Standart tovar;
     Valuta valuta;
-    Kurs kurs;
     HisobKitob hisobKitob;
     QaydnomaData qaydnomaData = null;
 
@@ -114,12 +109,14 @@ public class PulHarakatlari extends Application {
     }
 
     public PulHarakatlari() {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
     }
 
     public PulHarakatlari(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     private void ibtido() {
@@ -718,7 +715,7 @@ public class PulHarakatlari extends Application {
         int hujjatInt = getQaydnomaNumber();
         String izohString = izohTextArea.getText();
         Double jamiDouble = getJami(hisobKitobObservableList);
-        date = getQaydDate();
+        Date date = getQaydDate();
         QaydnomaData qaydnomaData = new QaydnomaData(null, amalTuri, hujjatInt, date,
                 hisob1.getId(), hisob1.getText(), hisob2.getId(), hisob2.getText(),
                 izohString, jamiDouble, 0, user.getId(), new Date());
@@ -758,6 +755,9 @@ public class PulHarakatlari extends Application {
             hk.setQaydId(qData.getId());
             hk.setHujjatId(qData.getHujjat());
             hk.setDateTime(qData.getSana());
+            hk.setHisob1(qData.getChiqimId());
+            hk.setHisob2(qData.getKirimId());
+            hk.setIzoh(qData.getIzoh());
             hkList.add(hk);
 /*
             if (bank != null && hk.getAmal() == 1) {
@@ -828,7 +828,7 @@ public class PulHarakatlari extends Application {
 
     private void initStage(Stage primaryStage) {
         stage = primaryStage;
-        stage.setTitle("Tovar Xaridi");
+        stage.setTitle("Pul harakati");
         scene = new Scene(borderpane, 1000, 600);
         stage.setScene(scene);
     }

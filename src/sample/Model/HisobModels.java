@@ -2,6 +2,8 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
+import sample.Data.GuruhNarh;
 import sample.Data.Standart3;
 import sample.Data.User;
 import sample.Tools.Alerts;
@@ -36,6 +38,7 @@ public class HisobModels {
     }
 
     public ObservableList<Hisob> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Hisob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -63,6 +66,7 @@ public class HisobModels {
     }
 
     public ObservableList<Hisob> get_data(Connection connection, ObservableList<Standart3> cheklanganHisoblar) {
+        MySqlStatus.checkMyConnection(connection);
         Map<Integer, Hisob> hisobMap = new HashMap<>();
         ObservableList<Hisob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
@@ -102,6 +106,7 @@ public class HisobModels {
     }
 
     public ObservableList<Hisob> get_data1(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Hisob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -122,8 +127,8 @@ public class HisobModels {
             }
 
             HisobKitobModels hisobKitobModels = new HisobKitobModels();
-            String select1 = "select hisob1, sum(if(tovar>0, dona*narh/kurs, narh/kurs)) as summa from Muhasib.HisobKitob group by hisob1";
-            String select2 = "select hisob2, sum(if(tovar>0, dona*narh/kurs, narh/kurs)) as summa from Muhasib.HisobKitob group by hisob2";
+            String select1 = "select hisob1, sum(if(tovar>0, dona*narh/kurs, narh/kurs)) as summa from HisobKitob group by hisob1";
+            String select2 = "select hisob2, sum(if(tovar>0, dona*narh/kurs, narh/kurs)) as summa from HisobKitob group by hisob2";
             ResultSet resultSet1 = hisobKitobModels.getResultSet(connection, select1);
             ResultSet resultSet2 = hisobKitobModels.getResultSet(connection, select2);
             while (resultSet1.next()) {
@@ -167,9 +172,10 @@ public class HisobModels {
     }
 
     public ObservableList<Hisob> get_data1(Connection connection, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Hisob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
-        if (date != null) {
+        if (date == null) {
             date = new Date();
         }
         String select = "SELECT * FROM " + TABLENAME;
@@ -190,11 +196,11 @@ public class HisobModels {
             }
 
             HisobKitobModels hisobKitobModels = new HisobKitobModels();
-            String select1 = "select hisob1, sum(if(tovar>0, dona*narh/kurs, narh/kurs)) as summa from Muhasib.HisobKitob WHERE  dateTime <= ? group by hisob1";
-            String select2 = "select hisob2, sum(if(tovar>0, dona*narh/kurs, narh/kurs)) as summa from Muhasib.HisobKitob WHERE dateTime <= ? group by hisob2";
+            String select1 = "select hisob1, sum(if(tovar>0, dona*narh/kurs, narh/kurs)) as summa from HisobKitob WHERE  dateTime <= '" + sdf.format(date) +"' group by hisob1";
+            String select2 = "select hisob2, sum(if(tovar>0, dona*narh/kurs, narh/kurs)) as summa from HisobKitob WHERE dateTime <= '" + sdf.format(date) +"' group by hisob2";
             ResultSet resultSet1 = hisobKitobModels.getResultSet(connection, select1);
             ResultSet resultSet2 = hisobKitobModels.getResultSet(connection, select2);
-            prSt.setString(1, sdf.format(date));
+//            prSt.setString(1, sdf.format(date));
             while (resultSet1.next()) {
                 Integer id = resultSet1.getInt(1);
                 for (Hisob h: books) {
@@ -238,6 +244,7 @@ public class HisobModels {
     }
 
     public ObservableList<Hisob> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Hisob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -268,6 +275,7 @@ public class HisobModels {
     }
 
     public Hisob getHisob(Connection connection, Integer hisobId) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Hisob> books = FXCollections.observableArrayList();
         Hisob hisob = null;
         ResultSet rs = null;
@@ -291,8 +299,10 @@ public class HisobModels {
             rs.close();
             prSt.close();
         } catch (SQLException e) {
+            e.printStackTrace();
            Alerts.losted();
         } catch (ParseException e) {
+            e.printStackTrace();
             Alerts.parseError();
         }
         if (books.size()>0) {
@@ -302,6 +312,7 @@ public class HisobModels {
     }
 
     public Integer insert_data(Connection connection, Hisob hisob) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -337,6 +348,7 @@ public class HisobModels {
     }
 
     public Integer insert_dataID(Connection connection, Hisob hisob) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -374,6 +386,7 @@ public class HisobModels {
     }
 
     public void copyDataBatch(Connection connection, ObservableList<Hisob> hisobList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -408,6 +421,7 @@ public class HisobModels {
     }
 
     public void delete_data(Connection connection, Hisob hisob) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -421,6 +435,7 @@ public class HisobModels {
     }
 
     public void deleteBatch(Connection connection, ObservableList<Hisob> hisobObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -437,6 +452,7 @@ public class HisobModels {
     }
 
     public void update_data(Connection connection, Hisob hisob) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + HISOB + " = ?,"
                 + BALANS + " = ?,"
@@ -458,6 +474,180 @@ public class HisobModels {
         } catch (SQLException e) {
            Alerts.losted();
         }
+    }
+    public void addBatch(Connection connection, ObservableList<Hisob> hisobObservableList) {
+        MySqlStatus.checkMyConnection(connection);
+        String insert = "INSERT INTO "
+                + TABLENAME + " ("
+                + ID_FIELD + ", "
+                + HISOB + ", "
+                + BALANS + ", "
+                + RASM + ", "
+                + EMAIL + ", "
+                + MOBILE + ", "
+                + USERID +
+                ") VALUES(?,?,?,?,?,?,?)";
+        PreparedStatement prSt = null;
+        try {
+            prSt = connection.prepareStatement(insert);
+            for(Hisob hisob: hisobObservableList) {
+                prSt = connection.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS);
+                prSt.setString(1, hisob.getText());
+                prSt.setDouble(2, hisob.getBalans());
+                prSt.setString(3, hisob.getRasm());
+                prSt.setString(4, hisob.getEmail());
+                prSt.setString(5, hisob.getMobile());
+                prSt.setInt(6, hisob.getUserId());
+                prSt.addBatch();
+            }
+            prSt.executeBatch();
+            prSt.close();
+        } catch (SQLException e) {
+            Alerts.losted();
+        }
+    }
+
+    public ObservableList<Hisob> yordamchiHisoblar(Connection connection, User user, Hisob hisob) {
+        ObservableList<Hisob> observableList = FXCollections.observableArrayList();
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        Integer pulHisobi = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "PulHisobi", "PulHisobi1");
+        Integer tranzitHisob = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "tranzithisobguruhi", "tranzithisob");
+        Integer foydaHisobi = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "FoydaHisobiGuruhi", "FoydaHisobi");
+        Integer zararHisobi = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "ZararGuruhi", "Zarar");
+        Integer bankHisobi = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Bank1", "Bank");
+        Integer chegirmaHisobi = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "ChegirmaGuruhi", "Chegirma");
+        Integer bankXizmatiHisobiInteger = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "BankXizmati1", "BankXizmati");
+        Integer ndsHisobi = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "NDS2","NDS1");
+        Integer qoshimchaDaromadHisobi = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "QoshimchaDaromad2", "QoshimchaDaromad");
+        Integer bojxonaHisobi = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Bojxona2", "Bojxona");
+        Integer tasdiqHisobi = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Tasdiq2", "Tasdiq");
+
+        return observableList;
+    }
+
+    public Hisob pulHisobi(Connection connection, User user, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        Integer hisobId = 0;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        if (user.getTovarHisobi().equals(hisob.getId())) {
+            hisobId = user.getPulHisobi();
+            hisob1 = getHisob(connection, hisobId);
+        } else {
+            hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "PulHisobi1");
+            if (hisobId > 0) {
+                hisob1 = getHisob(connection, hisobId);
+            }
+        }
+        return hisob1;
+    }
+
+    public Hisob keldiKetdiHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "tranzithisobguruhi", "tranzithisob");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob foydaHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "FoydaHisobiGuruhi");
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "FoydaHisobiGuruhi");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob zararHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "ZararGuruhi");
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "ZararGuruhi");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob bankHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Bank1");
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Bank1");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob chegirmaHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "ChegirmaGuruhi");
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "ChegirmaGuruhi");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob banXizmatiHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "BankXizmati1");
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "BankXizmati1");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob ndsHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "NDS2");
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "NDS2");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob qoshimchaDaromadHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "QoshimchaDaromad2");
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "QoshimchaDaromad2");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob bojxonaHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Bojxona2");
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Bojxona2");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob tasdiqHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Tasdiq2");
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Tasdiq2");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
+    }
+
+    public Hisob xaridorHisobi(Connection connection, Hisob hisob) {
+        Hisob hisob1 = hisob;
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+//        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Xaridor1");
+        Integer hisobId = hisobKitobModels.yordamchiHisob(connection, hisob.getId(), "Xaridor1");
+        if (hisobId>0)
+            hisob1 = getHisob(connection, hisobId);
+        return hisob1;
     }
 
     public void setTABLENAME(String TABLENAME) {

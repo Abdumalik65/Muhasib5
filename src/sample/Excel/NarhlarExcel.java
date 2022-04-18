@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.Date;
 
 public class NarhlarExcel {
@@ -47,6 +48,9 @@ public class NarhlarExcel {
     int fontSize = 10;
 
     File file;
+    File directory = new File(System.getProperty("user.dir") + File.separator + "Hisobot");
+    String pathString;
+    String printerim;
     Desktop desktop = Desktop.getDesktop();
     ObservableList<Standart3> s3List;
     ObservableList<BarCode>  barCodeList;
@@ -55,6 +59,7 @@ public class NarhlarExcel {
     }
 
     private void ibtido() {
+        initDirectory();
         initWorkBook();
         initFonts();
         initStyles();
@@ -144,6 +149,12 @@ public class NarhlarExcel {
 
     }
 
+    private void initDirectory() {
+        if (!directory.exists()) {
+            directory.mkdir();
+        }
+        pathString = directory.getAbsolutePath() + File.separator;
+    }
     private void setBorderStyle(CellStyle cellStyle, BorderStyle borderStyle, short foregroundColor,
                                 FillPatternType fillPatternType,
                                 XSSFFont font,
@@ -199,7 +210,7 @@ public class NarhlarExcel {
 
 
             OutputStream fileOut = null;
-            String fileName = "narhlar.xlsx";
+            String fileName = pathString + "Narhlar_" + LocalDate.now() + ".xlsx";
             try {
                 fileOut = new FileOutputStream(fileName);
                 wb.write(fileOut);

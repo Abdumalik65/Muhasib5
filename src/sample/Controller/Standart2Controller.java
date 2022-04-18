@@ -21,6 +21,7 @@ import sample.Data.User;
 import sample.Model.HisobModels;
 import sample.Model.Standart2Models;
 import sample.Model.Standart3Models;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
 import sample.Tools.PathToImageView;
 import sample.Tools.Tugmachalar;
@@ -46,7 +47,7 @@ public class Standart2Controller {
     Button button = new Tugmachalar().getExcel();
 
     Connection connection;
-    User user = GetDbData.getUser();
+    User user = GetDbData.getUser(1);
 
     String leftTableName = "TranzitHisob";
     String rightTableName = "TranzitHisobGuruhi";
@@ -81,6 +82,8 @@ public class Standart2Controller {
 
     public void start(Connection connection) {
         this.connection = connection;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         stage.setTitle(titleName);
         leftButtons.getChildren().remove(leftButtons.getEdit());
         rightButtons.getChildren().remove(rightButtons.getEdit());

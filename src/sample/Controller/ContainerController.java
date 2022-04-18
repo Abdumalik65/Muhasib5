@@ -10,11 +10,11 @@ import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
+import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -27,35 +27,41 @@ import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
+import sample.Tools.Butoq;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ContainerController extends Application {
     Stage stage;
     Scene scene;
     BorderPane borderpane = new BorderPane();
     GridPane gridPane = new GridPane();
+    TreeView<Butoq> treeView;
+    ToggleGroup toggleGroup;
     VBox centerPane = new VBox();
     Connection connection;
-    User user = new User(1, "admin", "", "admin");
+    User user;
     int padding = 3;
-    int amalTuri = 16;
-    int containersId = 5;
+    int amalTuri = 19;
+    int taqsimUsuli = 1;
 
-    TextField hisob1TextField = new TextField();
     TextArea izohTextArea = new TextArea();
     TextField qaydVaqtiTextField = new TextField();
     TableView<HisobKitob> tovarTableView = new TableView<>();
     TableView<HisobKitob> valutaTableView = new TableView<>();
     TableView<HisobKitob> natijaTableView = new TableView<>();
-    GetTableView2 getTableView2 = new GetTableView2();
-    ComboBox<Standart> standartComboBox = new ComboBox<>();
+    TableViewAndoza tableViewAndoza = new TableViewAndoza();
 
     ObservableList<HisobKitob> tovarTableList = FXCollections.observableArrayList();
     ObservableList<HisobKitob> valutaTableList = FXCollections.observableArrayList();
@@ -68,69 +74,56 @@ public class ContainerController extends Application {
     Date date = new Date();
     LocalDateTime localDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     DatePicker qaydSanasiDatePicker;
-    HBox valuta1Hbox;
-    HBox valuta2Hbox;
-    DecimalFormat decimalFormat = new MoneyShow();
 
-    TableView<HisobKitob> hisobKitobTableView = new TableView<>();
     Button xaridniYakunlaButton = new Button("Xaridni yakunla");
     Button xaridniBekorQilButton = new Button("Xaridni bekor qil");
 
     Hisob hisob1;
     Hisob hisob2;
     Hisob tranzitHisob;
-    Standart tovar;
-    HisobKitob hisobKitob;
     QaydnomaData qaydnomaData = null;
 
     Font font = Font.font("Arial", FontWeight.BOLD,20);
     SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
-    StringBuffer stringBuffer = new StringBuffer();
 
     ObservableList<HisobKitob> hisobKitobObservableList = FXCollections.observableArrayList();
     ObservableList<Hisob> hisobObservableList = FXCollections.observableArrayList();
-    ObservableList<Hisob> hisob2ObservableList = FXCollections.observableArrayList();
-    ObservableList<Standart> tovarObservableList;
     ObservableList<Valuta> valutaObservableList;
 
     HisobKitobModels hisobKitobModels = new HisobKitobModels();
-    HisobModels hisobModels = new HisobModels();
     StandartModels standartModels = new StandartModels();
     Standart3Models standart3Models = new Standart3Models();
+    Standart4Models standart4Models = new Standart4Models();
     QaydnomaModel qaydnomaModel = new QaydnomaModel();
+
+    Double jamiTovar = 0d;
+    Double jamiValuta = 0d;
+    Double jamiNatija = 0d;
+    Double jamiBalans = 0d;
+    Label jamiTovarLabel = new Label();
+    Label jamiValutaLabel = new Label();
+    Label jamiNatijaLabel = new Label();
+    Label jamiBalansLabel = new Label();
 
     public static void main(String[] args) {
         launch(args);
     }
 
-    public ContainerController() {}
+    public ContainerController() {
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        GetDbData.initData(connection);
+        user = GetDbData.getUser(1);
+    }
 
     public ContainerController(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
-    }
-
-    private void ibtido() {
-        initData();
-        initHisob1Hbox();
-        hisob2Hbox = initHisob2HBox();
-        initQaydSanasiDatePicker();
-        initQaydVaqtiTextField();
-        initYakunlaButton();
-        initIzohTextArea();
-        initTovarTable();
-        initValutaTable();
-        initComboBox();
-        initNatijaTable();
-        initGridPane();
-        initCenterPane();
-        initBorderPane();
-        setDisableNodes(true);
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     @Override
     public void start(Stage primaryStage) {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         ibtido();
         initStage(primaryStage);
         stage.show();
@@ -151,11 +144,22 @@ public class ContainerController extends Application {
         });
         return qaydnomaData;
     }
+    private void ibtido() {
+        initData();
+        yangiOngLawha();
+        initCenterPane();
+        initBorderPane();
+    }
+
+    private void yangiOngLawha() {
+        treeView = initTreeView();
+        SetHVGrow.VerticalHorizontal(treeView);
+    }
+
 
     private void initData() {
         GetDbData.initData(connection);
         standart3Models.setTABLENAME("hisobGuruhTarkibi");
-        ObservableList<Standart3> containers = standart3Models.getAnyData(connection, "id2 = " + containersId, "");
         hisobObservableList = GetDbData.getHisobObservableList();
         standartModels.setTABLENAME("NarhTuri");
         narhList = standartModels.get_data(connection);
@@ -164,7 +168,11 @@ public class ContainerController extends Application {
     private void initCenterPane() {
         SetHVGrow.VerticalHorizontal(centerPane);
         centerPane.setPadding(new Insets(padding));
-        centerPane.getChildren().addAll(gridPane, xaridniYakunlaButton);
+        initYakunlaButton();
+        initTovarTable();
+        initValutaTable();
+        initNatijaTable();
+        centerPane.getChildren().addAll(tovarTableView, valutaTableView, natijaTableView, xaridniYakunlaButton);
     }
 
     private void initHisob1Hbox() {
@@ -181,8 +189,16 @@ public class ContainerController extends Application {
             hisob1 = autoCompletionEvent.getCompletion();
             Integer yordamchiHisob = hisobKitobModels.yordamchiHisob(connection, hisob1.getId(), "TranzitHisobGuruhi", "TranzitHisob");
             tranzitHisob = GetDbData.getHisob(yordamchiHisob);
-            refreshTovarTable(hisob1);
-            refreshValutaTable(hisob1);
+            tovarTableList = tovarRoyxati(hisob1.getId());
+            tovarTableView.setItems(tovarTableList);
+            tovarTableView.refresh();
+            jamiTovar = jami(tovarTableList);
+            valutaTableList = pulRoyxati(connection, hisob1.getId());
+            jamiValuta = jami(valutaTableList);
+            jamiBalans();
+            valutaTableView.setItems(valutaTableList);
+            valutaTableView.refresh();
+
             setDisableNodes(false);
         });
         button.setOnAction(event -> {
@@ -190,8 +206,13 @@ public class ContainerController extends Application {
             if (hisob1 != null) {
                 Integer yordamchiHisob = hisobKitobModels.yordamchiHisob(connection, hisob1.getId(), "TranzitHisobGuruhi", "TranzitHisob");
                 tranzitHisob = GetDbData.getHisob(yordamchiHisob);
-                refreshTovarTable(hisob1);
+                tovarTableList = tovarRoyxati(hisob1.getId());
+                tovarTableView.setItems(tovarTableList);
+                tovarTableView.refresh();
+                jamiTovar = jami(tovarTableView.getItems());
                 refreshValutaTable(hisob1);
+                jamiValuta = jami(valutaTableView.getItems());
+                jamiBalans();
                 textField.setText(hisob1.getText());
                 setDisableNodes(false);
             }
@@ -201,6 +222,7 @@ public class ContainerController extends Application {
     private HBoxTextFieldPlusButton initHisob2HBox() {
         HBoxTextFieldPlusButton hisobHbox = new HBoxTextFieldPlusButton();
         TextField textField = hisobHbox.getTextField();
+        textField.setPromptText("Natija hisobi");
         textField.setFont(font);
         Button addButton = hisobHbox.getPlusButton();
         HBox.setHgrow(hisobHbox, Priority.ALWAYS);
@@ -209,6 +231,8 @@ public class ContainerController extends Application {
         TextFields.bindAutoCompletion(textField, hisobObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
             hisob2 = autoCompletionEvent.getCompletion();
             refreshNatijaTable(hisob2);
+            jamiNatija = jami(natijaTableView.getItems());
+            jamiBalans();
         });
         addButton.setOnAction(event -> {
             Hisob newValue = addHisob(hisobObservableList);
@@ -216,6 +240,8 @@ public class ContainerController extends Application {
                 textField.setText(newValue.getText());
                 hisob2 = newValue;
                 refreshNatijaTable(hisob2);
+                jamiNatija = jami(natijaTableView.getItems());
+                jamiBalans();
             }
         });
         return hisobHbox;
@@ -248,8 +274,7 @@ public class ContainerController extends Application {
         qaydSanasiDatePicker =  new DatePicker(LocalDate.now());
 
         qaydSanasiDatePicker.setConverter(converter);
-        qaydSanasiDatePicker.setMaxWidth(2000);
-        qaydSanasiDatePicker.setPrefWidth(150);
+        qaydSanasiDatePicker.setMaxWidth(200);
         HBox.setHgrow(qaydSanasiDatePicker, Priority.ALWAYS);
     }
 
@@ -262,72 +287,88 @@ public class ContainerController extends Application {
         SetHVGrow.VerticalHorizontal(izohTextArea);
         izohTextArea.setWrapText(true);
         izohTextArea.setEditable(true);
-        izohTextArea.textProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-            }
-        });
     }
 
     private void initTovarTable() {
-        TableColumn<HisobKitob, String> izohColumn = getTableView2.getIzoh2Column();
+        TableColumn<HisobKitob, String> izohColumn = tableViewAndoza.getIzoh2Column();
         izohColumn.setMinWidth(250);
         izohColumn.setText("Tovarlar");
         tovarTableView.getColumns().addAll(
                 izohColumn,
-                getTableView2.getAdadColumn(),
+                tableViewAndoza.getAdadColumn(),
                 getNarhColumn(),
                 getSotishNarhiColumn(),
                 getHajmColumn(),
-                getVaznColumn()
+                getVaznColumn(),
+                getBojColumn()
         );
         tovarTableView.setEditable(true);
+        visibleColumn(1);
         HBox.setHgrow(tovarTableView, Priority.ALWAYS);
         VBox.setVgrow(tovarTableView, Priority.ALWAYS);
         tovarTableView.setItems(tovarTableList);
+        jamiTovar = jami(tovarTableList);
+        jamiBalans();
+    }
+
+    private Double jami(ObservableList<HisobKitob> observableList) {
+        Double jami = 0d;
+        for (HisobKitob hisobKitob: observableList) {
+            jami += hisobKitob.getSummaCol();
+        }
+        return jami;
+    }
+
+    private void disableAll() {
+        tovarTableView.getColumns().get(3).setVisible(false);
+        tovarTableView.getColumns().get(4).setVisible(false);
+        tovarTableView.getColumns().get(5).setVisible(false);
+        tovarTableView.getColumns().get(6).setVisible(false);
+    }
+
+    private void visibleColumn(Integer i) {
+        disableAll();
+        switch (i) {
+            case 1: //Hajm
+                tovarTableView.getColumns().get(4).setVisible(true);
+                break;
+            case 2: //Vazn
+                tovarTableView.getColumns().get(5).setVisible(true);
+                break;
+            case 3: //Narh
+                tovarTableView.getColumns().get(2).setVisible(true);
+                break;
+            case 4: //Dona
+                tovarTableView.getColumns().get(2).setVisible(true);
+                break;
+            case 5: //Boj
+                tovarTableView.getColumns().get(6).setVisible(true);
+                break;
+        }
     }
 
     private void initValutaTable() {
-        TableColumn<HisobKitob, String> izohColumn = getTableView2.getIzoh2Column();
+        TableColumn<HisobKitob, String> izohColumn = tableViewAndoza.getIzoh2Column();
         izohColumn.setMinWidth(350);
         izohColumn.setText("Xarajatlar");
         valutaTableView.getColumns().addAll(
                 izohColumn,
-                getTableView2.getNarhColumn()
+                tableViewAndoza.getNarhColumn()
         );
         HBox.setHgrow(valutaTableView, Priority.ALWAYS);
         VBox.setVgrow(valutaTableView, Priority.ALWAYS);
         valutaTableView.setItems(valutaTableList);
-    }
-
-    private ObservableList<Standart> initComboBox() {
-        ObservableList<Standart> comboBoxItems = FXCollections.observableArrayList();
-        comboBoxItems.add(new Standart(1, "Hajmga taqsimlash", user.getId(), null));
-        comboBoxItems.add(new Standart(2, "Vaznga taqsimlash", user.getId(), null));
-        comboBoxItems.add(new Standart(3, "Narhga taqsimlash", user.getId(), null));
-        comboBoxItems.add(new Standart(4, "Donaga taqsimlash", user.getId(), null));
-        standartComboBox.setMaxWidth(2000);
-        standartComboBox.setPrefWidth(150);
-        HBox.setHgrow(standartComboBox, Priority.ALWAYS);
-        standartComboBox.setItems(comboBoxItems);
-        standartComboBox.getSelectionModel().selectFirst();
-
-        standartComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            if (newValue != null) {
-                if (!hisob2Hbox.getTextField().getText().isEmpty()) {
-                    refreshNatijaTable(hisob2);
-                }
-            }
-        });
-        return comboBoxItems;
+        jamiValuta = jami(valutaTableList);
+        jamiBalans();
     }
 
     private void initNatijaTable() {
-        TableColumn<HisobKitob, String> izohColumn = getTableView2.getIzoh2Column();
+        TableColumn<HisobKitob, String> izohColumn = tableViewAndoza.getIzoh2Column();
         izohColumn.setMinWidth(250);
         izohColumn.setText("Tovarlar");
         natijaTableView.getColumns().addAll(
                 izohColumn,
-                getTableView2.getAdadColumn(),
+                tableViewAndoza.getAdadColumn(),
                 getNarhColumn()
         );
         HBox.setHgrow(natijaTableView, Priority.ALWAYS);
@@ -395,9 +436,9 @@ public class ContainerController extends Application {
         int hujjatInt = getQaydnomaNumber();
         String izohString = izohTextArea.getText();
         Double jamiDouble = .0;
-        date = getQaydDate();
+        Date date = getQaydDate();
         QaydnomaData qaydnomaData = new QaydnomaData(null, amalTuri, hujjatInt, date,
-                hisob1.getId(), hisob1.getText(), tranzitHisob.getId(), tranzitHisob.getText(),
+                hisob1.getId(), hisob1.getText(), hisob2.getId(), hisob2.getText(),
                 izohString, jamiDouble, 0, user.getId(), new Date());
         qaydnomaModel.insert_data(connection, qaydnomaData);
         return qaydnomaData;
@@ -426,65 +467,91 @@ public class ContainerController extends Application {
         for (HisobKitob hk: tovarTableList) {
             hk.setQaydId(qData.getId());
             hk.setHujjatId(qData.getHujjat());
-            hisobKitobModels.insert_data(connection, hk);
+            hk.setDateTime(qData.getSana());
+            Integer id = hisobKitobModels.insert_data(connection, hk);
             HisobKitob natijaHK = natijaTableList.get(i);
-            natijaHK.setManba(hk.getId());
             i++;
+            natijaHK.setManba(id);
         }
         hisobKitobObservableList.addAll(valutaTableList);
         hisobKitobObservableList.addAll(natijaTableList);
         for (HisobKitob hk: hisobKitobObservableList) {
             hk.setQaydId(qData.getId());
             hk.setHujjatId(qData.getHujjat());
+            hk.setDateTime(qData.getSana());
         }
         hisobKitobModels.addBatch(connection, hisobKitobObservableList);
-    }
-
-    private void initGridPane() {
-        HBox.setHgrow(gridPane, Priority.ALWAYS);
-        int rowIndex = 0;
-
-        gridPane.add(hisob1Hbox, 0, rowIndex, 1, 1);
-        GridPane.setHgrow(hisob1Hbox, Priority.ALWAYS);
-        gridPane.add(qaydSanasiDatePicker, 1, rowIndex, 1, 1);
-        GridPane.setHgrow(qaydSanasiDatePicker, Priority.ALWAYS);
-        gridPane.add(qaydVaqtiTextField, 2, rowIndex, 1,1);
-        GridPane.setHgrow(qaydVaqtiTextField, Priority.ALWAYS);
-
-        rowIndex++;
-        gridPane.add(standartComboBox, 0, rowIndex, 1, 1);
-        GridPane.setHgrow(standartComboBox, Priority.ALWAYS);
-        GridPane.setVgrow(standartComboBox, Priority.ALWAYS);
-
-        rowIndex++;
-        gridPane.add(izohTextArea, 0, rowIndex, 3, 1);
-        GridPane.setHgrow(izohTextArea, Priority.ALWAYS);
-        GridPane.setVgrow(izohTextArea, Priority.ALWAYS);
-
-        rowIndex++;
-        gridPane.add(tovarTableView, 0, rowIndex, 3, 1);
-        GridPane.setHgrow(tovarTableView, Priority.ALWAYS);
-        GridPane.setVgrow(tovarTableView, Priority.ALWAYS);
-
-        rowIndex++;
-        gridPane.add(valutaTableView, 0, rowIndex, 3, 1);
-        GridPane.setHgrow(valutaTableView, Priority.ALWAYS);
-        GridPane.setVgrow(valutaTableView, Priority.ALWAYS);
-
-        rowIndex++;
-        gridPane.add(hisob2Hbox, 0, rowIndex, 1, 1);
-        GridPane.setHgrow(hisob2Hbox, Priority.ALWAYS);
-        GridPane.setVgrow(hisob2Hbox, Priority.ALWAYS);
-
-        rowIndex++;
-        gridPane.add(natijaTableView, 0, rowIndex, 3, 1);
-        GridPane.setHgrow(natijaTableView, Priority.ALWAYS);
-        GridPane.setVgrow(natijaTableView, Priority.ALWAYS);
     }
 
     private void initBorderPane() {
         SetHVGrow.VerticalHorizontal(borderpane);
         borderpane.setCenter(centerPane);
+        borderpane.setRight(treeView);
+    }
+    private VBox taqsimlashTuri() {
+        toggleGroup = new ToggleGroup();
+        RadioButton radioButton1 = new RadioButton("Hajm");
+        RadioButton radioButton2 = new RadioButton("Vazn");
+        RadioButton radioButton3 = new RadioButton("Narh");
+        RadioButton radioButton4 = new RadioButton("Dona");
+        RadioButton radioButton5 = new RadioButton("Bojxona solig`i");
+        toggleGroup.getToggles().addAll(radioButton1, radioButton2, radioButton3, radioButton4, radioButton5);
+        toggleGroup.selectToggle(radioButton1);
+        VBox vBox = new VBox(5);
+        HBox.setHgrow(vBox, Priority.ALWAYS);
+        VBox.setVgrow(vBox, Priority.ALWAYS);
+        vBox.getChildren().addAll(radioButton1, radioButton2, radioButton3, radioButton4, radioButton5);
+        radioButton1.setOnAction(event -> {
+            taqsimUsuli = 1;
+            visibleColumn(taqsimUsuli);
+            if (!hisob2Hbox.getTextField().getText().isEmpty()) {
+                refreshNatijaTable(hisob2);
+                jamiNatija = jami(natijaTableView.getItems());
+                jamiBalans();
+                tovarTableView.refresh();
+            }
+        });
+        radioButton2.setOnAction(event -> {
+            taqsimUsuli = 2;
+            visibleColumn(taqsimUsuli);
+            if (!hisob2Hbox.getTextField().getText().isEmpty()) {
+                refreshNatijaTable(hisob2);
+                jamiNatija = jami(natijaTableView.getItems());
+                jamiBalans();
+                tovarTableView.refresh();
+            }
+        });
+        radioButton3.setOnAction(event -> {
+            taqsimUsuli = 3;
+            visibleColumn(taqsimUsuli);
+            if (!hisob2Hbox.getTextField().getText().isEmpty()) {
+                refreshNatijaTable(hisob2);
+                jamiNatija = jami(natijaTableView.getItems());
+                jamiBalans();
+                tovarTableView.refresh();
+            }
+        });
+        radioButton4.setOnAction(event -> {
+            taqsimUsuli = 4;
+            visibleColumn(taqsimUsuli);
+            if (!hisob2Hbox.getTextField().getText().isEmpty()) {
+                refreshNatijaTable(hisob2);
+                jamiNatija = jami(natijaTableView.getItems());
+                jamiBalans();
+                tovarTableView.refresh();
+            }
+        });
+        radioButton5.setOnAction(event -> {
+            taqsimUsuli = 5;
+            visibleColumn(taqsimUsuli);
+            if (!hisob2Hbox.getTextField().getText().isEmpty()) {
+                refreshNatijaTable(hisob2);
+                jamiNatija = jami(natijaTableView.getItems());
+                jamiBalans();
+                tovarTableView.refresh();
+            }
+        });
+        return vBox;
     }
 
     private void initStage(Stage primaryStage) {
@@ -559,11 +626,14 @@ public class ContainerController extends Application {
                 case 2: //Vazn taqsimoti
                     hvSumma += hk.getDona() * barCode.getVazn();
                     break;
-                case 3: //mablag taqsimoti
+                case 3: //narh taqsimoti
                     hvSumma += hk.getDona() * hk.getNarh()/hk.getKurs();
                     break;
                 case 4: //dona taqsimoti
                     hvSumma += hk.getDona();
+                    break;
+                case 5: //boj taqsimoti
+                    hvSumma += hk.getDona() * bojSoligi(hk);
                     break;
             }
         }
@@ -575,8 +645,7 @@ public class ContainerController extends Application {
     }
 
     private void cloneNatijaList(Hisob hisob) {
-        Integer taqsimUsuli = standartComboBox.getValue().getId();
-        Double deltaDouble = getDeltaDouble(standartComboBox.getValue().getId());
+        Double deltaDouble = getDeltaDouble(taqsimUsuli);
         Double summaDouble;
         Double yangiNarh;
         natijaTableList.removeAll(natijaTableList);
@@ -599,13 +668,41 @@ public class ContainerController extends Application {
                 case 4: //dona taqsimoti
                     summaDouble = 1d;
                     break;
+                case 5: //boj taqsimoti
+                    summaDouble = bojSoligi(nhk);
+                    break;
             }
             if (summaDouble != 0.00) {
                 yangiNarh = summaDouble * deltaDouble + nhk.getNarh()/nhk.getKurs();
                 nhk.setNarh(yangiNarh);
             }
+            nhk.setValuta(1);
+            nhk.setKurs(1d);
             natijaTableList.add(nhk);
         }
+    }
+
+    private void jamiBalans() {
+        DecimalFormat decimalFormat = new MoneyShow();
+        jamiTovarLabel.setText(decimalFormat.format(jamiTovar));
+        jamiValutaLabel.setText(decimalFormat.format(jamiValuta));
+        jamiNatijaLabel.setText(decimalFormat.format(jamiNatija));
+        jamiBalans = jamiTovar + jamiValuta - jamiNatija;
+        jamiBalansLabel.setText(decimalFormat.format(jamiBalans));
+    }
+
+    private Double bojSoligi(HisobKitob nhk) {
+        Double boj = 0d;
+        standart4Models.setTABLENAME("BojxonaSoligi");
+        Standart4 standart4 = null;
+        ObservableList<Standart4> observableList = standart4Models.getAnyData(connection, "tovar = " + nhk.getTovar(), "sana desc");
+        if (observableList.size()>0) {
+            standart4 = observableList.get(0);
+        } else {
+            standart4 = new Standart4(0, nhk.getTovar(), new Date(), 0d, user.getId(), null);
+        }
+        boj = standart4.getMiqdor();
+        return boj;
     }
 
     private void setDisableNodes(Boolean disable) {
@@ -618,9 +715,9 @@ public class ContainerController extends Application {
 
     private TableColumn<HisobKitob, Double> getNarhColumn() {
         TableColumn<HisobKitob, Double> hajmColumn = new TableColumn<>("Tannarh");
-        TableColumn<HisobKitob, Double> donaColumn = getTableView2.getNarhColumn();
+        TableColumn<HisobKitob, Double> donaColumn = tableViewAndoza.getNarhColumn();
         donaColumn.setText("Dona");
-        TableColumn<HisobKitob, Double> jamiColumn = getTableView2.getSummaColumn();
+        TableColumn<HisobKitob, Double> jamiColumn = tableViewAndoza.getSummaColumn();
         jamiColumn.setText("Jami");
         hajmColumn.setStyle( "-fx-alignment: CENTER;");
         hajmColumn.getColumns().addAll(
@@ -632,9 +729,9 @@ public class ContainerController extends Application {
 
     private TableColumn<HisobKitob, Double> getSotishNarhiColumn() {
         TableColumn<HisobKitob, Double> sotishNarhiColumn = new TableColumn<>("Sotish narhlari");
-        TableColumn<HisobKitob, Double> chakanaColumn = getTableView2.getNarhColumn();
+        TableColumn<HisobKitob, Double> chakanaColumn = tableViewAndoza.getNarhColumn();
         chakanaColumn.setText("Chakana");
-        TableColumn<HisobKitob, Double> ulgurjiColumn = getTableView2.getSummaColumn();
+        TableColumn<HisobKitob, Double> ulgurjiColumn = tableViewAndoza.getSummaColumn();
         ulgurjiColumn.setText("Ulgurji");
         sotishNarhiColumn.setStyle( "-fx-alignment: CENTER;");
         sotishNarhiColumn.getColumns().addAll(
@@ -858,6 +955,117 @@ public class ContainerController extends Application {
         return vaznColumn;
     }
 
+    private TableColumn<HisobKitob, Double> getBojColumn() {
+        TableColumn<HisobKitob, Double> bojColumn = new TableColumn<>("Bojxona solig`i");
+        bojColumn.setStyle( "-fx-alignment: CENTER;");
+        bojColumn.getColumns().addAll(
+                getBojDonaColumn(),
+                getBojJamiColumn()
+        );
+        return bojColumn;
+    }
+
+    private TableColumn<HisobKitob, Double> getBojDonaColumn() {
+        TableColumn<HisobKitob, Double> bojColumn = new TableColumn<>("Dona");
+        bojColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Double>, ObservableValue<Double>>() {
+
+            @Override
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<HisobKitob, Double> param) {
+                HisobKitob hisobKitob = param.getValue();
+                standart4Models.setTABLENAME("BojxonaSoligi");
+                Standart4 standart4 = null;
+                ObservableList<Standart4> observableList = standart4Models.getAnyData(connection, "tovar = " + hisobKitob.getTovar(), "sana desc");
+                if (observableList.size()>0) {
+                    standart4 = observableList.get(0);
+                } else {
+                    standart4 = new Standart4(0, hisobKitob.getTovar(), new Date(), 0d, user.getId(), null);
+                }
+                return new SimpleObjectProperty<Double>(standart4.getMiqdor());
+            }
+        });
+        bojColumn.setMinWidth(100);
+        bojColumn.setMaxWidth(100);
+        bojColumn.setStyle( "-fx-alignment: CENTER;");
+        bojColumn.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                NumberFormat numberFormat = NumberFormat.getInstance();
+                numberFormat.setMinimumIntegerDigits (1);
+                numberFormat.setMaximumIntegerDigits (10);
+
+                numberFormat.setMinimumFractionDigits (1);
+                numberFormat.setMaximumFractionDigits (5);
+                return numberFormat.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                string = string.replaceAll(" ", "");
+                string = string.replaceAll(",", ".");
+                if (!Alerts.isNumericAlert(string)) {
+                    string = "0.0";
+                }
+                return Double.valueOf(string);
+            }
+        }));
+
+        bojColumn.setOnEditCommit((TableColumn.CellEditEvent<HisobKitob, Double> event) -> {
+            Double newValue = event.getNewValue();
+            HisobKitob hisobKitob = event.getRowValue();
+            Standart4 standart4 = null;
+            if (newValue != null) {
+                standart4 = new Standart4(0, hisobKitob.getTovar(), new Date(), newValue, user.getId(), null);
+                standart4Models.setTABLENAME("BojxonaSoligi");
+                standart4Models.insert_data(connection, standart4);
+            }
+            event.getTableView().refresh();
+        });
+        return bojColumn;
+    }
+
+    private TableColumn<HisobKitob, Double> getBojJamiColumn() {
+        TableColumn<HisobKitob, Double> jamiColumn = new TableColumn<>("Jami");
+        jamiColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Double>, ObservableValue<Double>>() {
+
+            @Override
+            public ObservableValue<Double> call(TableColumn.CellDataFeatures<HisobKitob, Double> param) {
+                HisobKitob hisobKitob = param.getValue();
+                TableColumn<HisobKitob, Double> tovarDona = (TableColumn<HisobKitob, Double>) param.getTableView().getColumns().get(1);
+                TableColumn<HisobKitob, Double> bojDona = (TableColumn<HisobKitob, Double>) param.getTableView().getColumns().get(6).getColumns().get(0);
+                Double bojValue = bojDona.getCellObservableValue(hisobKitob).getValue();
+                Double tovarValue = tovarDona.getCellObservableValue(hisobKitob).getValue();
+                Double jamiDouble = tovarValue * bojValue;
+                return new SimpleObjectProperty<Double>(jamiDouble);
+            }
+        });
+        jamiColumn.setMinWidth(100);
+        jamiColumn.setMaxWidth(100);
+        jamiColumn.setStyle( "-fx-alignment: CENTER;");
+        jamiColumn.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
+            @Override
+            public String toString(Double object) {
+                NumberFormat numberFormat = NumberFormat.getInstance();
+                numberFormat.setMinimumIntegerDigits (1);
+                numberFormat.setMaximumIntegerDigits (10);
+
+                numberFormat.setMinimumFractionDigits (1);
+                numberFormat.setMaximumFractionDigits (5);
+                return numberFormat.format(object);
+            }
+
+            @Override
+            public Double fromString(String string) {
+                string = string.replaceAll(" ", "");
+                string = string.replaceAll(",", ".");
+                if (!Alerts.isNumericAlert(string)) {
+                    string = "0.0";
+                }
+                return Double.valueOf(string);
+            }
+        }));
+        return jamiColumn;
+    }
+
     private  TableColumn<HisobKitob, Double> getChakanaNarhColumn() {
         String chakana = narhList.get(0).getText();
         TableColumn<HisobKitob, Double>  chakanaColumn = new TableColumn<>(chakana);
@@ -1039,12 +1247,433 @@ public class ContainerController extends Application {
         TovarNarhi tovarNarhi = null;
         TovarNarhiModels tovarNarhiModels = new TovarNarhiModels();
         ObservableList<TovarNarhi> observableList = tovarNarhiModels.getAnyData(
-                connection, "tovar = " + tovarId + " AND narhTuri = " + narhTuri, "sana desc"
+                connection, "tovar = " + tovarId + " AND narhTuri = " + narhTuri, "id desc"
         );
         if (observableList.size()>0) {
             tovarNarhi = observableList.get(0);
         }
         return tovarNarhi;
+    }
+
+    private ObservableList<HisobKitob> tovarList3(Integer hisobId, LocalDate localDate) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String localDateString = localDate.format(formatter);
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        ObservableList<HisobKitob> hisobKitobObservableList = FXCollections.observableArrayList();
+
+        String select =
+                "Select barCode, sum(if(hisob2="+hisobId+",narh*dona/kurs,0)), sum(if(hisob1="+hisobId+",narh*dona/kurs,0)), sum(if(hisob2="+hisobId+",dona,-dona)) from HisobKitob where (hisob1=" + hisobId + " or hisob2=" + hisobId + ") and tovar>0 and dateTime<='" + localDateString + " 23:59:59' group by barCode order by barcode";
+        ResultSet rs = hisobKitobModels.getResultSet(connection, select);
+        try {
+            while (rs.next()) {
+                String barCodeString = rs.getString(1);
+                Double kirim = rs.getDouble(2);
+                Double chiqim = rs.getDouble(3);
+                Double dona = rs.getDouble(4);
+                BarCode bc = GetDbData.getBarCode(barCodeString);
+                Standart tovar = GetDbData.getTovar(bc.getTovar());
+                Integer id = tovar.getId();
+                Double jami = kirim - chiqim;
+                HisobKitob hisobKitob = new HisobKitob();
+                hisobKitob.setTovar(tovar.getId());
+                hisobKitob.setKurs(1d);
+                hisobKitob.setValuta(1);
+                hisobKitob.setBarCode(barCodeString);
+                hisobKitob.setIzoh(tovar.getText());
+                hisobKitob.setNarh(jami);
+                hisobKitob.setDona(dona);
+                hisobKitob.setHisob1(hisobId);
+                hisobKitob.setHisob2(tranzitHisob.getId());
+                hisobKitobObservableList.add(hisobKitob);
+            }
+            rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return hisobKitobObservableList;
+    }
+    private static ObservableList<HisobKitob> pulRoyxati(Connection connection, Integer hisobId) {
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        HisobModels hisobModels = new HisobModels();
+        KursModels kursModels = new KursModels();
+        Hisob hisob = GetDbData.getHisob(hisobId);
+        Hisob keldiKetdiHisobi = hisobModels.keldiKetdiHisobi(connection, hisob);
+        ObservableList<HisobKitob> pulLRoyxati = FXCollections.observableArrayList();
+        String select = "select valuta, sum(if(hisob1 = " + hisobId + ", -narh, narh)) from HisobKitob where (hisob1 ="+ hisobId +" or hisob2 ="+ hisobId +") and tovar = 0 group by valuta order by valuta";
+        ResultSet rs  = hisobKitobModels.getResultSet(connection, select);
+        try{
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            while (rs.next()) {
+                Integer valutaId = rs.getInt(1);
+                Double narh = rs.getDouble(2);
+                if (StringNumberUtils.yaxlitla(narh, -2) != 0d) {
+                    Valuta valuta = GetDbData.getValuta(valutaId);
+                    Kurs kurs = kursModels.getKurs(connection, valutaId, new Date(), "sana desc");
+                    Double kursDouble = kurs.getKurs();
+                    HisobKitob hisobKitob = new HisobKitob(
+                            0,
+                            0,
+                            0,
+                            1,
+                            hisobId,
+                            keldiKetdiHisobi.getId(),
+                            valutaId,
+                            0,
+                            kursDouble,
+                            "",
+                            0d,
+                            narh,
+                            0,
+                            valuta.getValuta(),
+                            1,
+                            new Date()
+                    );
+                    pulLRoyxati.add(hisobKitob);
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return pulLRoyxati;
+    }
+
+    private ObservableList<HisobKitob> tovarRoyxatiM(Connection connection, Integer hisobId) {
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        HisobModels hisobModels = new HisobModels();
+        Hisob hisob = GetDbData.getHisob(hisobId);
+        HisobKitob hisobKitob1 = null;
+        BarCode barCode = null;
+        Map<String, HisobKitob> barCodeMap = new HashMap<>();
+        Hisob keldiKetdiHisobi = hisobModels.keldiKetdiHisobi(connection, hisob);
+        ObservableList<HisobKitob> observableList = FXCollections.observableArrayList();
+        String select = "select * from HisobKitob where (hisob1 ="+ hisobId +" or hisob2 ="+ hisobId +") and tovar > 0 order by barCode";
+        ResultSet rs  = hisobKitobModels.getResultSet(connection, select);
+        try{
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            while (rs.next()) {
+                Standart tovar = GetDbData.getTovar(rs.getInt(8));
+                HisobKitob hisobKitob = new HisobKitob(
+                        rs.getInt(1),
+                        rs.getInt(2),
+                        rs.getInt(3),
+                        rs.getInt(4),
+                        rs.getInt(5),
+                        rs.getInt(6),
+                        rs.getInt(7),
+                        rs.getInt(8),
+                        rs.getDouble(9),
+                        rs.getString(10),
+                        rs.getDouble(11),
+                        rs.getDouble(12),
+                        rs.getInt(13),
+                        tovar.getText(),
+                        rs.getInt(15),
+                        sdf.parse(rs.getString(16))
+                );
+                barCode = GetDbData.getBarCode(hisobKitob.getBarCode());
+                if (barCode != null) {
+                    if (barCodeMap.containsKey(hisobKitob.getBarCode())) {
+                        hisobKitob1 = barCodeMap.get(hisobKitob.getBarCode());
+                    } else {
+                        hisobKitob1 = hisobKitobModels.cloneHisobKitob(hisobKitob);
+                        hisobKitob1.setQaydId(0);
+                        hisobKitob1.setHujjatId(0);
+                        hisobKitob1.setHisob1(hisobId);
+                        hisobKitob1.setHisob2(keldiKetdiHisobi.getId());
+                        hisobKitob1.setValuta(1);
+                        hisobKitob1.setKurs(1d);
+                        hisobKitob1.setDona(0d);
+                        hisobKitob1.setNarh(0d);
+                        barCodeMap.put(hisobKitob.getBarCode(), hisobKitob1);
+                        observableList.add(hisobKitob1);
+                    }
+                    Double dona = hisobKitob.getDona();
+                    Double narh = dona * hisobKitob.getNarh() / hisobKitob.getKurs();
+                    if (hisobKitob.getHisob1().equals(hisobId)) {
+                        hisobKitob1.setDona(hisobKitob1.getDona() - dona);
+                        hisobKitob1.setBalans(hisobKitob1.getBalans() - narh);
+                    } else {
+                        hisobKitob1.setDona(hisobKitob1.getDona() + dona);
+                        hisobKitob1.setBalans(hisobKitob1.getBalans() + narh);
+                    }
+                } else {
+                    Alerts.AlertString(barCode.getBarCode() + " barcodiga muvofiq tovar topilmadi");
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        observableList.forEach(hisobKitob -> hisobKitob.setNarh(hisobKitob.getBalans() / hisobKitob.getDona()));
+        observableList.removeIf(hisobKitob -> hisobKitob.getDona().equals(0d));
+        return observableList;
+    }
+    private ObservableList<HisobKitob> tovarRoyxati2(Connection connection, Integer hisobId) {
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        HisobModels hisobModels = new HisobModels();
+        Hisob hisob = GetDbData.getHisob(hisobId);
+        HisobKitob hisobKitob1 = null;
+        BarCode barCode = null;
+        Map<String, HisobKitob> barCodeMap = new HashMap<>();
+        Hisob keldiKetdiHisobi = hisobModels.keldiKetdiHisobi(connection, hisob);
+        ObservableList<HisobKitob> observableList = FXCollections.observableArrayList();
+        String select = "select * from HisobKitob where (hisob1 ="+ hisobId +" or hisob2 ="+ hisobId +") and tovar > 0 order by barCode";
+        ResultSet rs  = hisobKitobModels.getResultSet(connection, select);
+        try{
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            while (rs.next()) {
+                Standart tovar = GetDbData.getTovar(rs.getInt(8));
+                HisobKitob hisobKitob = new HisobKitob(
+                        rs.getInt(1),
+                        rs.getInt(2),
+                        rs.getInt(3),
+                        rs.getInt(4),
+                        rs.getInt(5),
+                        rs.getInt(6),
+                        rs.getInt(7),
+                        rs.getInt(8),
+                        rs.getDouble(9),
+                        rs.getString(10),
+                        rs.getDouble(11),
+                        rs.getDouble(12),
+                        rs.getInt(13),
+                        tovar.getText(),
+                        rs.getInt(15),
+                        sdf.parse(rs.getString(16))
+                );
+                barCode = GetDbData.getBarCode(hisobKitob.getBarCode());
+                if (barCode != null) {
+                    if (barCodeMap.containsKey(hisobKitob.getBarCode())) {
+                        hisobKitob1 = barCodeMap.get(hisobKitob.getBarCode());
+                    } else {
+                        hisobKitob1 = hisobKitobModels.cloneHisobKitob(hisobKitob);
+                        hisobKitob1.setQaydId(0);
+                        hisobKitob1.setHujjatId(0);
+                        hisobKitob1.setHisob1(hisobId);
+                        hisobKitob1.setHisob2(keldiKetdiHisobi.getId());
+                        hisobKitob1.setValuta(1);
+                        hisobKitob1.setKurs(1d);
+                        hisobKitob1.setDona(0d);
+                        hisobKitob1.setNarh(0d);
+                        barCodeMap.put(hisobKitob.getBarCode(), hisobKitob1);
+                        observableList.add(hisobKitob1);
+                    }
+                    Double dona = hisobKitob.getDona();
+                    Double narh = dona * hisobKitob.getNarh() / hisobKitob.getKurs();
+                    if (hisobKitob.getHisob1().equals(hisobId)) {
+                        hisobKitob1.setDona(hisobKitob1.getDona() - dona);
+                        hisobKitob1.setBalans(hisobKitob1.getBalans() - narh);
+                    } else {
+                        hisobKitob1.setDona(hisobKitob1.getDona() + dona);
+                        hisobKitob1.setBalans(hisobKitob1.getBalans() + narh);
+                    }
+                } else {
+                    Alerts.AlertString(barCode.getBarCode() + " barcodiga muvofiq tovar topilmadi");
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        observableList.forEach(hisobKitob -> hisobKitob.setNarh(hisobKitob.getBalans() / hisobKitob.getDona()));
+        observableList.removeIf(hisobKitob -> hisobKitob.getDona().equals(0d));
+        return observableList;
+    }
+
+    private ObservableList<HisobKitob> tovarRoyxati(Integer hisobId) {
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        HisobModels hisobModels = new HisobModels();
+        Hisob hisob = GetDbData.getHisob(hisobId);
+        Hisob keldiKetdiHisobi = hisobModels.keldiKetdiHisobi(connection, hisob);
+        ObservableList<HisobKitob> tovarRoyxati = hisobKitobModels.getAnyData(connection, "hisob2 ="+ hisobId +" and tovar > 0", "tovar");
+        Map<Integer, HisobKitob> kirimMap = new HashMap<>();
+        tovarRoyxati.forEach(hisobKitob -> {
+            hisobKitob.setHisob1(hisobId);
+            hisobKitob.setHisob2(keldiKetdiHisobi.getId());
+            hisobKitob.setManba(hisobKitob.getId());
+            kirimMap.put(hisobKitob.getId(), hisobKitob);
+        });
+        ObservableList<HisobKitob> chiqimRoyxati = hisobKitobModels.getAnyData(connection, "hisob1 ="+ hisobId +" and tovar > 0", "tovar");
+        for (HisobKitob hisobKitob: chiqimRoyxati) {
+            if (kirimMap.containsKey(hisobKitob.getManba())) {
+                HisobKitob kirimHisobKitob = kirimMap.get(hisobKitob.getManba());
+                Double chiqimDona = hisobKitob.getDona();
+                Double kirimDona = kirimHisobKitob.getDona();
+                kirimHisobKitob.setDona(kirimDona - chiqimDona);
+            } else {
+                System.out.println(hisobKitob.getId()+"");
+            }
+        }
+        tovarRoyxati.removeIf(hisobKitob -> hisobKitob.getDona().equals(0d));
+        return tovarRoyxati;
+    }
+    private TreeView<Butoq> initTreeView() {
+        TreeView<Butoq> treeView = new TreeView<>();
+        treeView.setMinWidth(230);
+        SetHVGrow.VerticalHorizontal(treeView);
+        TreeItem<Butoq> rootTreeItem = new TreeItem(getRootTreeItem());
+        rootTreeItem.getChildren().addAll(
+                getSozlovTreeItem(),
+                sanaVaqtButoq(),
+                taqsimotUsuliButoq(),
+                jamiButoq(),
+                izohButoq()
+        );
+
+        treeView.setRoot(rootTreeItem);
+        treeView.setShowRoot(false);
+        treeView.setMaxWidth(280);
+        return treeView;
+    }
+
+    private TreeItem<Butoq> getRootTreeItem() {
+        Standart standart = new Standart(0, "Asosiy", user.getId(), new Date());
+        Butoq butoq = new Butoq(standart);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> getSozlovTreeItem() {
+        Butoq butoq = new Butoq(40, new Label("Savdo sozlovlari"));
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        Label label = butoq.getLabel();
+        label.setFont(font);
+        treeItem.getChildren().addAll(
+                getHisob1TreeItem(),
+                getHisob2TreeItem()
+        );
+        treeItem.setExpanded(true);
+        return treeItem;
+    }
+
+    private TreeItem<Butoq> getHisob1TreeItem() {
+        initHisob1Hbox();
+        Butoq butoq = new Butoq(41, hisob1Hbox);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+
+    private TreeItem<Butoq> getHisob2TreeItem() {
+        hisob2Hbox = initHisob2HBox();
+        Butoq butoq = new Butoq(42, hisob2Hbox);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+
+    private TreeItem<Butoq> sanaVaqtButoq() {
+        Butoq butoq = new Butoq(40, new Label("Sana vaqt"));
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        Label label = butoq.getLabel();
+        label.setFont(font);
+        treeItem.getChildren().addAll(
+                sanaButoq(),
+                vaqtButoq()
+        );
+        treeItem.setExpanded(false);
+        return treeItem;
+    }
+
+    private TreeItem<Butoq> sanaButoq() {
+        initQaydSanasiDatePicker();
+        Butoq butoq = new Butoq(qaydSanasiDatePicker);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> vaqtButoq() {
+        initQaydVaqtiTextField();
+        Butoq butoq = new Butoq(1, qaydVaqtiTextField);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> taqsimotUsuliButoq() {
+        Butoq butoq = new Butoq(40, new Label("Taqsimot usuli"));
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        Label label = butoq.getLabel();
+        label.setFont(font);
+        treeItem.getChildren().addAll(
+                tugmachalarButoq()
+        );
+        treeItem.setExpanded(true);
+        return treeItem;
+    }
+    private TreeItem<Butoq> tugmachalarButoq() {
+        VBox taqsimlashTugmachalari = taqsimlashTuri();
+        Butoq butoq = new Butoq(taqsimlashTugmachalari);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> izohButoq() {
+        Butoq butoq = new Butoq(40, new Label("Izoh"));
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        Label label = butoq.getLabel();
+        label.setFont(font);
+        treeItem.getChildren().addAll(
+                eslatmaButoq()
+        );
+        treeItem.setExpanded(true);
+        return treeItem;
+    }
+    private TreeItem<Butoq> eslatmaButoq() {
+        initIzohTextArea();
+        Butoq butoq = new Butoq(izohTextArea);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> jamiButoq() {
+        Butoq butoq = new Butoq(40, new Label("Jami"));
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        Label label = butoq.getLabel();
+        label.setFont(font);
+        treeItem.getChildren().addAll(
+                jamiTovarButoq(),
+                jamiValutaButoq(),
+                jamiNatijaButoq(),
+                balansButoq()
+        );
+        treeItem.setExpanded(true);
+        return treeItem;
+    }
+    private TreeItem<Butoq> jamiTovarButoq() {
+        jamiTovarLabel.setFont(font);
+        HBox hBox = yangiHBox("Tovar", jamiTovarLabel);
+        Butoq butoq = new Butoq(hBox);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> jamiValutaButoq() {
+        jamiValutaLabel.setFont(font);
+        HBox hBox = yangiHBox("Valyuta", jamiValutaLabel);
+        Butoq butoq = new Butoq(hBox);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> jamiNatijaButoq() {
+        jamiNatijaLabel.setFont(font);
+        HBox hBox = yangiHBox("Natija", jamiNatijaLabel);
+        Butoq butoq = new Butoq(hBox);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+
+    private TreeItem<Butoq> balansButoq() {
+        jamiBalansLabel.setFont(font);
+        HBox hBox = yangiHBox("Balans", jamiBalansLabel);
+        Butoq butoq = new Butoq(hBox);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+
+    private HBox yangiHBox(String string, Label jamiLabel) {
+        HBox hBox = new HBox(5);
+        Text text = new Text(string);
+        HBox.setHgrow(hBox, Priority.ALWAYS);
+        HBox.setHgrow(text, Priority.NEVER);
+        hBox.getChildren().addAll(text, jamiLabel);
+        return hBox;
     }
 
 }

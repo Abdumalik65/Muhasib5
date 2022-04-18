@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.BarCode;
 import sample.Data.Standart3;
 import sample.Data.Standart6;
@@ -28,6 +29,7 @@ public class SerialNumbersModels {
     QueryHelper queryHelper;
 
     public ObservableList<SerialNumber> get(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<SerialNumber> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -58,6 +60,7 @@ public class SerialNumbersModels {
     }
 
     public Boolean getSerialNumber(Connection connection, String serialNumberString) {
+        MySqlStatus.checkMyConnection(connection);
         Boolean isExist = false;
         SerialNumber serialNumber;
         ResultSet rs = null;
@@ -79,6 +82,7 @@ public class SerialNumbersModels {
     }
 
     public ObservableList<SerialNumber> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<SerialNumber> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -110,6 +114,7 @@ public class SerialNumbersModels {
     }
 
     public Integer insert(Connection connection, SerialNumber serialNumber) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -145,6 +150,7 @@ public class SerialNumbersModels {
     }
 
     public Integer addBath(Connection connection, ObservableList<SerialNumber> serialNumbers) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -176,6 +182,7 @@ public class SerialNumbersModels {
     }
 
     public void copyDataBatch(Connection connection, ObservableList<SerialNumber> tovarNarhiObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -207,6 +214,7 @@ public class SerialNumbersModels {
     }
 
     public void delete(Connection connection, SerialNumber serialNumber) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -219,6 +227,7 @@ public class SerialNumbersModels {
         }
     }
     public void update(Connection connection, SerialNumber serialNumber) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + SANA + " = ?, "
                 + HISOB + " = ?, "

@@ -15,18 +15,15 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.HisobKitobModels;
-import sample.Temp.Hisobot;
-import sample.Temp.Hisobot2;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
-import sample.Tools.GetTableView2;
-import sample.Tools.SetHVGrow;
-import sample.Tools.Tugmachalar;
+import sample.Tools.TableViewAndoza;
+import sample.Tools.Hisobot2;
 
 import java.sql.Connection;
 import java.util.Date;
@@ -66,6 +63,8 @@ public class TovarHisoboti extends Application {
     public TovarHisoboti(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
@@ -143,11 +142,11 @@ public class TovarHisoboti extends Application {
         HBox.setHgrow(tovarTableView, Priority.ALWAYS);
         VBox.setVgrow(tovarTableView, Priority.ALWAYS);
         tovarTableView.setPadding(new Insets(padding));
-        GetTableView2 getTableView2 = new GetTableView2();
-        TableColumn<HisobKitob, String> tovarColumn = getTableView2.getIzoh2Column();
-        TableColumn<HisobKitob, String> birlikColumn = getTableView2.getBirlikColumn();
-        TableColumn<HisobKitob, Double> adadColumn = getTableView2.getAdadColumn();
-        TableColumn<HisobKitob, Double> narhColumn = getTableView2.getNarhColumn();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
+        TableColumn<HisobKitob, String> tovarColumn = tableViewAndoza.getIzoh2Column();
+        TableColumn<HisobKitob, String> birlikColumn = tableViewAndoza.getBirlikColumn();
+        TableColumn<HisobKitob, Double> adadColumn = tableViewAndoza.getAdadColumn();
+        TableColumn<HisobKitob, Double> narhColumn = tableViewAndoza.getNarhColumn();
         tovarTableView.getColumns().addAll(tovarColumn, /*barCodeColumn, birlikColumn, */adadColumn, narhColumn);
         tovarTableView.setItems(tovarList);
     }

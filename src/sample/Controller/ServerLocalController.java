@@ -13,6 +13,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Config.SqliteDB;
 import sample.Data.Aloqa;
+import sample.Data.User;
 import sample.Model.AloqaModels;
 import sample.Tools.Encryptor;
 
@@ -40,6 +41,7 @@ public class ServerLocalController extends Application {
 
     AloqaModels aloqaModels = new AloqaModels();
     Aloqa aloqa;
+    User user;
 
 
     Connection connection;
@@ -51,6 +53,11 @@ public class ServerLocalController extends Application {
     }
 
     public ServerLocalController() {
+        ibtido();
+    }
+    public ServerLocalController(Connection connection, User user) {
+        this.connection = connection;
+        this.user = user;
         ibtido();
     }
 
@@ -95,7 +102,7 @@ public class ServerLocalController extends Application {
     private void initStage(Stage primaryStage) {
         stage = primaryStage;
         stage.setTitle("LOCAL CONNECTION");
-        scene = new Scene(borderpane, 300, 240);
+        scene = new Scene(borderpane, 300, 270);
         stage.setScene(scene);
     }
     private void initTopPane() {
@@ -193,7 +200,8 @@ public class ServerLocalController extends Application {
                 aloqa.setDbPrefix(dbPrefixTextField.getText().trim());
                 aloqaModels.update_data(connection, aloqa);
             } else {
-                aloqa = new Aloqa(null,
+                aloqa = new Aloqa(
+                        1,
                         enCryptString,
                         dbHostTextField.getText().trim(),
                         dbPortTextField.getText().trim(),

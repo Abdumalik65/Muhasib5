@@ -16,6 +16,7 @@ import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDBGeneral;
 import sample.Enums.ServerType;
 import sample.Tools.CustomWindow;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.PathToImageView;
 import sample.Tools.Tugmachalar;
 import sample.Data.*;
@@ -50,6 +51,8 @@ public class GuruhlarController {
     public GuruhlarController(Connection connection, User user, String tableName) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         this.tableName = tableName;
         init();
     }

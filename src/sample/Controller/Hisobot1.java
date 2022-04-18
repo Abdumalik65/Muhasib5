@@ -15,15 +15,16 @@ import javafx.scene.text.FontWeight;
 import javafx.stage.Modality;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
 import sample.Model.HisobModels;
 import sample.Model.QaydnomaModel;
 import sample.Model.Standart3Models;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
-import sample.Tools.GetTableView2;
+import sample.Tools.TableViewAndoza;
 import sample.Tools.MoneyShow;
 import java.sql.Connection;
 import java.util.Collections;
@@ -56,7 +57,7 @@ public class Hisobot1 extends Application {
 
     Connection connection;
     User user;
-    GetTableView2 getTableView2 = new GetTableView2();
+    TableViewAndoza tableViewAndoza = new TableViewAndoza();
 
 
     public static void main(String[] args) {
@@ -64,7 +65,7 @@ public class Hisobot1 extends Application {
     }
 
     public Hisobot1() {
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         initConnection();
         ibtido();
     }
@@ -72,11 +73,13 @@ public class Hisobot1 extends Application {
     public Hisobot1(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
     private void ibtido() {
-        getTableView2.initTableViews();
+        tableViewAndoza.initTableViews();
         GetDbData.initData(connection);
         initData();
         initHisobTableView();
@@ -215,7 +218,7 @@ public class Hisobot1 extends Application {
     }
 
     private void initHisobTableView() {
-        hisobTableView = getTableView2.getHisobTableView();
+        hisobTableView = tableViewAndoza.getHisobTableView();
         hisobTableView.setItems(hisobObservableList);
         hisobTableView.getSelectionModel().selectFirst();
         HBox.setHgrow(hisobTableView, Priority.ALWAYS);
@@ -261,7 +264,7 @@ public class Hisobot1 extends Application {
     }
 
     private void initQaydnomaTableView() {
-        qaydnomaTableView = getTableView2.getQaydnomaTableView();
+        qaydnomaTableView = tableViewAndoza.getQaydnomaTableView();
         HBox.setHgrow(qaydnomaTableView, Priority.ALWAYS);
         VBox.setVgrow(qaydnomaTableView, Priority.ALWAYS);
         qaydnomaTableView.setItems(qaydnomaObservableList);
@@ -297,8 +300,8 @@ public class Hisobot1 extends Application {
     }
 
     private void initHisobKitobTableView() {
-        hisobKitobTableView = getTableView2.getHisobKitobTableView();
-        hisobKitobTableView.getColumns().add(getTableView2.getBalans2Column());
+        hisobKitobTableView = tableViewAndoza.getHisobKitobTableView();
+        hisobKitobTableView.getColumns().add(tableViewAndoza.getBalans2Column());
         HBox.setHgrow(hisobKitobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobKitobTableView, Priority.ALWAYS);
         hisobKitobTableView.setItems(hisobKitobObservableList);

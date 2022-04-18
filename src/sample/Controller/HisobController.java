@@ -16,7 +16,8 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Data.User;
 import sample.Model.HisobModels;
-import sample.Tools.ExportToExcel;
+import sample.Excel.ExportToExcel;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
 import sample.Tools.Tugmachalar;
 import sample.Data.Hisob;
@@ -52,6 +53,8 @@ public class HisobController {
     public HisobController(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     public HisobController(String tableName) {

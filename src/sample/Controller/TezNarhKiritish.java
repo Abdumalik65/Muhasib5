@@ -298,7 +298,7 @@ public class TezNarhKiritish extends Application {
 
         addButton.setOnAction(event -> {
             barCodeOff();
-            TovarController1 tovarController = new TovarController1(connection, user);
+            TovarController tovarController = new TovarController(connection, user);
             Standart newValue = tovarController.display();
             barCodeOn();
             if (newValue != null) {

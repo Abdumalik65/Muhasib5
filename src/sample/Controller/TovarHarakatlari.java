@@ -111,7 +111,7 @@ public class TovarHarakatlari extends Application {
     }
 
     public TovarHarakatlari() {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }
@@ -119,6 +119,8 @@ public class TovarHarakatlari extends Application {
     public TovarHarakatlari(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     private void ibtido() {
@@ -658,7 +660,7 @@ public class TovarHarakatlari extends Application {
 
         tovarHBox.getChildren().addAll(tovarTextField, addButton);
         addButton.setOnAction(event -> {
-            TovarController1 tovarController = new TovarController1(connection, user);
+            TovarController tovarController = new TovarController(connection, user);
             tovar = tovarController.display();
             if (tovar != null) {
                 tovarTextField.setText(tovar.getText());
@@ -734,7 +736,7 @@ public class TovarHarakatlari extends Application {
         int hujjatInt = getQaydnomaNumber();
         String izohString = izohTextArea.getText();
         Double jamiDouble = getJami(hisobKitobObservableList);
-        date = getQaydDate();
+        Date date = getQaydDate();
         QaydnomaData qaydnomaData = new QaydnomaData(null, amalTuri, hujjatInt, date,
                 hisob1.getId(), hisob1.getText(), hisob2.getId(), hisob2.getText(),
                 izohString, jamiDouble, 0, user.getId(), new Date());
@@ -775,6 +777,9 @@ public class TovarHarakatlari extends Application {
             hk.setHujjatId(qData.getHujjat());
             hk.setAmal(amalTuri);
             hk.setDateTime(qData.getSana());
+            hk.setHisob1(qData.getChiqimId());
+            hk.setHisob2(qData.getKirimId());
+            hk.setIzoh(qData.getIzoh());
             qoldiqList = hisobKitobModels.getBarCodeQoldiq(connection,hk.getHisob1(), barCode, qData.getSana());
             for (HisobKitob q: qoldiqList) {
                 HisobKitob clonedHK = cloneHisobKitob(q);
@@ -784,6 +789,7 @@ public class TovarHarakatlari extends Application {
                 clonedHK.setHisob1(hk.getHisob1());
                 clonedHK.setHisob2(hk.getHisob2());
                 clonedHK.setManba(q.getId());
+                clonedHK.setDateTime(qData.getSana());
                 if (q.getDona()>=talabDouble) {
                     clonedHK.setDona(talabDouble);
                     talabDouble = 0.0;

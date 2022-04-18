@@ -3,6 +3,8 @@ package sample.Model;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import sample.Config.MySqlDB;
+import sample.Config.MySqlDBGeneral;
+import sample.Config.MySqlStatus;
 import sample.Data.Standart;
 import sample.Data.Standart6;
 import sample.Tools.Alerts;
@@ -30,14 +32,7 @@ public class StandartModels {
 
 
     public ObservableList<Standart> get_data(Connection connection) {
-        try {
-            if (!connection.isValid(100)) {
-                MySqlDB.connectionIsValid(connection);
-                System.out.println("qayta ulanamiz");
-            }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -62,18 +57,19 @@ public class StandartModels {
         return books;
     }
 
-    public Standart getDataId(Connection connection, Integer tovarId) {
+    public Standart getDataId(Connection connection, Integer standartId) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart> books = FXCollections.observableArrayList();
-        Standart tovar = null;
+        Standart standart = null;
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE id = ?";
         PreparedStatement prSt = null;
         try {
             prSt = connection.prepareStatement(select);
-            prSt.setInt(1, tovarId);
+            prSt.setInt(1, standartId);
             rs = prSt.executeQuery();
             while (rs.next()) {
-                tovar =new Standart(rs.getInt(1),
+                standart =new Standart(rs.getInt(1),
                         rs.getString(2),
                         rs.getInt(3),
                         sdf.parse(rs.getString(4))
@@ -86,10 +82,11 @@ public class StandartModels {
         } catch (ParseException e) {
             Alerts.parseError();
         }
-        return tovar;
+        return standart;
     }
 
     public ObservableList<Standart> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy)  {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -116,6 +113,7 @@ public class StandartModels {
     }
 
     public Integer insert_data(Connection connection, Standart standart) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -143,6 +141,7 @@ public class StandartModels {
         return insertedID;
     }
     public Integer insert_data2(Connection connection, Standart standart) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -164,6 +163,7 @@ public class StandartModels {
         return insertedID;
     }
     public void delete_data(Connection connection, Standart standart) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -176,6 +176,7 @@ public class StandartModels {
         }
     }
     public void update_data(Connection connection, Standart standart) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + TEXT + " = ? WHERE "
                 + ID_FIELD + " = ?";
@@ -192,6 +193,7 @@ public class StandartModels {
     }
 
     public void addBatch(Connection connection, ObservableList<Standart> standartObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + TEXT + ", "
@@ -213,6 +215,7 @@ public class StandartModels {
     }
 
     public void copyDataBatch(Connection connection, ObservableList<Standart> standartObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "

@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
 import sample.Data.User;
@@ -21,12 +22,14 @@ public class UserModels {
     private String STATUS = "status";
     private String JINS = "jins";
     private String ONLINE = "online";
+    private String ONLINE_FIELD = "online";
     private final String USERID = "userId";
     private final String DATETIME = "dateTime";
     SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     QueryHelper queryHelper;
 
     public Integer addUser(Connection connection, User user) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "+ TABLENAME + "(" +
@@ -66,6 +69,7 @@ public class UserModels {
         return insertedID;
     }
     public void copyDataBatch(Connection connection, ObservableList<User> userList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "+ TABLENAME + "(" +
                 ID_FIELD + "," +
                 ISM + "," +
@@ -105,6 +109,7 @@ public class UserModels {
     }
 
     public ObservableList<User> getData(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<User> book = FXCollections.observableArrayList();
         ResultSet resSet = null;
         String select = "SELECT * FROM "+ TABLENAME;
@@ -138,6 +143,7 @@ public class UserModels {
     }
 
     public ObservableList<User> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<User> book = FXCollections.observableArrayList();
         ResultSet resSet = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -172,6 +178,7 @@ public class UserModels {
     }
 
     public ObservableList<User> getData1(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<User> book = FXCollections.observableArrayList();
         ResultSet resSet = null;
         String select = "SELECT * FROM "+ TABLENAME;
@@ -205,6 +212,7 @@ public class UserModels {
     }
 
     public User getUser(Connection connection, User user) {
+        MySqlStatus.checkMyConnection(connection);
         User user1 = null;
         ResultSet resSet = null;
         String select = "SELECT * FROM "+ TABLENAME + " WHERE " + ISM + " = ? AND " + PAROL + " = ?";
@@ -244,17 +252,17 @@ public class UserModels {
 
 
     public void changeUser(Connection connection, User user) {
-        String replace = "UPDATE " + TABLENAME +
-                " Set "  +
-                ISM + " = ?, " +
-                RASM+ " = ?, " +
-                PAROL+ " = ?, " +
-                EMAIL+ " = ?, " +
-                PHONE+ " = ?, " +
-                STATUS+ " = ?, " +
-                JINS + " = ?, " +
-                ONLINE + " = ? " +
-                "WHERE " + ID_FIELD + " = ? ";
+        MySqlStatus.checkMyConnection(connection);
+        String replace = "UPDATE " + TABLENAME + " SET "  +
+                ISM + " =?, " +
+                RASM+ " =?, " +
+                PAROL+ " =?, " +
+                EMAIL+ " =?, " +
+                PHONE+ " =?, " +
+                STATUS+ " =?, " +
+                JINS + " =?, " +
+                ONLINE + " =? WHERE " +
+                ID_FIELD + " =? ";
         PreparedStatement prSt = null;
         try {
             prSt = connection.prepareStatement(replace);
@@ -275,6 +283,7 @@ public class UserModels {
     }
 
     public void delete_data(Connection connection, User user){
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {

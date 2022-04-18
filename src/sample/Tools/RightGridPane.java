@@ -235,15 +235,10 @@ public class RightGridPane extends GridPane {
     }
 
     /***********************************************************************************************************************/
-    private void initFromHisobKitob() throws SQLException, ParseException {
+    private void initFromHisobKitob() {
         DecimalFormat decimalFormat = new MoneyShow();
-        DecimalFormatSymbols decimalFormatSymbols = DecimalFormatSymbols.getInstance();
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
         LocalDateTime localDateTime = qaydnomaData.getSana().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-        HisobModels hisobModels = new HisobModels();
-        TovarModels tovarModels = new TovarModels();
-        ValutaModels valutaModels = new ValutaModels();
-        StandartModels standartModels = new StandartModels();
 
         Integer day = localDateTime.getDayOfMonth();
         Integer month = localDateTime.getMonthValue();

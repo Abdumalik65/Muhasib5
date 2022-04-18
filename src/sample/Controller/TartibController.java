@@ -27,10 +27,7 @@ import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.*;
-import sample.Tools.Alerts;
-import sample.Tools.GetDbData;
-import sample.Tools.MoneyShow;
-import sample.Tools.Tugmachalar;
+import sample.Tools.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -82,6 +79,8 @@ public class TartibController extends Application {
     public TartibController(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
 

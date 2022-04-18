@@ -1,11 +1,8 @@
 package sample.Controller;
 
 import javafx.application.Application;
-import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -14,21 +11,15 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
-import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.util.Callback;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
-import sample.Model.HisobKitobModels;
-import sample.Model.QaydnomaModel;
 import sample.Model.SerialNumbersModels;
 import sample.Tools.*;
 
 import java.sql.Connection;
-import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -41,7 +32,7 @@ public class SerialNumbersController extends Application {
     TableView<Hisob> hisobTableView = new TableView<>();
     TableView<SerialNumber> serialNumberTableView = new TableView<>();
     Tugmachalar tugmachalar = new Tugmachalar();
-    GetTableView2 getTableView2 = new GetTableView2();
+    TableViewAndoza tableViewAndoza = new TableViewAndoza();
     TextField textField = new TextField();
     TextField serialNumberQidir = new TextField();
     ObservableList<Hisob> hisobObservableList;
@@ -65,6 +56,8 @@ public class SerialNumbersController extends Application {
     public SerialNumbersController(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
@@ -85,7 +78,7 @@ public class SerialNumbersController extends Application {
         SetHVGrow.VerticalHorizontal(hisobTableView);
         hisobTableView.setMaxWidth(210);
         hisobTableView.setPadding(new Insets(padding));
-        TableColumn<Hisob, String> hisobText = getTableView2.getHisobTextColumn();
+        TableColumn<Hisob, String> hisobText = tableViewAndoza.getHisobTextColumn();
         hisobText.setMinWidth(200);
         hisobTableView.getColumns().add(hisobText);
         hisobTableView.setItems(hisobObservableList);

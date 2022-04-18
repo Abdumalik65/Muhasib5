@@ -115,8 +115,8 @@ public class TovarKirimChiqimi extends Application {
     public TovarKirimChiqimi() {
         connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
-        String serialNumber = Sotuvchi3.getSerialNumber();
-        kassa = Sotuvchi3.getKassaData(connection, serialNumber);
+        String serialNumber = Sotuvchi.getSerialNumber();
+        kassa = Sotuvchi.getKassaData(connection, serialNumber);
         if (kirim) {
             hisob1 = GetDbData.getHisob(kassa.getXaridorHisobi());
             hisob2 = GetDbData.getHisob(kassa.getTovarHisobi());
@@ -135,6 +135,8 @@ public class TovarKirimChiqimi extends Application {
     public TovarKirimChiqimi(Connection connection, User user, Boolean kirim, Kassa kassa) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         this.kirim = kirim;
         this.kassa = kassa;
         if (kirim) {
@@ -889,7 +891,7 @@ public class TovarKirimChiqimi extends Application {
 
         tovarHBox.getChildren().addAll(tovarTextField, addButton);
         addButton.setOnAction(event -> {
-            TovarController1 tovarController = new TovarController1(connection, user);
+            TovarController tovarController = new TovarController(connection, user);
             tovar = tovarController.display();
             if (tovar != null) {
                 tovarTextField.setText(tovar.getText());

@@ -17,6 +17,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.Date;
 
 public class FoydaExcel {
@@ -47,7 +48,11 @@ public class FoydaExcel {
     int fontSize = 19;
 
     File file;
+    File directory = new File(System.getProperty("user.dir") + File.separator + "Hisobot");
+    String pathString;
+    String printerim;
     Desktop desktop = Desktop.getDesktop();
+
     ObservableList<Standart3> s3List;
     ObservableList<BarCode>  barCodeList;
     public FoydaExcel() {
@@ -55,9 +60,17 @@ public class FoydaExcel {
     }
 
     private void ibtido() {
+        initDirectory();
         initWorkBook();
         initFonts();
         initStyles();
+    }
+
+    private void initDirectory() {
+        if (!directory.exists()) {
+            directory.mkdir();
+        }
+        pathString = directory.getAbsolutePath() + File.separator;
     }
 
     private void initWorkBook() {
@@ -209,7 +222,7 @@ public class FoydaExcel {
 
 
             OutputStream fileOut = null;
-            String fileName = "hisob" + hisobId + ".xlsx";
+            String fileName= pathString + hisob.getText().trim() + "_" + LocalDate.now() + ".xlsx";
             try {
                 fileOut = new FileOutputStream(fileName);
                 wb.write(fileOut);
@@ -258,7 +271,7 @@ public class FoydaExcel {
 
 
             OutputStream fileOut = null;
-            String fileName = "hisob" + hisobId + ".xlsx";
+            String fileName= pathString + hisob.getText().trim() + "_" + LocalDate.now() + ".xlsx";
             try {
                 fileOut = new FileOutputStream(fileName);
                 wb.write(fileOut);

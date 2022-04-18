@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.TovarSana;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
@@ -22,6 +23,7 @@ public class TovarSanaModels {
     QueryHelper queryHelper;
 
     public ObservableList<TovarSana> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<TovarSana> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -49,6 +51,7 @@ public class TovarSanaModels {
     }
 
     public ObservableList<TovarSana> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<TovarSana> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -77,6 +80,7 @@ public class TovarSanaModels {
     }
 
     public ObservableList<TovarSana> getDate(Connection connection, Integer valuta, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<TovarSana> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE valuta = ? AND sana <= ? ORDER BY " + sqlOrderBy;
@@ -106,6 +110,7 @@ public class TovarSanaModels {
     }
 
     public Integer insert_data(Connection connection, TovarSana tovarSana) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -135,6 +140,7 @@ public class TovarSanaModels {
     }
 
     public Integer addBatch(Connection connection, ObservableList<TovarSana> tovarSanaObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -159,6 +165,7 @@ public class TovarSanaModels {
         return insertedID;
     }
     public void copyDataBatch(Connection connection, ObservableList<TovarSana> tovarSanaObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -187,6 +194,7 @@ public class TovarSanaModels {
     }
 
     public void delete_data(Connection connection, TovarSana tovarSana) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -200,6 +208,7 @@ public class TovarSanaModels {
     }
 
     public void update_data(Connection connection, TovarSana tovarSana) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + TOVAR + " = ?, "
                 + SANA + " = ? WHERE "

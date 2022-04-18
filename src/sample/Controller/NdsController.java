@@ -32,10 +32,7 @@ import sample.Enums.ServerType;
 import sample.Model.BarCodeModels;
 import sample.Model.Standart4Models;
 import sample.Model.StandartModels;
-import sample.Tools.Alerts;
-import sample.Tools.GetDbData;
-import sample.Tools.MoneyShow;
-import sample.Tools.Tugmachalar;
+import sample.Tools.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -87,6 +84,8 @@ public class NdsController extends Application {
     public NdsController(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
 

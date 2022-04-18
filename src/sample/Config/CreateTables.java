@@ -26,31 +26,46 @@ public class CreateTables {
             AndozaTable(connection, "MijozTuri");
             AndozaTable(connection, "SavdoTuri");
             AndozaTable(connection, "QarzAmallari");
+            AndozaTable(connection, "Tizimlar");
+            AndozaTable(connection, "Dasturlar");
+            Andoza6Table(connection, "BGuruh1");
+            Andoza6Table(connection, "TGuruh1");
+            AndozaTable(connection, "XodimMavqesi");
+            AndozaTable(connection, "PulMavqesi");
 
             AndozaTable2(connection, "FoydaHisobi");
             AndozaTable2(connection, "Zarar");
             AndozaTable2(connection, "TranzitHisob");
+            AndozaTable2(connection, "Xaridor");
+            AndozaTable2(connection, "PulHisobi");
             AndozaTable2(connection, "NDS1");
             AndozaTable2(connection, "Chegirma");
             AndozaTable2(connection, "Bank");
             AndozaTable2(connection, "Bojxona");
+            AndozaTable2(connection, "Tasdiq");
+            AndozaTable2(connection, "QoshimchaDaromad");
             AndozaTable2(connection, "Mahsulot");
-            AndozaTable3(connection, "Bank1");
             AndozaTable2(connection, "BankXizmati");
+            AndozaTable2(connection, "YordamchiHisobRoyxati");
 
+            AndozaTable3(connection, "Bank1");
             AndozaTable3(connection, "BankXizmati1");
             AndozaTable3(connection, "FoydaHisobiGuruhi");
             AndozaTable3(connection, "TranzitHisobGuruhi");
             AndozaTable3(connection, "ZararGuruhi");
+            AndozaTable3(connection, "Xaridor1");
+            AndozaTable3(connection, "PulHisobi1");
             AndozaTable3(connection, "ChegirmaGuruhi");
             AndozaTable3(connection, "NDS2");
             AndozaTable3(connection, "BGuruh2");
             AndozaTable3(connection, "TGuruh2");
             AndozaTable3(connection, "HisobGuruhTarkibi");
             AndozaTable3(connection, "CheklanganHisobTarkibi");
+            AndozaTable3(connection, "CheklanganDasturTarkibi");
             AndozaTable3(connection, "Bojxona2");
-            Andoza6Table(connection, "BGuruh1");
-            Andoza6Table(connection, "TGuruh1");
+            AndozaTable3(connection, "Tasdiq2");
+            AndozaTable3(connection, "QoshimchaDaromad2");
+            AndozaTable3(connection, "Dokonlar");
 
             Andoza4Table(connection, "Tartib");
             Andoza4Table(connection, "Nds");
@@ -64,6 +79,9 @@ public class CreateTables {
             HisobTable(connection, "Hisob1");
             HisobTable(connection, "Hisob2");
             HisobKitob(connection, "HisobKitob");
+            HisobKitob(connection, "XomAshyo");
+            HisobKitob(connection, "TayyorMaxsulot");
+            HisobKitob(connection, "TempHisobKitob");
             UserTable(connection);
             KassaTable(connection);
             Qaydnoma(connection);
@@ -73,24 +91,30 @@ public class CreateTables {
             NarhTable(connection);
             GuruhNarhiTable(connection);
             SerialNumbersTable(connection, "SerialNumbers");
+            PlasticFoizTable(connection, "PlasticFoiz");
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
     }
     private void AndozaTable(Connection connection, String fileName) throws SQLException {
-        String structure = "CREATE TABLE IF NOT EXISTS " +  fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, text varchar(100), userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
+        String structure = "CREATE TABLE IF NOT EXISTS " +  fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, text varchar(200), userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
         PreparedStatement prSt = connection.prepareStatement(structure);
         prSt.executeUpdate();
 
     }
     private void AndozaTable2(Connection connection, String fileName) throws SQLException {
-        String structure = "CREATE TABLE IF NOT EXISTS " +  fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, id2 INT, text varchar(100), userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
+        String structure = "CREATE TABLE IF NOT EXISTS " +  fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, id2 INT, text varchar(200), userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
         PreparedStatement prSt = connection.prepareStatement(structure);
         prSt.executeUpdate();
     }
     private void AndozaTable3(Connection connection, String fileName) throws SQLException {
-        String structure = "CREATE TABLE IF NOT EXISTS " +  fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, id2 INT, id3 INT, text varchar(100), userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
+        String structure = "CREATE TABLE IF NOT EXISTS " +  fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, id2 INT, id3 INT, text varchar(200), userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
+        PreparedStatement prSt = connection.prepareStatement(structure);
+        prSt.executeUpdate();
+    }
+    private void AndozaTable7(Connection connection, String fileName) throws SQLException {
+        String structure = "CREATE TABLE IF NOT EXISTS " +  fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, text varchar(200), aDouble double NOT NULL DEFAULT 1, userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
         PreparedStatement prSt = connection.prepareStatement(structure);
         prSt.executeUpdate();
     }
@@ -183,6 +207,12 @@ public class CreateTables {
 
     private void SerialNumbersTable(Connection connection, String fileName) throws SQLException {
         String structure = "CREATE TABLE IF NOT EXISTS " + fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, sana datetime, hisob INT, invoice varchar(40), tovar int, serialNumber varchar(60), userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
+        PreparedStatement prSt = connection.prepareStatement(structure);
+        prSt.executeUpdate();
+    }
+
+    private void PlasticFoizTable(Connection connection, String fileName) throws SQLException {
+        String structure = "CREATE TABLE IF NOT EXISTS " + fileName + " (id INT  PRIMARY KEY AUTO_INCREMENT, foiz double NOT NULL DEFAULT 0.02, userId INT, dateTime datetime NOT NULL DEFAULT CURRENT_TIMESTAMP)";
         PreparedStatement prSt = connection.prepareStatement(structure);
         prSt.executeUpdate();
     }

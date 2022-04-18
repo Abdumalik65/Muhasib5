@@ -74,6 +74,8 @@ public class FoydaHisoboti extends Application {
     public FoydaHisoboti(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
@@ -145,10 +147,10 @@ public class FoydaHisoboti extends Application {
         Standart2Models standart2Models = new Standart2Models();
         standart2Models.setTABLENAME("foydahisobi");
         ObservableList<Standart2> standart2ObservableList = standart2Models.get_data(connection);
-        GetTableView2 getTableView2 = new GetTableView2();
-        hisobTableView = getTableView2.getHisobTableView();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
+        hisobTableView = tableViewAndoza.getHisobTableView();
         SetHVGrow.VerticalHorizontal(hisobTableView);
-        hisobTableView.getColumns().add(getTableView2.getHisobTextColumn());
+        hisobTableView.getColumns().add(tableViewAndoza.getHisobTextColumn());
         for (Standart2 s2: standart2ObservableList) {
             hisobTableList.add(new Hisob(s2.getId2(), s2.getText(), 0d,"","", "", user.getId()));
         }
@@ -159,15 +161,15 @@ public class FoydaHisoboti extends Application {
     }
 
     private void initFoydaTable() {
-        GetTableView2 getTableView2 = new GetTableView2();
-        foydaTableView = getTableView2.getHisobKitobTableView();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
+        foydaTableView = tableViewAndoza.getHisobKitobTableView();
         SetHVGrow.VerticalHorizontal(foydaTableView);
         foydaTableView.getColumns().addAll(
-                getTableView2.getDateTimeColumn(),
-                getTableView2.getIzoh2Column(),
-                getTableView2.getAdadColumn(),
-                getTableView2.getNarhColumn(),
-                getTableView2.getSummaColumn()
+                tableViewAndoza.getDateTimeColumn(),
+                tableViewAndoza.getIzoh2Column(),
+                tableViewAndoza.getAdadColumn(),
+                tableViewAndoza.getNarhColumn(),
+                tableViewAndoza.getSummaColumn()
         );
         foydaTableList = refreshFoydaList();
         foydaTableView.setItems(foydaTableList);

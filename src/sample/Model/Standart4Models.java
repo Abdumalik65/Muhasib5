@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.HisobKitob;
 import sample.Data.Kurs;
 import sample.Data.Standart4;
@@ -25,6 +26,7 @@ public class Standart4Models {
     QueryHelper queryHelper;
 
     public ObservableList<Standart4> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart4> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -53,6 +55,7 @@ public class Standart4Models {
     }
 
     public ObservableList<Standart4> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart4> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -82,6 +85,7 @@ public class Standart4Models {
     }
 
     public Standart4 getTartibForDate(Connection connection, Integer tovar, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart4> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE "+ TOVAR +" = ? AND sana <= ? ORDER BY " + DATETIME + " DESC";
@@ -115,6 +119,7 @@ public class Standart4Models {
         return standart4;
     }
     public Integer insert_data(Connection connection, Standart4 standart4) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -146,6 +151,7 @@ public class Standart4Models {
     }
 
     public ObservableList<Standart4> getDate(Connection connection, Integer tovarId, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart4> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE " + TOVAR + " = ? AND sana <= ? ORDER BY " + sqlOrderBy;
@@ -176,6 +182,7 @@ public class Standart4Models {
     }
 
     public void addBatch(Connection connection, ObservableList<Standart4> standart4ObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + TOVAR + ", "
@@ -200,6 +207,7 @@ public class Standart4Models {
         }
     }
     public void copyDataBatch(Connection connection, ObservableList<Standart4> standart4ObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -230,6 +238,7 @@ public class Standart4Models {
 
 
     public void delete_data(Connection connection, Standart4 standart4) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -242,6 +251,7 @@ public class Standart4Models {
         }
     }
     public void update_data(Connection connection, Standart4 standart4) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + TOVAR + " = ?, "
                 + SANA + " = ?, "

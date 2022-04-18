@@ -50,6 +50,13 @@ public class Savdo {
         initData();
     }
 
+    public Savdo(Connection connection, HisobKitob hisobKitob) {
+        this.connection = connection;
+        this.hisobKitob = hisobKitob;
+        initData();
+        initHisobKitob(hisobKitob);
+    }
+
     public void initHisobKitob(HisobKitob hisobKitob) {
         this.hisobKitob = hisobKitob;
         tovar = GetDbData.getTovar(hisobKitob.getTovar());

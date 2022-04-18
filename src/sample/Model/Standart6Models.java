@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Standart3;
 import sample.Data.Standart6;
 import sample.Tools.Alerts;
@@ -33,6 +34,7 @@ public class Standart6Models {
     }
 
     public ObservableList<Standart6> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart6> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -64,6 +66,7 @@ public class Standart6Models {
     }
 
     public Standart6 getWithId(Connection connection, int id) {
+        MySqlStatus.checkMyConnection(connection);
         Standart6 standart6 = null;
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
@@ -96,6 +99,7 @@ public class Standart6Models {
     }
 
     public ObservableList<Standart6> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart6> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -128,6 +132,7 @@ public class Standart6Models {
     }
 
     public Integer insert_data(Connection connection, Standart6 standart6) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -166,6 +171,7 @@ public class Standart6Models {
 
 
     public void addBatch(Connection connection, ObservableList<Standart6> standart6ObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + TEXT + ", "
@@ -198,6 +204,7 @@ public class Standart6Models {
         }
     }
     public void copyDataBatch(Connection connection, ObservableList<Standart6> standart6ObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -234,6 +241,7 @@ public class Standart6Models {
 
 
     public void deleteBatch(Connection connection, ObservableList<Standart6> standart6List) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -249,6 +257,7 @@ public class Standart6Models {
         }
     }
     public void delete_data(Connection connection, Standart6 standart6) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -261,6 +270,7 @@ public class Standart6Models {
         }
     }
     public void update_data(Connection connection, Standart6 standart6) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + TEXT + " = ?, "
                 + NARH + " = ?, "
@@ -287,6 +297,7 @@ public class Standart6Models {
     }
 
     public Standart6 guruhliTovarNarhi(Connection connection, int tovarId) {
+        MySqlStatus.checkMyConnection(connection);
         Standart6 s6 = null;
         Standart6Models standart6Models = new Standart6Models("TGuruh1");
         Standart3Models standart3Models = new Standart3Models();

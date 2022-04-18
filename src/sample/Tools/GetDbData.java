@@ -21,8 +21,11 @@ public class GetDbData {
     public static StandartModels standartModels = new StandartModels();
     public static UserModels userModels = new UserModels();
     public static BarCodeModels barCodeModels = new BarCodeModels();
+    public static KassaModels kassaModels = new KassaModels();
+    public static PlasticFoiziModels plasticFoiziModels = new PlasticFoiziModels();
 
     public static User user;
+    public static PlasticFoizi plasticFoizi;
 
     public static Connection connection;
 
@@ -39,6 +42,13 @@ public class GetDbData {
         GetDbData.amalObservableList = standartModels.get_data(connection);
         GetDbData.userObservableList = userModels.getData(connection);
         GetDbData.barCodeObservableList = barCodeModels.get_data(connection);
+        ObservableList<PlasticFoizi> plasticFoiziObservableList = plasticFoiziModels.get_data(connection);
+        if (plasticFoiziObservableList.size()==0) {
+            GetDbData.plasticFoizi = new PlasticFoizi(null, 0.02, 1, null);
+                    plasticFoiziModels.insert(connection, GetDbData.plasticFoizi);
+        } else {
+            GetDbData.plasticFoizi = plasticFoiziObservableList.get(0);
+        }
     }
 
     public static ObservableList<Hisob> getHisobObservableList() {
@@ -105,6 +115,12 @@ public class GetDbData {
             }
         }
         return tovar;
+    }
+
+    public static Kassa getKassa(String string) {
+        Kassa kassa = null;
+        kassa = kassaModels.getKassa(connection, string);
+        return kassa;
     }
 
     public static ObservableList<BarCode> getBarCodeObservableList() {
@@ -327,5 +343,13 @@ public class GetDbData {
             }
         }
         return hisobList;
+    }
+
+    public static PlasticFoizi getPlasticFoizi() {
+        return plasticFoizi;
+    }
+
+    public static void setPlasticFoizi(PlasticFoizi plasticFoizi) {
+        GetDbData.plasticFoizi = plasticFoizi;
     }
 }

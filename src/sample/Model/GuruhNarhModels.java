@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.GuruhNarh;
 import sample.Data.Narh;
 import sample.Tools.Alerts;
@@ -25,6 +26,7 @@ public class GuruhNarhModels {
     QueryHelper queryHelper;
 
     public ObservableList<GuruhNarh> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<GuruhNarh> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -54,6 +56,7 @@ public class GuruhNarhModels {
     }
 
     public ObservableList<GuruhNarh> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<GuruhNarh> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -84,6 +87,7 @@ public class GuruhNarhModels {
     }
 
     public GuruhNarh getTartibForDate(Connection connection, Integer tovar, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<GuruhNarh> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE "+ GURUHID +" = ? AND sana <= ? ORDER BY " + DATETIME + " DESC";
@@ -118,6 +122,7 @@ public class GuruhNarhModels {
         return guruhNarh;
     }
     public Integer insert_data(Connection connection, GuruhNarh guruhNarh) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -151,6 +156,7 @@ public class GuruhNarhModels {
     }
 
     public ObservableList<GuruhNarh> getDate(Connection connection, Integer tovarId, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<GuruhNarh> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE " + GURUHID + " = ? AND sana <= ? ORDER BY " + sqlOrderBy;
@@ -182,6 +188,7 @@ public class GuruhNarhModels {
     }
 
     public void addBatch(Connection connection, ObservableList<GuruhNarh> guruhNarhObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + SANA + ", "
@@ -208,6 +215,7 @@ public class GuruhNarhModels {
         }
     }
     public void copyDataBatch(Connection connection, ObservableList<GuruhNarh> guruhNarhObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -239,6 +247,7 @@ public class GuruhNarhModels {
     }
 
     public void delete_data(Connection connection, GuruhNarh guruhNarh) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -251,6 +260,7 @@ public class GuruhNarhModels {
         }
     }
     public void update_data(Connection connection, GuruhNarh guruhNarh) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + SANA + " = ?, "
                 + GURUHID + " = ?, "

@@ -2,9 +2,11 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Hisob;
 import sample.Data.HisobKitob;
 import sample.Data.QaydnomaData;
+import sample.Data.User;
 import sample.Tools.Alerts;
 import sample.Tools.GetDbData;
 import sample.Tools.QueryHelper;
@@ -33,6 +35,7 @@ public class QaydnomaModel {
     QueryHelper queryHelper;
 
     public ObservableList<QaydnomaData> get_data(Connection connection){
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<QaydnomaData> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -68,6 +71,7 @@ public class QaydnomaModel {
     }
 
     public QaydnomaData get_data(Connection connection, Integer qaydId){
+        MySqlStatus.checkMyConnection(connection);
         QaydnomaData qaydnomaData = null;
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
@@ -103,6 +107,7 @@ public class QaydnomaModel {
     }
 
     public ObservableList<Hisob> get_data(Connection connection, Integer hisobId, Integer amalId){
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Hisob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + CHIQIMID + " FROM " + TABLENAME + " WHERE " + KIRIMID + " = ? and amalTuri = ?";
@@ -124,7 +129,45 @@ public class QaydnomaModel {
         return books;
     }
 
+    public QaydnomaData getQaydnoma(Connection connection, Integer qaydId){
+        MySqlStatus.checkMyConnection(connection);
+        QaydnomaData qaydnomaData = null;
+        ResultSet rs = null;
+        String select = "SELECT * FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
+        PreparedStatement prSt = null;
+        try {
+            prSt = connection.prepareStatement(select);
+            prSt.setInt(1, qaydId);
+            rs = prSt.executeQuery();
+            if (rs.next()) {
+                qaydnomaData = new QaydnomaData(
+                        rs.getInt(1),
+                        rs.getInt(2),
+                        rs.getInt(3),
+                        sdf.parse(rs.getString(4)),
+                        rs.getInt(5),
+                        rs.getString(6),
+                        rs.getInt(7),
+                        rs.getString(8),
+                        rs.getString(9),
+                        rs.getDouble(10),
+                        rs.getInt(11),
+                        rs.getInt(12),
+                        sdf.parse(rs.getString(13))
+                );
+            }
+            rs.close();
+            prSt.close();
+        } catch (SQLException e) {
+            Alerts.losted();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return qaydnomaData;
+    }
+
     public ObservableList<QaydnomaData> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<QaydnomaData> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -163,6 +206,7 @@ public class QaydnomaModel {
     }
 
     public QaydnomaData getDataById(Connection connection, int qaydId) {
+        MySqlStatus.checkMyConnection(connection);
         QaydnomaData qaydnomaData = null;
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
@@ -200,6 +244,7 @@ public class QaydnomaModel {
         return qaydnomaData;
     }
     public ObservableList<QaydnomaData> getDataByDate(Connection connection, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<QaydnomaData> qaydnomaDataList = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE " + SANA + " = ?";
@@ -236,8 +281,10 @@ public class QaydnomaModel {
     }
 
     public Integer insert_data(Connection connection, QaydnomaData qaydnomaData) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
+        yangiHujjat(connection, qaydnomaData);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + AMALTURI + ", "
@@ -280,6 +327,7 @@ public class QaydnomaModel {
         return insertedID;
     }
     public void addBatchWithId(Connection connection, ObservableList<QaydnomaData> qaydnomaDataObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -320,6 +368,7 @@ public class QaydnomaModel {
         }
     }
     public void copyDataBatch(Connection connection, ObservableList<QaydnomaData> qaydnomaDataObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -363,6 +412,7 @@ public class QaydnomaModel {
     }
 
     public void delete_data(Connection connection, QaydnomaData qaydnomaData)  {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -375,6 +425,7 @@ public class QaydnomaModel {
         }
     }
     public void update_data(Connection connection, QaydnomaData qaydnomaData)  {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + AMALTURI + "= ?,"
                 + HUJJAT + "= ?,"
@@ -413,6 +464,7 @@ public class QaydnomaModel {
     }
 
     public Hisob getBalans(Connection connection, Hisob hisob) {
+        MySqlStatus.checkMyConnection(connection);
         ResultSet rs = null;
 
         String select = "SELECT SUM("+JAMI+") FROM " + TABLENAME + " WHERE " + CHIQIMID + "=?" ;
@@ -441,6 +493,7 @@ public class QaydnomaModel {
     }
 
     public Integer getCount(Connection connection, String sqlWhere) {
+        MySqlStatus.checkMyConnection(connection);
         Integer count = 0;
         ObservableList<QaydnomaData> books = FXCollections.observableArrayList();
         ResultSet rs = null;
@@ -459,5 +512,26 @@ public class QaydnomaModel {
             Alerts.losted();
         }
         return count;
+    }
+
+    public QaydnomaData yangiHujjat(Connection connection, QaydnomaData qaydnomaData){
+        MySqlStatus.checkMyConnection(connection);
+        ResultSet rs = null;
+        String select = "SELECT MAX(" + HUJJAT + ") FROM " + TABLENAME + " WHERE " + AMALTURI + " = ?";
+        PreparedStatement prSt = null;
+        try {
+            prSt = connection.prepareStatement(select);
+            prSt.setInt(1, qaydnomaData.getAmalTuri());
+            rs = prSt.executeQuery();
+            if (rs.next()) {
+                Integer hujjatN = rs.getInt(1);
+                qaydnomaData.setHujjat(hujjatN+1);
+            }
+            rs.close();
+            prSt.close();
+        } catch (SQLException e) {
+            Alerts.losted();
+        }
+        return qaydnomaData;
     }
 }

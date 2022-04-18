@@ -32,10 +32,7 @@ import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.*;
-import sample.Tools.Alerts;
-import sample.Tools.MoneyShow;
-import sample.Tools.PathToImageView;
-import sample.Tools.SetHVGrow;
+import sample.Tools.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -112,6 +109,8 @@ public class KassadanPulChiqimi extends Application {
     public KassadanPulChiqimi(Connection connection, User user, Hisob hisob) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         this.hisob1 = hisob;
     }
 

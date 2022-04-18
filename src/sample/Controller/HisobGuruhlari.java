@@ -21,8 +21,11 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDB;
+import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
+import sample.Enums.ServerType;
+import sample.Excel.ExportToExcel;
+import sample.Excel.HisobGuruhlariExcel;
 import sample.Model.HisobKitobModels;
 import sample.Model.HisobModels;
 import sample.Model.Standart3Models;
@@ -48,6 +51,7 @@ public class HisobGuruhlari extends Application {
     TableView<Standart> leftTableView = new TableView<>();
     TableView<Standart3> rightTableView = new TableView<>();
     TableView<Hisob> hisobTableView = new TableView<>();
+    TextField hisobTableViewTextField = new TextField();
     HBox hisobButtonsPane = new HBox();
     Button qaydEtButton;
     Button cancelButton = new Button("<<");
@@ -71,6 +75,7 @@ public class HisobGuruhlari extends Application {
     HisobModels hisobModels = new HisobModels();
 
     Standart guruhCursor;
+    Standart nushaGuruhi;
 
     VBox rightPane = new VBox();
     VBox leftPane = new VBox();
@@ -83,7 +88,7 @@ public class HisobGuruhlari extends Application {
     }
 
     public HisobGuruhlari() {
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }
@@ -91,6 +96,8 @@ public class HisobGuruhlari extends Application {
     public HisobGuruhlari(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     private void ibtido() {
@@ -143,7 +150,7 @@ public class HisobGuruhlari extends Application {
                         summa = summa + h.getBalans();
                     }
                 }
-                Balans b = new Balans(s.getId(), .0, .0, .0, summa);
+                Balans b = new Balans(s.getId(), .0, .0, .0, StringNumberUtils.yaxlitla(summa, -2));
                 balansList.add(b);
             }
         }
@@ -199,7 +206,21 @@ public class HisobGuruhlari extends Application {
         });
 
         leftButtons.getEdit().setOnAction(event -> {});
+        Button refreshButton = new Button();
+        ImageView imageView = new PathToImageView("/sample/images/Icons/refresh1.png", 16, 16).getImageView();
+        refreshButton.setGraphic(imageView);
+        refreshButton.setText("Yangilash");
+        refreshButton.setOnAction(e->{
+            refreshTables(localDate);
+        });
+        Button excel = leftButtons.getExcel();
+        excel.setOnAction(event -> {
+            HisobGuruhlariExcel hisobGuruhlariExcel = new HisobGuruhlariExcel();
+            hisobGuruhlariExcel.hisobGuruhlari(guruhlarNomi, balansList);
+        });
 
+
+        leftButtons.getChildren().add(refreshButton);
         leftButtons.getChildren().add(datePicker);
     }
 
@@ -237,16 +258,20 @@ public class HisobGuruhlari extends Application {
             LocalDate newDate = datePicker.getValue();
             if (newDate != null) {
                 localDate = newDate;
-                Date date = null;
-                LocalDateTime localDateTime = LocalDateTime.of(localDate, LocalTime.of(23,59,59));
-                Instant instant = Instant.from(localDateTime.atZone(ZoneId.systemDefault()));
-                date = Date.from(instant);
-                hisobObservableList = hisobModels.get_data1(connection, date);
-                refreshBalance();
-                rightTableView.refresh();
-                leftTableView.refresh();
+                refreshTables(localDate);
             }
         });
+    }
+
+    private void refreshTables(LocalDate localDate) {
+        Date date = null;
+        LocalDateTime localDateTime = LocalDateTime.of(localDate, LocalTime.of(23,59,59));
+        Instant instant = Instant.from(localDateTime.atZone(ZoneId.systemDefault()));
+        date = Date.from(instant);
+        hisobObservableList = hisobModels.get_data1(connection, date);
+        refreshBalance();
+        rightTableView.refresh();
+        leftTableView.refresh();
     }
 
     private void refreshBalance() {
@@ -278,6 +303,7 @@ public class HisobGuruhlari extends Application {
         leftTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 guruhCursor = newValue;
+                standart3Models.setTABLENAME("HisobGuruhTarkibi");
                 guruhTarkibi = standart3Models.getAnyData(connection, "id2 = " + guruhCursor.getId(), "");
                 rightTableView.setItems(guruhTarkibi);
                 rightTableView.refresh();
@@ -295,7 +321,7 @@ public class HisobGuruhlari extends Application {
 
     private TableColumn<Standart, String> getGuruhColumn() {
         TableColumn<Standart, String> textColumn = new TableColumn<>("Guruh nomi");
-        textColumn.setMinWidth(180);
+        textColumn.setMinWidth(350);
         textColumn.setCellValueFactory(new PropertyValueFactory<>("text"));
         textColumn.setCellFactory(TextFieldTableCell.<Standart> forTableColumn());
         textColumn.setOnEditCommit((TableColumn.CellEditEvent<Standart, String> event) -> {
@@ -369,6 +395,16 @@ public class HisobGuruhlari extends Application {
         centerPane.getItems().addAll(leftPane, rightPane);
     }
 
+    private TextField initTaftishTextField() {
+        TextField textField = new TextField();
+        textField.textProperty().addListener(((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                Taftish2(oldValue, newValue);
+            }
+        }));
+        return textField;
+    }
+
     private void initRightButtons() {
         rightButtons.getChildren().remove(rightButtons.getEdit());
         rightButtons.getChildren().add(textField);
@@ -383,11 +419,13 @@ public class HisobGuruhlari extends Application {
                 leftPane.setDisable(true);
                 rightPane.getChildren().removeAll(rightPane.getChildren());
                 hisobButtonsPane.getChildren().removeAll(hisobButtonsPane.getChildren());
-                rightPane.getChildren().addAll(hisobTableView, hisobButtonsPane);
+                hisobTableViewTextField = initTaftishTextField();
+                rightPane.getChildren().addAll(hisobTableViewTextField, hisobTableView, hisobButtonsPane);
                 qaydEtButton = new Tugmachalar().getAdd();
                 initHBoxButtons();
                 hisobButtonsPane.getChildren().addAll(cancelButton, qaydEtButton);
                 guruhToHisob();
+                hisobTableViewTextField = initTaftishTextField();
 
                 qaydEtButton.setOnAction(event1 -> {
                     hisobToGuruh();
@@ -454,6 +492,18 @@ public class HisobGuruhlari extends Application {
         VBox.setVgrow(rightTableView, Priority.ALWAYS);
         rightTableView.setItems(guruhTarkibi);
         rightTableView.getColumns().addAll(getHisobColumn(), getHisobBalansColumn());
+        rightTableView.setRowFactory( tv -> {
+            TableRow<Standart3> row = new TableRow<>();
+            row.setOnMouseClicked(event1 -> {
+                if (event1.getClickCount() == 2 && (! row.isEmpty()) ) {
+                    Standart3 standart3 = row.getItem();
+                    YakkaHisobBalans hisobBalans = new YakkaHisobBalans(connection, user, standart3.getId3());
+                    hisobBalans.display();
+                }
+            });
+            return row ;
+        });
+
     }
 
     private TableColumn<Standart3, Integer> getHisobIdColumn() {
@@ -578,7 +628,6 @@ public class HisobGuruhlari extends Application {
 
     private void initHisobButtonsPane() {
         HBox.setHgrow(hisobButtonsPane, Priority.ALWAYS);
-        VBox.setVgrow(hisobButtonsPane, Priority.ALWAYS);
     }
 
     private void initBorderPane() {
@@ -589,7 +638,7 @@ public class HisobGuruhlari extends Application {
     private void initStage(Stage primaryStage) {
         stage = primaryStage;
         stage.setTitle("Hisob guruhlari");
-        Scene scene = new Scene(borderpane, 700, 400);
+        Scene scene = new Scene(borderpane, 900, 600);
         stage.setScene(scene);
     }
 
@@ -695,10 +744,11 @@ public class HisobGuruhlari extends Application {
     private ContextMenu initContextMenu() {
         ContextMenu contextMenu = new ContextMenu();
         ImageView imageView = new PathToImageView("/sample/images/Icons/add.png").getImageView();
-        MenuItem addMenu = new MenuItem("Qo`sh", imageView);
+        MenuItem nushaOl = new MenuItem("Nusha ol");
 
         imageView = new PathToImageView("/sample/images/Icons/delete.png").getImageView();
-        MenuItem deleteMenu = new MenuItem("O`chir", imageView);
+        MenuItem joylashtir = new MenuItem("Joylashtir");
+        joylashtir.setDisable(true);
 
         imageView = new PathToImageView("/sample/images/Icons/edit.png").getImageView();
         MenuItem editMenu = new MenuItem("O`zgartir", imageView);
@@ -707,14 +757,25 @@ public class HisobGuruhlari extends Application {
         MenuItem grafikDiagramma = new MenuItem("Grafik diagramma", imageView);
 
 
-        contextMenu.getItems().add(addMenu);
-        contextMenu.getItems().add(deleteMenu);
+        contextMenu.getItems().add(nushaOl);
+        contextMenu.getItems().add(joylashtir);
         contextMenu.getItems().add(grafikDiagramma);
 
-        addMenu.setOnAction(event -> {
+        nushaOl.setOnAction(event -> {
+            Standart standart = leftTableView.getSelectionModel().getSelectedItem();
+            if (standart != null) {
+                nushaGuruhi = standart;
+                joylashtir.setDisable(false);
+            }
         });
 
-        deleteMenu.setOnAction(event -> {
+        joylashtir.setOnAction(event -> {
+            Boolean joylashdi = joylashtir(nushaGuruhi);
+            if (joylashdi) {
+                nushaGuruhi = null;
+                joylashtir.setDisable(true);
+                leftTableView.refresh();
+            }
         });
 
         editMenu.setOnAction(event -> {
@@ -722,10 +783,36 @@ public class HisobGuruhlari extends Application {
 
         grafikDiagramma.setOnAction(event -> {
             MyChart myChart = new MyChart(connection, user);
-            myChart.display(localDate, guruhCursor, guruhTarkibi);
+            guruhCursor = leftTableView.getSelectionModel().getSelectedItem();
+            guruhTarkibi = rightTableView.getItems();
+            if (guruhCursor!=null && guruhTarkibi!=null)
+                myChart.display(localDate, guruhCursor, guruhTarkibi);
         });
 
         return contextMenu;
+    }
+
+    private Boolean joylashtir(Standart standart) {
+        Standart buGuruh = leftTableView.getSelectionModel().getSelectedItem();
+        if (buGuruh == null) {
+            return false;
+        }
+        ObservableList<Standart3> rightList = rightTableView.getItems();
+        ObservableList <Standart3> observableList = standart3Models.getAnyData(connection, "id2 = " + standart.getId(), "");
+        ObservableList<Standart3> standart3ObservableList = FXCollections.observableArrayList();
+        for (Standart3 s3: observableList) {
+            for (Standart3 rs3: rightList) {
+                if (s3.getId3().equals(rs3.getId3())) {
+                    break;
+                }
+            }
+            Standart3 standart3 = new Standart3(null, buGuruh.getId(), s3.getId3(), s3.getText(), user.getId(), new Date());
+            standart3Models.insert_data(connection, standart3);
+        }
+        ObservableList <Standart3> righTableList = standart3Models.getAnyData(connection, "id2 = " + buGuruh.getId(), "");
+        rightTableView.setItems(righTableList);
+        rightTableView.refresh();
+        return true;
     }
 
     private void Taftish(String oldValue, String newValue) {
@@ -743,4 +830,21 @@ public class HisobGuruhlari extends Application {
         }
         rightTableView.setItems(subentries);
     }
+
+    private void Taftish2(String oldValue, String newValue) {
+        ObservableList<Hisob> subentries = FXCollections.observableArrayList();
+        newValue = newValue.toLowerCase();
+
+        if ( oldValue != null && (newValue.length() < oldValue.length()) ) {
+            hisobTableView.setItems(hisobTableList);
+        }
+
+        for ( Hisob hisob: hisobTableList ) {
+            if (hisob.getText().toLowerCase().contains(newValue)) {
+                subentries.add(hisob);
+            }
+        }
+        hisobTableView.setItems(subentries);
+    }
+
 }

@@ -10,16 +10,15 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import sample.Config.MySqlDB;
 import sample.Data.Standart;
 import sample.Data.User;
 import sample.Model.StandartModels;
-import sample.Tools.ExportToExcel;
+import sample.Excel.ExportToExcel;
 import sample.Tools.CustomWindow;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.Tugmachalar;
 
 import java.sql.Connection;
-import java.sql.SQLException;
 
 public class StandartController {
     Tugmachalar tugmachalar = new Tugmachalar();
@@ -37,6 +36,8 @@ public class StandartController {
     public StandartController(Connection connection, User user, String tableName) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         this.tableName = tableName;
         customWindow.setStageTitle(tableName);
         tugmachalar.getChildren().add(0, textField);
@@ -230,5 +231,13 @@ public class StandartController {
 
     public void setDoubleClickedRow(Standart doubleClickedRow) {
         this.doubleClickedRow = doubleClickedRow;
+    }
+
+    public Tugmachalar getTugmachalar() {
+        return tugmachalar;
+    }
+
+    public TableView<Standart> getTableView() {
+        return tableView;
     }
 }

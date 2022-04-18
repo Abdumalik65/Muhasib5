@@ -84,6 +84,8 @@ public class TovarNarhiController extends Application {
     public TovarNarhiController(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     public static void main(String[] args) {

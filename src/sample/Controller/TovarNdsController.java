@@ -23,6 +23,7 @@ import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.*;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
 import sample.Tools.MoneyShow;
 import sample.Tools.Tugmachalar;
@@ -91,6 +92,9 @@ public class TovarNdsController extends Application {
 
     public TovarNdsController() {
         connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
+
     }
 
     private void ibtido() {

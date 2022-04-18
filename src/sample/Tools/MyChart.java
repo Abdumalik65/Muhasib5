@@ -1,12 +1,12 @@
 package sample.Tools;
 
 import javafx.application.Application;
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
-import javafx.scene.control.Button;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -16,18 +16,21 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
-import sample.Data.HisobKitob;
-import sample.Data.Standart;
-import sample.Data.Standart3;
-import sample.Data.User;
+import sample.Data.*;
+import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
-import sample.Temp.ShowCoordinatesNode;
-import sample.Temp.ShowCoordinatesNode2;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 
 public class MyChart extends Application {
     Stage stage;
@@ -39,6 +42,7 @@ public class MyChart extends Application {
     VBox rightPane = new VBox();
     HBox bottomPane = new HBox();
     Connection connection;
+    HisobKitobModels hisobKitobModels = new HisobKitobModels();
     User user = new User(1, "admin", "", "admin");
     int padding = 3;
 
@@ -48,7 +52,7 @@ public class MyChart extends Application {
     }
 
     public MyChart() {
-        connection = new MySqlDB().getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -79,7 +83,7 @@ public class MyChart extends Application {
         stage.show();
     }
 
-    public void display(LocalDate localDate, Standart guruhNomi, ObservableList<Standart3> guruhTarkibi) {
+    public void display(LocalDate localDate, Standart guruh, ObservableList<Standart3> guruhTarkibi) {
         Stage stage = new Stage();
         initStage(stage);
         stage.initModality(Modality.APPLICATION_MODAL);
@@ -88,12 +92,9 @@ public class MyChart extends Application {
         NumberAxis yAxis = new NumberAxis();
         xAxis.setLabel("Sana");
         LineChart<String,Number> lineChart = new LineChart<String,Number>(xAxis,yAxis);
-
-        lineChart.setTitle(guruhNomi.getText());
-
-
-        XYChart.Series series1 = getData(localDate, guruhNomi, guruhTarkibi);
-        series1.setName(guruhNomi.getText());
+        lineChart.setTitle(guruh.getText());
+        XYChart.Series series1 = getData(localDate, guruhTarkibi);
+        series1.setName(guruh.getText());
 
         Scene scene  = new Scene(lineChart,800,600);
         lineChart.getData().addAll(series1);
@@ -161,15 +162,13 @@ public class MyChart extends Application {
 
         });
     }
-    public XYChart.Series getData(LocalDate localDate, Standart guruhNomi, ObservableList<Standart3> s3List) {
+    public XYChart.Series getData(LocalDate localDate, ObservableList<Standart3> s3List) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         SimpleDateFormat sdf2 = new SimpleDateFormat("dd.MM.yyyy");
         String dateString = dateFormatter.format(localDate);
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
         ObservableList<HisobKitob> hisobKitobObservableList = hisobKitobModels.getAnyData(connection, "substr(dateTime,1,10) <= '" + dateString + "'","dateTime asc");
         XYChart.Series series = new XYChart.Series();
-        XYChart.Series seriesKundalik = new XYChart.Series();
-
         String hkDateString = "";
         Double hkSummaCol = 0d;
         Double jamiSummaCol = 0d;

@@ -21,18 +21,22 @@ import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
+import sample.Excel.BarCodeExcel;
+import sample.Excel.HisoblarExcel;
 import sample.Model.*;
-import sample.Temp.Hisobot2;
 import sample.Tools.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 
 public class HisobotYigma2 extends Application {
     Stage stage;
@@ -53,7 +57,7 @@ public class HisobotYigma2 extends Application {
 
     TableView<Hisob> hisobTableView = new TableView<>();
     TableView<HisobKitob> hisobKitobTableView = new TableView<>();
-    GetTableView2 getTableView2 = new GetTableView2();
+    TableViewAndoza tableViewAndoza = new TableViewAndoza();
 
     ObservableList<Hisob> hisobObservableList;
     ObservableList<Hisob> hisobListForTable = FXCollections.observableArrayList();
@@ -83,6 +87,8 @@ public class HisobotYigma2 extends Application {
     public HisobotYigma2(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
@@ -92,20 +98,13 @@ public class HisobotYigma2 extends Application {
         initButtons();
         initTextFields();
         initLeftHBox();
-        getTableView2.initTableViews();
+        tableViewAndoza.initTableViews();
         initHisobTableView();
         initLeftPane();
         initHisobKitobTable();
         initRightPane();
         initCenterPane();
         initBorderPane();
-    }
-
-    private void initData() {
-        hisobObservableList  = GetDbData.getHisobObservableList();
-        for (Hisob h: hisobObservableList) {
-            h.setBalans(hisobBalans(h.getId()));
-        }
     }
 
     private void initDataYangi() {
@@ -128,15 +127,15 @@ public class HisobotYigma2 extends Application {
     private void initButtons() {
         hisoblarToExcelButton.setGraphic(new PathToImageView("/sample/images/Icons/excel.png").getImageView());
         hisoblarToExcelButton.setOnAction(event -> {
-            ExportToExcel exportToExcel = new ExportToExcel();
-            exportToExcel.hisoblar(hisobObservableList);
+            HisoblarExcel hisoblarExcel = new HisoblarExcel();
+            hisoblarExcel.hisoblar(hisobListForTable);
         });
         hisobToExcelButton.setGraphic(new PathToImageView("/sample/images/Icons/excel.png").getImageView());
         hisobToExcelButton.setOnAction(event -> {
             Hisob hisob = hisobTableView.getSelectionModel().getSelectedItem();
             if (hisob != null) {
-                ExportToExcel exportToExcel = new ExportToExcel();
-                exportToExcel.hisob(hisob.getId(), rightObservableList);
+                BarCodeExcel barCodeExcel = new BarCodeExcel();
+                barCodeExcel.hisob(hisob.getId(), rightObservableList);
             }
         });
 
@@ -144,7 +143,7 @@ public class HisobotYigma2 extends Application {
 
     private void initTextFields() {
         HBox.setHgrow(qidirTextField, Priority.ALWAYS);
-        TextFields.bindAutoCompletion(qidirTextField, hisobObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
+        TextFields.bindAutoCompletion(qidirTextField, hisobListForTable).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
             Hisob hisob = autoCompletionEvent.getCompletion();
             hisobTableView.getSelectionModel().select(hisob);
             hisobTableView.scrollTo(hisob);
@@ -211,7 +210,7 @@ public class HisobotYigma2 extends Application {
     }
 
     private void initHisobTableView() {
-        hisobTableView = getTableView2.getHisobTableView();
+        hisobTableView = tableViewAndoza.getHisobTableView();
         HBox.setHgrow(hisobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobTableView, Priority.ALWAYS);
         hisobTableView.getColumns().get(1).setMinWidth(150);
@@ -246,9 +245,9 @@ public class HisobotYigma2 extends Application {
 
     private void initHisobKitobTable() {
         hisobKitobTableView.getColumns().addAll(
-                getTableView2.getIzoh2Column(),
-                getTableView2.getAdadColumn(),
-                getTableView2.getNarhColumn()
+                tableViewAndoza.getIzoh2Column(),
+                tableViewAndoza.getAdadColumn(),
+                tableViewAndoza.getNarhColumn()
         );
         HBox.setHgrow(hisobKitobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobKitobTableView, Priority.ALWAYS);
@@ -445,6 +444,60 @@ public class HisobotYigma2 extends Application {
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
         ObservableList<Hisob> hisobObservableList = FXCollections.observableArrayList();
         String kirimHisoblari =
+                "Select hisob2, sum(dona*narh/kurs) from HisobKitob where tovar>0 and dateTime<='" + localDateString + " 23:59:59' group by hisob2 order by hisob2";
+        ResultSet rs1 = hisobKitobModels.getResultSet(connection, kirimHisoblari);
+        try {
+            while (rs1.next()) {
+                Integer id = rs1.getInt(1);
+                Double balance = rs1.getDouble(2);
+                Hisob hisob = GetDbData.getHisob(id);
+                if (hisob != null) {
+                    hisobObservableList.add(new Hisob(id, hisob.getText(), 0d, balance, balance));
+                } else {
+                    System.out.println("Select Hisob topilmadi " + id);
+                }
+            }
+            rs1.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        String chiqimHisoblari =
+                "Select hisob1, sum(dona*narh/kurs) from HisobKitob where tovar>0 and dateTime<='" + localDateString + " 23:59:59' group by hisob1 order by hisob1";
+        ResultSet rs2 = hisobKitobModels.getResultSet(connection, chiqimHisoblari);
+        try {
+            while (rs2.next()) {
+                Integer id = rs2.getInt(1);
+                Double balance = rs2.getDouble(2);
+                Hisob hisob = GetDbData.hisobniTop(id, hisobObservableList);
+                if (hisob != null) {
+                    hisob.setBalans(hisob.getBalans() - balance);
+                } else {
+                    Hisob h = GetDbData.getHisob(id);
+                    if (h != null) {
+                        hisobObservableList.add(new Hisob(id, h.getText(), balance, 0d, -balance));
+                    } else {
+                        System.out.println("Select Hisob topilmadi " + id);
+                    }
+                }
+            }
+            rs2.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        if (hisobObservableList.size()>0) {
+            Comparator<Hisob> comparator = Comparator.comparing(Hisob::getId);
+            Collections.sort(hisobObservableList, comparator);
+        }
+//        hisobObservableList.removeIf(hisob -> yahlitla(hisob.getBalans(), 2) == 0d);
+        return hisobObservableList;
+    }
+    private ObservableList<Hisob> hisoblarListO(LocalDate localDate) {
+        DecimalFormat decimalFormat = new MoneyShow();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String localDateString = localDate.format(formatter);
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        ObservableList<Hisob> hisobObservableList = FXCollections.observableArrayList();
+        String kirimHisoblari =
                 "Select hisob2, sum(narh*dona/kurs) from HisobKitob where tovar>0 and dateTime<='" + localDateString + " 23:59:59' group by hisob2 order by hisob2";
         ResultSet rs1 = hisobKitobModels.getResultSet(connection, kirimHisoblari);
         try {
@@ -452,7 +505,11 @@ public class HisobotYigma2 extends Application {
                 Integer id = rs1.getInt(1);
                 Double balance = rs1.getDouble(2);
                 Hisob hisob = GetDbData.getHisob(id);
-                hisobObservableList.add(new Hisob(id, hisob.getText(), 0d, 0d, balance));
+                if (hisob != null) {
+                    hisobObservableList.add(new Hisob(id, hisob.getText(), 0d, 0d, balance));
+                } else {
+                    System.out.println("Select Hisob topilmadi " + id);
+                }
             }
             rs1.close();
         } catch (SQLException e) {
@@ -481,7 +538,7 @@ public class HisobotYigma2 extends Application {
             Comparator<Hisob> comparator = Comparator.comparing(Hisob::getId);
             Collections.sort(hisobObservableList, comparator);
         }
-        hisobObservableList.removeIf(hisob -> yahlitla(hisob.getBalans(), 2) == 0d);
+//        hisobObservableList.removeIf(hisob -> yahlitla(hisob.getBalans(), 2) == 0d);
         return hisobObservableList;
     }
     private double yahlitla(double son, int daraja) {
@@ -516,6 +573,9 @@ public class HisobotYigma2 extends Application {
                 Double jami = kirim - chiqim;
                 Standart tovar = GetDbData.getTovar(id);
                 HisobKitob hisobKitob = new HisobKitob();
+                hisobKitob.setHisob1(hisobId);
+                Instant instant = Instant.from(localDate.atStartOfDay(ZoneId.systemDefault()));
+                hisobKitob.setDateTime(Date.from(instant));
                 hisobKitob.setTovar(tovar.getId());
                 hisobKitob.setKurs(1d);
                 hisobKitob.setValuta(1);
@@ -533,4 +593,3 @@ public class HisobotYigma2 extends Application {
         return hisobKitobObservableList;
     }
 }
-//10:47:49	Select tovar, sum(if(hisob2=19,narh*dona/kurs,0)), sum(if(hisob1=19,narh*dona/kurs,0)), sum(if(hisob2=19,dona,-dona)), barCode from Muhasib.HisobKitob where (hisob1=19 or hisob2=19) and tovar>0 and dateTime<="2021-11-07 23:59:59" group by barCode order by tovar LIMIT 0, 50000	Error Code: 1055. Expression #1 of SELECT list is not in GROUP BY clause and contains nonaggregated column 'muhasib.HisobKitob.tovar' which is not functionally dependent on columns in GROUP BY clause; this is incompatible with sql_mode=only_full_group_by	0.00087 sec

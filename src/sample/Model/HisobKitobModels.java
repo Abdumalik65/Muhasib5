@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.*;
 import sample.Tools.Alerts;
 import sample.Tools.GetDbData;
@@ -11,6 +12,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.Date;
+import java.util.function.Predicate;
 
 public class HisobKitobModels {
     private String TABLENAME = "HisobKitob";
@@ -41,6 +43,7 @@ public class HisobKitobModels {
     }
 
     public ResultSet getResultSet(Connection connection, String select) {
+        MySqlStatus.checkMyConnection(connection);
         ResultSet rs = null;
         PreparedStatement prSt = null;
         try {
@@ -53,6 +56,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<HisobKitob> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -70,6 +74,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<HisobKitob> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -89,6 +94,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<HisobKitob> getAnyData(Connection connection, String sqlSelectItems, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -107,6 +113,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<QaydnomaData> getDistinct(Connection connection, int hisobId) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<QaydnomaData> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + QAYDID + " FROM " + TABLENAME + " WHERE hisob1 = ? OR hisob2 = ?";
@@ -130,6 +137,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<QaydnomaData> getDistinct(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<QaydnomaData> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + QAYDID + " FROM " + TABLENAME;
@@ -151,6 +159,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<QaydnomaData> getDistinctQaydId(Connection connection, int amal) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<QaydnomaData> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + QAYDID + " FROM " + TABLENAME + " WHERE amal = ?" ;
@@ -173,6 +182,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<Valuta> getDistinctValuta(Connection connection, int hisobId, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Valuta> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + VALUTA + " FROM " + TABLENAME + " WHERE (hisob1 = ? OR hisob2 = ?)  AND " + TOVAR +" = 0 AND " + DATETIME + "  <= ?";
@@ -196,6 +206,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<HisobKitob> getDistinctValuta2(Connection connection, int hisobId, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + VALUTA + " FROM " + TABLENAME + " WHERE (hisob1 = ? OR hisob2 = ?)  AND " + TOVAR +" = 0 AND " + DATETIME + "  <= ?";
@@ -236,6 +247,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<HisobKitob> getDistinctTovar2(Connection connection, int hisobId, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + TOVAR + " FROM " + TABLENAME + " WHERE (hisob1 = ? OR hisob2 = ?)  AND " + TOVAR +" > 0 AND " + DATETIME + "  <= ?";
@@ -277,6 +289,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<Standart> getDistinctTovar(Connection connection, int hisobId, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Standart> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + TOVAR + " FROM " + TABLENAME + " WHERE (hisob1 = ? OR hisob2 = ?)  AND " + TOVAR +" > 0 AND " + DATETIME + "  <= ?";
@@ -300,6 +313,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<BarCode> getDistinctBarCode(Connection connection, int hisobId) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<BarCode> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + BARCODE + " FROM " + TABLENAME + " WHERE hisob1 = ? OR hisob2 = ?";
@@ -322,6 +336,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<BarCode> getDistinctBarCode(Connection connection, int hisobId, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<BarCode> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT " + BARCODE + " FROM " + TABLENAME + " WHERE hisob1 = ? OR hisob2 = ? AND " + DATETIME + "  <= ?";
@@ -345,6 +360,7 @@ public class HisobKitobModels {
     }
 
     public Hisob getValutaBalans(Connection connection, Hisob hisob, Valuta valuta) {
+        MySqlStatus.checkMyConnection(connection);
         ResultSet rs = null;
         String select = "SELECT SUM("+NARH+") FROM " + TABLENAME + " WHERE " + HISOB1 + " = ? AND " + VALUTA + "=?" + " AND " + TOVAR + " = 0";
         PreparedStatement prSt = null;
@@ -377,6 +393,7 @@ public class HisobKitobModels {
     }
 
     public HisobKitob getValutaBalans(Connection connection, Integer hisobId, Valuta valuta, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ResultSet rs = null;
         HisobKitob hisobKitob = new HisobKitob(
                 null, 0,0,0,hisobId,0,valuta.getId(),0,
@@ -417,6 +434,7 @@ public class HisobKitobModels {
     }
 
     public Double getValutaBalans(Connection connection, Integer hisob, Valuta valuta) {
+        MySqlStatus.checkMyConnection(connection);
         ResultSet rs = null;
         Double jami = .0;
         String select = "SELECT SUM("+NARH+") FROM " + TABLENAME + " WHERE " + HISOB1 + " = ? AND " + VALUTA + "=?" + " AND " + TOVAR + " = 0";
@@ -446,6 +464,7 @@ public class HisobKitobModels {
     }
 
     public HisobKitob getTovarBalans(Connection connection, Integer hisobId, Standart tovar, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ResultSet rs = null;
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         HisobKitob hisobKitob = new HisobKitob(
@@ -499,6 +518,7 @@ public class HisobKitobModels {
     }
 
     public Double getTovarBalansDouble(Connection connection, Integer hisobId, Standart tovar, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ResultSet rs = null;
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         HisobKitob hisobKitob = new HisobKitob(
@@ -554,19 +574,33 @@ public class HisobKitobModels {
 
     public Double getHisobBalance(Connection connection, Hisob hisob) {
         Double jami = 0d;
-        ObservableList<HisobKitob> hisobKitobObservableList = getAnyData(connection, HISOB1 + " = " + hisob.getId() + " OR " + HISOB2 + " = " + hisob.getId(), "");
-        for (HisobKitob hk: hisobKitobObservableList) {
-            if (hk.getHisob1().equals(hisob.getId())) {
-                jami -= hk.getSummaCol();
+        Double kirim = 0d;
+        Double chiqim = 0d;
+        String select = "select sum(if(tovar>0,dona,1)*narh/kurs) as d1 from hisobkitob where hisob2 = " + hisob.getId();
+        ResultSet rs1 = getResultSet(connection, select);
+        try {
+            while (rs1.next()) {
+                kirim = rs1.getDouble(1);
             }
-            else if (hk.getHisob2().equals(hisob.getId())) {
-                jami += hk.getSummaCol();
-            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+        select = "select sum(if(tovar>0,dona,1)*narh/kurs) as d1 from hisobkitob where hisob1 = " + hisob.getId();
+        rs1 = getResultSet(connection, select);
+        try {
+            while (rs1.next()) {
+                chiqim = rs1.getDouble(1);
+            }
+            rs1.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        jami = kirim - chiqim;
         return jami;
     }
 
     public ObservableList<HisobKitob> getBarCodeBalans(Connection connection, Integer hisobId, String barCode, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> kirimList = FXCollections.observableArrayList();
         ObservableList<HisobKitob> chiqimList = FXCollections.observableArrayList();
         ObservableList<HisobKitob> balanceList = FXCollections.observableArrayList();
@@ -645,6 +679,7 @@ public class HisobKitobModels {
     }
 
     public HisobKitob getBarCodeBalans(Connection connection, Integer hisobId, BarCode barCode, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         Standart tovar = GetDbData.getTovar(barCode.getTovar());
         Standart birlik = GetDbData.getBirlik(barCode.getBirlik());
@@ -698,6 +733,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<BarCode> getBarCodeCount(Connection connection, Integer hisobId, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         Map<String, BarCode> barCodeMap = new HashMap<>();
         ObservableList<BarCode> books = FXCollections.observableArrayList();
         ResultSet rs1 = null;
@@ -749,6 +785,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<BarCode> getBarCodeCount(Connection connection, Integer hisobId, Integer tovarId, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         Map<String, BarCode> barCodeMap = new HashMap<>();
         ObservableList<BarCode> books = FXCollections.observableArrayList();
         ResultSet rs1 = null;
@@ -807,6 +844,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<Standart> getTovarCount(Connection connection, Integer hisobId, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         Map<Integer, Tovar> tovarMap = new HashMap<>();
         ObservableList<Standart> books = FXCollections.observableArrayList();
         ResultSet rs1 = null;
@@ -823,7 +861,10 @@ public class HisobKitobModels {
                 Integer tovarId = rs1.getInt(1);
                 Double tovarAdad = rs1.getDouble(2);
                 Standart standart = GetDbData.getTovar(tovarId);
-                Tovar tovar = new Tovar(standart.getId(), standart.getText(), 0d, 1, null);
+                if (standart == null) {
+                    System.out.println("tovarId : " + tovarId);
+                }
+                Tovar tovar = new Tovar(tovarId, standart.getText(), 0d, 1, null);
                 tovar.setNds(tovarAdad);
                 tovarMap.put(tovarId, tovar);
             }
@@ -860,7 +901,33 @@ public class HisobKitobModels {
         return books;
     }
 
+    public ObservableList<HisobKitob> barCodeQoldiq(Connection connection, Integer hisobId, BarCode barCode, Date date) {
+        HisobKitobModels hisobKitobModels = new HisobKitobModels();
+        HisobModels hisobModels = new HisobModels();
+        Hisob hisob = GetDbData.getHisob(hisobId);
+        Hisob keldiKetdiHisobi = hisobModels.keldiKetdiHisobi(connection, hisob);
+        ObservableList<HisobKitob> tovarRoyxati = hisobKitobModels.getAnyData(connection, "hisob2 ="+ hisobId +" and tovar > 0 and barcode = '" + barCode + "' and dateTime  <= '" + sdf.format(date) + "'", "tovar");
+        Map<Integer, HisobKitob> kirimMap = new HashMap<>();
+        tovarRoyxati.forEach(hisobKitob -> {
+            kirimMap.put(hisobKitob.getId(), hisobKitob);
+        });
+        ObservableList<HisobKitob> chiqimRoyxati = hisobKitobModels.getAnyData(connection, "hisob1 ="+ hisobId +" and tovar > 0 and barcode = '" + barCode + "'", "tovar");
+        for (HisobKitob hisobKitob: chiqimRoyxati) {
+            if (kirimMap.containsKey(hisobKitob.getManba())) {
+                HisobKitob kirimHisobKitob = kirimMap.get(hisobKitob.getManba());
+                Double chiqimDona = kirimHisobKitob.getDona();
+                Double kirimDona = hisobKitob.getDona();
+                kirimHisobKitob.setDona(kirimDona - chiqimDona);
+            } else {
+                System.out.println(hisobKitob.getId()+" topilmadi");
+            }
+        }
+        tovarRoyxati.removeIf(hisobKitob -> hisobKitob.getDona().equals(0d));
+        return tovarRoyxati;
+    }
+
     public ObservableList<HisobKitob> getBarCodeQoldiq(Connection connection, Integer hisobId, BarCode barCode, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         Standart tovar = GetDbData.getTovar(barCode.getTovar());
         Standart birlik = GetDbData.getBirlik(barCode.getBirlik());
@@ -898,6 +965,7 @@ public class HisobKitobModels {
     }
 
     public Double getBarCodeCount(Connection connection, Integer hisobId, String barCode) {
+        MySqlStatus.checkMyConnection(connection);
         ResultSet rs = null;
         Double jami = .0;
         String select = "SELECT SUM(" + DONA + ") FROM " + TABLENAME + " WHERE " + HISOB1 + " = ? AND " +  BARCODE + " = ?" ;
@@ -927,6 +995,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<HisobKitob> getAllForHisob(Connection connection, int hisobId) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE " + HISOB1 + " = ? OR " + HISOB2 + " = ?" ;
@@ -946,6 +1015,7 @@ public class HisobKitobModels {
     }
 
     public ObservableList<HisobKitob> getAllForHisob(Connection connection, int hisobId, String  sqlWhere) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<HisobKitob> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE (" + HISOB1 + " = ? OR " + HISOB2 + " = ?)";
@@ -968,6 +1038,7 @@ public class HisobKitobModels {
     }
 
     public Integer insert_data(Connection connection, HisobKitob hisobKitob) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -1015,12 +1086,69 @@ public class HisobKitobModels {
             rs.close();
             prSt.close();
         } catch (SQLException e) {
-           Alerts.losted();
+            e.printStackTrace();
+            Alerts.losted();
+        }
+        return insertedID;
+    }
+
+    public Integer insert(Connection connection, HisobKitob hisobKitob) {
+        MySqlStatus.checkMyConnection(connection);
+        Integer insertedID = -1;
+        ResultSet rs = null;
+        String insert = "INSERT INTO "
+                + TABLENAME + " ("
+                + QAYDID + ", "
+                + HUJJAT + ", "
+                + AMAL + ", "
+                + HISOB1 + ", "
+                + HISOB2 + ", "
+                + VALUTA + ", "
+                + TOVAR + ", "
+                + KURS + ", "
+                + BARCODE + ", "
+                + DONA + ", "
+                + NARH + ", "
+                + MANBA + ", "
+                + IZOH + ", "
+                + USERID + ", "
+                + DATETIME +
+                ") VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+        PreparedStatement prSt = null;
+        try {
+
+            prSt = connection.prepareStatement(insert, Statement.RETURN_GENERATED_KEYS);
+            prSt.setInt(1, hisobKitob.getQaydId());
+            prSt.setInt(2, hisobKitob.getHujjatId());
+            prSt.setInt(3, hisobKitob.getAmal());
+            prSt.setInt(4, hisobKitob.getHisob1());
+            prSt.setInt(5, hisobKitob.getHisob2());
+            prSt.setInt(6, hisobKitob.getValuta());
+            prSt.setInt(7, hisobKitob.getTovar());
+            prSt.setDouble(8, hisobKitob.getKurs());
+            prSt.setString(9, hisobKitob.getBarCode());
+            prSt.setDouble(10, hisobKitob.getDona());
+            prSt.setDouble(11, hisobKitob.getNarh());
+            prSt.setDouble(12, hisobKitob.getManba());
+            prSt.setString(13, hisobKitob.getIzoh());
+            prSt.setDouble(14, hisobKitob.getUserId());
+            prSt.setString(15, sdf.format(hisobKitob.getDateTime()));
+            prSt.executeUpdate();
+            rs = prSt.getGeneratedKeys();
+            if(rs.next()){
+                insertedID = rs.getInt(1);
+                hisobKitob.setId(insertedID);
+            }
+            rs.close();
+            prSt.close();
+        } catch (SQLException e) {
+            Alerts.losted();
         }
         return insertedID;
     }
 
     public void delete_data(Connection connection, HisobKitob hisobKitob)  {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -1034,6 +1162,7 @@ public class HisobKitobModels {
     }
 
     public void deleteWhere(Connection connection, String sqlWhere) {
+        MySqlStatus.checkMyConnection(connection);
         queryHelper = new QueryHelper(sqlWhere, "");
         String delete = "DELETE FROM " + TABLENAME +  queryHelper.getYakuniyJumla();
         PreparedStatement prSt = null;
@@ -1047,6 +1176,7 @@ public class HisobKitobModels {
     }
 
     public void update_data(Connection connection, HisobKitob hisobKitob){
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + QAYDID + " = ?,"
                 + HUJJAT + " = ?,"
@@ -1091,6 +1221,7 @@ public class HisobKitobModels {
     }
 
     public void addBatch(Connection connection, ObservableList<HisobKitob> hisobKitobObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + QAYDID + ", "
@@ -1133,11 +1264,13 @@ public class HisobKitobModels {
             prSt.executeBatch();
             prSt.close();
         } catch (SQLException e) {
-           Alerts.losted();
+            e.printStackTrace();
+            Alerts.losted();
         }
     }
 
     public void addBatchWithId(Connection connection, ObservableList<HisobKitob> hisobKitobObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -1187,6 +1320,7 @@ public class HisobKitobModels {
     }
 
     public void copyDataBatch(Connection connection, ObservableList<HisobKitob> hisobKitobObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -1257,12 +1391,13 @@ public class HisobKitobModels {
         return clonedHisobKitob;
     }
 
-    public Integer yordamchiHisob(Connection connection, HisobKitob hisobKitob, String tableName) {
+    public Integer yordamchiHisob(Connection connection, Integer hisobId, String tableName) {
+        MySqlStatus.checkMyConnection(connection);
         Integer yordamchiHisob = 0;
         ObservableList<Standart3> standart3ObservableList = FXCollections.observableArrayList();
         Standart3Models standart3Models = new Standart3Models();
         standart3Models.setTABLENAME(tableName);
-        standart3ObservableList = standart3Models.getAnyData(connection, "id3 = " + hisobKitob.getHisob1(),"");
+        standart3ObservableList = standart3Models.getAnyData(connection, "id3 = " + hisobId,"dateTime desc");
         if (standart3ObservableList.size()>0) {
             yordamchiHisob = standart3ObservableList.get(0).getId2();
         }
@@ -1270,6 +1405,7 @@ public class HisobKitobModels {
     }
 
     public Integer yordamchiHisob(Connection connection, Integer hisobID, String tableName, String boshJadval) {
+        MySqlStatus.checkMyConnection(connection);
         Integer yordamchiHisob = 0;
         ObservableList<Standart3> standart3ObservableList = FXCollections.observableArrayList();
         Standart3Models standart3Models = new Standart3Models();
@@ -1289,7 +1425,7 @@ public class HisobKitobModels {
         return yordamchiHisob;
     }
 
-    private double tovarDonasi(BarCode barCode) {
+    public double tovarDonasi(BarCode barCode) {
         double dona = 1.0;
         dona *= barCode.getAdad();
         int tarkibInt = barCode.getTarkib();
@@ -1324,7 +1460,12 @@ public class HisobKitobModels {
                 ));
             }
         } catch (SQLException | ParseException e) {
-           Alerts.losted();
+//           Alerts.losted();
+            e.printStackTrace();
         }
    }
+
+    public void setTABLENAME(String TABLENAME) {
+        this.TABLENAME = TABLENAME;
+    }
 }

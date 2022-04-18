@@ -17,6 +17,7 @@ import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.Standart2Models;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
 import sample.Tools.Tugmachalar;
 
@@ -61,6 +62,8 @@ public class MahsulotTarkibi extends Application {
     public MahsulotTarkibi(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     @Override
@@ -174,7 +177,7 @@ public class MahsulotTarkibi extends Application {
 
     private void initMahsulotTugmachalar() {
         mahsulotTugmachalar.getAdd().setOnAction(event -> {
-            TovarController1 tovarController = new TovarController1(connection, user);
+            TovarController tovarController = new TovarController(connection, user);
             Standart tovar = tovarController.display();
             if (tovar != null) {
                 Standart2 mahsulot = new Standart2(null,

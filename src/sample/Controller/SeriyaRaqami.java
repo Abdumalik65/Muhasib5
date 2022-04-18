@@ -19,6 +19,7 @@ import sample.Data.Standart;
 import sample.Data.User;
 import sample.Enums.ServerType;
 import sample.Model.SerialNumbersModels;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
 import sample.Tools.HBoxTextFieldPlusButton;
 
@@ -58,6 +59,8 @@ public class SeriyaRaqami extends Application {
     public SeriyaRaqami(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 

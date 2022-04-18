@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Sanoq;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
@@ -24,6 +25,7 @@ public class SanoqModels {
     QueryHelper queryHelper;
 
     public ObservableList<Sanoq> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Sanoq> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -41,6 +43,7 @@ public class SanoqModels {
     }
 
     public ObservableList<Sanoq> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy){
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Sanoq> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -59,6 +62,7 @@ public class SanoqModels {
     }
 
     public Integer insert_data(Connection connection, Sanoq sanoq) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -91,6 +95,7 @@ public class SanoqModels {
         return insertedID;
     }
     public void copyDataBatch(Connection connection, ObservableList<Sanoq> sanoqList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -123,6 +128,7 @@ public class SanoqModels {
     }
 
     public void delete_data(Connection connection, Sanoq sanoq) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -135,6 +141,7 @@ public class SanoqModels {
         }
     }
     public void update_data(Connection connection, Sanoq sanoq){
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + QAYDID + " = ?, "
                 + BARCODE + " = ?, "

@@ -5,11 +5,13 @@ import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.EventHandler;
-import javafx.geometry.HPos;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.geometry.Rectangle2D;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.ComboBoxTableCell;
@@ -24,16 +26,21 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import org.controlsfx.control.textfield.AutoCompletionBinding;
-import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDBGeneral;
+import sample.Controller.HisobController;
+import sample.Controller.Tolovlar4;
+import sample.Controller.Tolovlar5;
+import sample.Controller.TovarController;
 import sample.Data.*;
 import sample.Enums.ServerType;
 import sample.Model.*;
 import sample.Tools.*;
+import sample.Tools.Butoq;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,46 +56,39 @@ public class TovarXaridi extends Application {
     Stage stage;
     Scene scene;
     BorderPane borderpane = new BorderPane();
-    GridPane gridPane = new GridPane();
     VBox centerPane = new VBox();
+    VBox ongLawha;
     Connection connection;
-    User user = new User(1, "admin", "", "admin");
+    User user;
     int padding = 3;
     int amalTuri = 2;
+    TreeView<Butoq> treeView;
 
     TextField hisob1TextField = new TextField();
     TextField hisob2TextField = new TextField();
     TextArea izohTextArea = new TextArea();
     TextField tovarTextField = new TextField();
     TextField barCodeTextField = new TextField();
-    Label hisob1BalanceLabel = new Label("");
-    Label hisob2BalanceLabel = new Label("");
-    Double hisob1BalanceDouble = 0D;
-    Double hisob2BalanceDouble = 0D;
-    Label hisob1NewBalanceLabel = new Label("");
-    Label hisob2NewBalanceLabel = new Label("");
 
-    HBox hisob1Hbox;
-    HBox hisob2Hbox;
+    HisobBox hisob1Box;
+    HisobBox hisob2Box;
+    TovarBox tovarBox;
 
     Date date = new Date();
-    LocalDateTime localDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
     DatePicker qaydSanasiDatePicker;
     TextField qaydVaqtiTextField = new TextField();
-    HBox tovarHBox;
-    HBox birlikHbox;
     DecimalFormat decimalFormat = new MoneyShow();
 
     ComboBox<Standart> birlikComboBox = new ComboBox<>();
     TableView<HisobKitob> hisobKitobTableView = new TableView<>();
     Button xaridniYakunlaButton = new Button("Xaridni yakunla");
+    Button xaridniBekorQilButton = new Button("Xaridni bekor qil");
 
     Hisob hisob1;
     Hisob hisob2;
     Standart tovar;
     Standart6 standart6;
     Valuta valuta;
-    Kurs kurs;
     HisobKitob hisobKitob;
     QaydnomaData qaydnomaData = null;
 
@@ -104,12 +104,9 @@ public class TovarXaridi extends Application {
 
     ValutaModels valutaModels = new ValutaModels();
     HisobModels hisobModels = new HisobModels();
-    HisobKitobModels hisobKitobModels = new HisobKitobModels();
     StandartModels standartModels = new StandartModels();
     BarCodeModels barCodeModels = new BarCodeModels();
     KursModels kursModels = new KursModels();
-    QaydnomaModel qaydnomaModel = new QaydnomaModel();
-
     public static void main(String[] args) {
         launch(args);
     }
@@ -118,27 +115,21 @@ public class TovarXaridi extends Application {
         connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
+        user.setTovarHisobi(9);
     }
 
     public TovarXaridi(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     private void ibtido() {
         initData();
-        initHisob1Hbox();
-        initHisob2Hbox();
-        initQaydSanasiDatePicker();
-        initQaydVaqtiTextField();
-        initTovarHbox();
-        initBirlikComboBox();
-        initBarCodeTextField();
-        initHisobKitobTableView();
-        initYakunlaButton();
-        initIzohTextArea();
-        initGridPane();
         initCenterPane();
+        ongLawha = yangiOngLawha();
+        setDisable(true);
         initBorderPane();
     }
 
@@ -152,19 +143,14 @@ public class TovarXaridi extends Application {
             System.exit(0);
         });
     }
-
     public QaydnomaData display() {
         stage = new Stage();
         ibtido();
         initStage(stage);
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.showAndWait();
-        stage.setOnCloseRequest(event -> {
-            stage.close();
-        });
         return qaydnomaData;
     }
-
     private void initData() {
         hisobObservableList = hisobModels.get_data(connection);
         standartModels.setTABLENAME("Tovar");
@@ -174,7 +160,21 @@ public class TovarXaridi extends Application {
         valutaObservableList = valutaModels.get_data(connection);
         valuta = getValuta(1);
     }
-
+    private VBox yangiOngLawha() {
+        ongLawha = new VBox();
+        treeView = initTreeView();
+        ongLawha.getChildren().add(treeView);
+        return ongLawha;
+    }
+    private void initCenterPane() {
+        Pane pane = new Pane();
+        HBox.setHgrow(pane, Priority.ALWAYS);
+        initHisobKitobTableView();
+        initYakunlaButton();
+        SetHVGrow.VerticalHorizontal(centerPane);
+        centerPane.setPadding(new Insets(padding));
+        centerPane.getChildren().addAll(hisobKitobTableView, xaridniYakunlaButton);
+    }
     public Valuta getValuta(int id) {
         Valuta valuta = null;
         for (Valuta o : valutaObservableList) {
@@ -186,17 +186,6 @@ public class TovarXaridi extends Application {
         return valuta;
     }
 
-    private void initCenterPane() {
-        HBox balanceHBox = new HBox();
-        Pane pane = new Pane();
-        HBox.setHgrow(pane, Priority.ALWAYS);
-        hisob1NewBalanceLabel.setFont(font);
-        hisob2NewBalanceLabel.setFont(font);
-        balanceHBox.getChildren().addAll(hisob1NewBalanceLabel, pane, hisob2NewBalanceLabel);
-        SetHVGrow.VerticalHorizontal(centerPane);
-        centerPane.setPadding(new Insets(padding));
-        centerPane.getChildren().addAll(gridPane, barCodeTextField, hisobKitobTableView, balanceHBox, xaridniYakunlaButton);
-    }
 
     private void initHisobKitobTableView() {
         hisobKitobTableView.setDisable(true);
@@ -213,8 +202,19 @@ public class TovarXaridi extends Application {
                 standart6 = narhOl(hisobKitob.getTovar());
             }
         });
-    }
+        hisobKitobObservableList.addListener(new ListChangeListener<HisobKitob>() {
+            @Override
+            public void onChanged(Change<? extends HisobKitob> c) {
+                if (c.getList().size() == 0) {
+                    xaridniYakunlaButton.setDisable(true);
+                }
 
+                if (c.getList().size() > 0) {
+                    xaridniYakunlaButton.setDisable(false);
+                }
+            }
+        });
+    }
     public TableColumn<HisobKitob, String> getIzohColumn() {
         TableColumn<HisobKitob, String> izohColumn = new TableColumn<>("Tovar");
         izohColumn.setMinWidth(150);
@@ -240,7 +240,6 @@ public class TovarXaridi extends Application {
         });
         return izohColumn;
     }
-
     private TableColumn<HisobKitob, Integer> getTovarColumn() {
         TableColumn<HisobKitob, Integer>  tovarColumn = new TableColumn<>("Tovar");
         tovarColumn.setMinWidth(200);
@@ -268,7 +267,6 @@ public class TovarXaridi extends Application {
         });
         return tovarColumn;
     }
-
     private  TableColumn<HisobKitob, Double> getAdadColumn() {
         TableColumn<HisobKitob, Double>  adad = new TableColumn<>("Adad");
         adad.setMinWidth(100);
@@ -294,13 +292,11 @@ public class TovarXaridi extends Application {
             if (newValue != null) {
                 hisobKitob.setDona(newValue);
                 hisobKitobTableView.refresh();
-                balanceRefresh();
             }
         });
         adad.setStyle( "-fx-alignment: CENTER;");
         return adad;
     }
-
     private  TableColumn<HisobKitob, Double> getXaridNarhiColumn() {
         TableColumn<HisobKitob, Double>  xaridColumn = new TableColumn<>("Tannarh");
         xaridColumn.setMinWidth(100);
@@ -362,12 +358,10 @@ public class TovarXaridi extends Application {
             event.getTableView().scrollTo(hk);
             event.getTableView().requestFocus();
             event.getTableView().refresh();
-            balanceRefresh();
         });
         xaridColumn.setStyle( "-fx-alignment: CENTER;");
         return xaridColumn;
     }
-
     private  TableColumn<HisobKitob, Double> getChakanaNarhColumn() {
         TableColumn<HisobKitob, Double>  chakanaColumn = new TableColumn<>("Штучно");
         chakanaColumn.setMinWidth(100);
@@ -423,12 +417,10 @@ public class TovarXaridi extends Application {
             event.getTableView().scrollTo(hk);
             event.getTableView().requestFocus();
             event.getTableView().refresh();
-            balanceRefresh();
         });
         chakanaColumn.setStyle( "-fx-alignment: CENTER;");
         return chakanaColumn;
     }
-
     private  TableColumn<HisobKitob, Double> getUlgurjiNarhColumn() {
         TableColumn<HisobKitob, Double>  ulgurjiColumn = new TableColumn<>("Оптом");
         ulgurjiColumn.setMinWidth(100);
@@ -484,12 +476,10 @@ public class TovarXaridi extends Application {
             event.getTableView().scrollTo(hk);
             event.getTableView().requestFocus();
             event.getTableView().refresh();
-            balanceRefresh();
         });
         ulgurjiColumn.setStyle( "-fx-alignment: CENTER;");
         return ulgurjiColumn;
     }
-
     private TableColumn<HisobKitob, Double> getNarhColumn() {
         TableColumn<HisobKitob, Double>  narh = new TableColumn<>("Narh");
         narh.setMinWidth(100);
@@ -522,11 +512,9 @@ public class TovarXaridi extends Application {
             HisobKitob hisobKitob = event.getRowValue();
             event.getTableView().refresh();
             hisobKitob.setNarh(newValue);
-            balanceRefresh();
         });
         return narh;
     }
-
     private TableColumn<HisobKitob, Valuta> getValutaColumn() {
         TableColumn<HisobKitob, Valuta> valutaTableColumn = new TableColumn<>("Valuta");
         valutaTableColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Valuta>, ObservableValue<Valuta>>() {
@@ -566,13 +554,11 @@ public class TovarXaridi extends Application {
                 }
             }
             event.getTableView().refresh();
-            balanceRefresh();
         });
         valutaTableColumn.setMinWidth(100);
         valutaTableColumn.setStyle( "-fx-alignment: CENTER;");
         return valutaTableColumn;
     }
-
     private TableColumn<HisobKitob, Double> getKursColumn() {
         TableColumn<HisobKitob, Double>  kursColumn = new TableColumn<>("Kurs");
         kursColumn.setMinWidth(100);
@@ -599,12 +585,10 @@ public class TovarXaridi extends Application {
             if (newValue != null) {
                 hisobKitob.setKurs(newValue);
                 event.getTableView().refresh();
-                balanceRefresh();
             }
         });
         return kursColumn;
     }
-
     private TableColumn<HisobKitob, Button> getDeleteColumn() {
         TableColumn<HisobKitob, Button> deleteColumn = new TableColumn<>("O`chir");
         deleteColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Button>, ObservableValue<Button>>() {
@@ -630,7 +614,6 @@ public class TovarXaridi extends Application {
                 b.setOnAction(event -> {
                     hisobKitobObservableList.remove(hisobKitob);
                     param.getTableView().refresh();
-                    balanceRefresh();
                 });
                 return new SimpleObjectProperty<Button>(b);
             }
@@ -640,7 +623,6 @@ public class TovarXaridi extends Application {
         deleteColumn.setStyle( "-fx-alignment: CENTER;");
         return deleteColumn;
     }
-
     private TableColumn<HisobKitob, Button> getEditColumn() {
         TableColumn<HisobKitob, Button> editColumn = new TableColumn<>("O`chir");
         editColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, Button>, ObservableValue<Button>>() {
@@ -674,7 +656,6 @@ public class TovarXaridi extends Application {
         editColumn.setStyle( "-fx-alignment: CENTER;");
         return editColumn;
     }
-
     private TableColumn<HisobKitob, Double> getTotalColumn() {
         TableColumn<HisobKitob, Double>  total = new TableColumn<>("Jami");
         total.setMinWidth(100);
@@ -682,7 +663,6 @@ public class TovarXaridi extends Application {
         total.setStyle( "-fx-alignment: CENTER;");
         return total;
     }
-
     private TableColumn<HisobKitob, String> getSummaColumn() {
         TableColumn<HisobKitob, String>  summaCol = new TableColumn<>("Jami");
         summaCol.setMinWidth(100);
@@ -695,13 +675,11 @@ public class TovarXaridi extends Application {
                 HisobKitob hisobKitob = param.getValue();
                 Double total = hisobKitob.getDona()*hisobKitob.getNarh()/hisobKitob.getKurs();
                 hisobKitob.setSummaCol(total);
-                balanceRefresh();
                 return new SimpleObjectProperty<String>(decimalFormat.format(total));
             }
         });
         return summaCol;
     }
-
     private TableColumn<HisobKitob, String> getTaqdimColumn() {
         TableColumn<HisobKitob, String> taqdimColumn = new TableColumn<>("Taqdim shakli");
         taqdimColumn.setCellFactory(column -> {
@@ -745,91 +723,6 @@ public class TovarXaridi extends Application {
         return taqdimColumn;
     }
 
-    private void initHisob1Hbox() {
-        hisob1BalanceLabel.setFont(font);
-        hisob1Hbox = new HBox();
-        hisob1TextField.setFont(font);
-        hisob1TextField.setPromptText("Chiqim hisobi");
-        HBox.setHgrow(hisob1Hbox, Priority.ALWAYS);
-        HBox.setHgrow(hisob1Hbox, Priority.ALWAYS);
-        Button addButton = new Button();
-        addButton.setMinHeight(37);
-        addButton.setGraphic(new PathToImageView("/sample/images/Icons/add.png").getImageView());
-        HBox.setHgrow(addButton, Priority.ALWAYS);
-        HBox.setHgrow(hisob1TextField, Priority.ALWAYS);
-        TextFields.bindAutoCompletion(hisob1TextField, hisobObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
-            Hisob newHisob = autoCompletionEvent.getCompletion();
-            if (newHisob != null) {
-                hisob1 = newHisob;
-                hisob1BalanceDouble = hisobKitobModels.getHisobBalance(connection, hisob1);
-                balanceRefresh();
-            }
-            hisob2Hbox.setDisable(false);
-        });
-        hisob1Hbox.getChildren().addAll(hisob1TextField, addButton);
-        addButton.setOnAction(event -> {
-            Hisob newHisob = addHisob();
-            if (newHisob != null) {
-                hisob1 = newHisob;
-                hisob1BalanceDouble = hisobKitobModels.getHisobBalance(connection, hisob1);
-                hisob2Hbox.setDisable(false);
-                hisob1TextField.setText(hisob1.getText());
-            }
-        });
-    }
-
-    private void initHisob2Hbox() {
-        hisob2BalanceLabel.setFont(font);
-        hisob2Hbox = new HBox();
-        hisob2Hbox.setDisable(true);
-        hisob2TextField.setFont(font);
-        hisob2TextField.setPromptText("Kirim hisobi");
-        HBox.setHgrow(hisob2Hbox, Priority.ALWAYS);
-        Button addButton = new Button();
-        addButton.setMinHeight(37);
-        addButton.setGraphic(new PathToImageView("/sample/images/Icons/add.png").getImageView());
-        HBox.setHgrow(addButton, Priority.ALWAYS);
-        HBox.setHgrow(hisob2TextField, Priority.ALWAYS);
-        TextFields.bindAutoCompletion(hisob2TextField, hisobObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
-            Hisob newHisob = autoCompletionEvent.getCompletion();
-            if (newHisob != null) {
-                hisob2 = newHisob;
-                if (hisob2 != null) {
-                    hisob2BalanceDouble = hisobKitobModels.getHisobBalance(connection, hisob2);
-                }
-                qaydSanasiDatePicker.setDisable(false);
-                qaydVaqtiTextField.setDisable(false);
-                tovarHBox.setDisable(false);
-                birlikComboBox.setDisable(false);
-                barCodeTextField.setDisable(false);
-                hisobKitobTableView.setDisable(false);
-                izohTextArea.setDisable(false);
-                barCodeOn();
-                balanceRefresh();
-            }
-        });
-        hisob2Hbox.getChildren().addAll(hisob2TextField, addButton);
-        addButton.setOnAction(event -> {
-            Hisob newHisob = addHisob();
-            if (newHisob != null) {
-                hisob2 = newHisob;
-                if (hisob2 != null) {
-                    hisob2BalanceDouble = hisobKitobModels.getHisobBalance(connection, hisob2);
-                }
-                qaydSanasiDatePicker.setDisable(false);
-                qaydVaqtiTextField.setDisable(false);
-                tovarHBox.setDisable(false);
-                birlikComboBox.setDisable(false);
-                barCodeTextField.setDisable(false);
-                hisobKitobTableView.setDisable(false);
-                izohTextArea.setDisable(false);
-                hisob2TextField.setText(hisob2.getText());
-                barCodeOn();
-                balanceRefresh();
-            }
-        });
-    }
-
     private void initQaydSanasiDatePicker() {
         // Converter
         StringConverter<LocalDate> converter = new StringConverter<LocalDate>() {
@@ -857,57 +750,23 @@ public class TovarXaridi extends Application {
         qaydSanasiDatePicker =  new DatePicker(LocalDate.now());
 
         qaydSanasiDatePicker.setConverter(converter);
-        qaydSanasiDatePicker.setMaxWidth(2000);
-        qaydSanasiDatePicker.setPrefWidth(150);
+        qaydSanasiDatePicker.setMaxWidth(200);
         HBox.setHgrow(qaydSanasiDatePicker, Priority.ALWAYS);
         qaydSanasiDatePicker.setDisable(true);
     }
-
     private void initQaydVaqtiTextField()  {
         qaydVaqtiTextField.setDisable(true);
         qaydVaqtiTextField.setText(sdf.format(date));
         HBox.setHgrow(qaydVaqtiTextField, Priority.ALWAYS);
     }
-
     private void initIzohTextArea() {
         izohTextArea.setDisable(true);
         SetHVGrow.VerticalHorizontal(izohTextArea);
+        izohTextArea.setMaxWidth(2000);
+        izohTextArea.setPrefWidth(150);
         izohTextArea.setWrapText(true);
         izohTextArea.setEditable(true);
     }
-
-    private void initTovarHbox() {
-        tovarHBox = new HBox();
-        tovarHBox.setDisable(true);
-        tovarTextField.setFont(font);
-        tovarTextField.setPromptText("Tovar nomi");
-        HBox.setHgrow(tovarTextField, Priority.ALWAYS);
-        HBox.setHgrow(tovarHBox, Priority.ALWAYS);
-        Button addButton = new Button();
-        addButton.setMinHeight(37);
-        addButton.setGraphic(new PathToImageView("/sample/images/Icons/add.png").getImageView());
-        HBox.setHgrow(tovarTextField, Priority.ALWAYS);
-
-        TextFields.bindAutoCompletion(tovarTextField, tovarObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Standart> autoCompletionEvent) -> {
-            tovar = autoCompletionEvent.getCompletion();
-            if (tovar != null) {
-                barCodeAction();
-            }
-        });
-
-        tovarHBox.getChildren().addAll(tovarTextField, addButton);
-        addButton.setOnAction(event -> {
-            barCodeOff();
-            TovarController1 tovarController = new TovarController1(connection, user);
-            tovar = tovarController.display();
-            barCodeOn();
-            if (tovar != null) {
-                tovarTextField.setText(tovar.getText());
-                barCodeAction();
-            }
-        });
-    }
-
     private void barCodeAction() {
         ObservableList<Standart> birlikList = FXCollections.observableArrayList();
         ObservableList<BarCode> barCodeList = barCodeModels.getAnyData(connection, "tovar = " + tovar.getId(), "");
@@ -921,6 +780,7 @@ public class TovarXaridi extends Application {
         if (birlikList.size()>0) {
             birlikComboBox.getSelectionModel().selectFirst();
             barCodeTextField.setText(barCodeList.get(0).getBarCode());
+            barCodeTextField.requestFocus();
         }
 
         birlikComboBox.setOnAction(event -> {
@@ -928,32 +788,47 @@ public class TovarXaridi extends Application {
             int pos = birlikComboBox.getSelectionModel().getSelectedIndex();
             if (birlik != null) {
                 barCodeTextField.setText(barCodeList.get(pos).getBarCode());
+                barCodeTextField.requestFocus();
             }
         });
     }
-
-    private void initBarCodeTextField() {
+    private TextField initBarCodeTextField() {
+        TextField barCodeTextField = new TextField();
         barCodeTextField.setDisable(true);
         barCodeTextField.setFont(font);
         barCodeTextField.setPromptText("Shtrixkod");
         HBox.setHgrow(barCodeTextField, Priority.ALWAYS);
+        barCodeTextField.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent event) {
+                if (event.getCode()== KeyCode.ENTER) {
+                    stringBuffer.delete(0, stringBuffer.length());
+                    String string = barCodeTextField.getText().trim();
+                    if (!string.isEmpty()) {
+                        BarCode barCode = GetDbData.getBarCode(string);
+                        if (barCode != null) {
+                            Standart tovar = getStandart(barCode.getTovar(), tovarObservableList, "Tovar");
+                            if (tovar != null) {
+                                barCodeTextField.setText("");
+                                tovarTextField.setText("");
+                                birlikComboBox.setItems(null);
+                                addTovar(barCode);
+                            }
+                        } else {
+                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                            alert.setTitle("Diqqat!!!");
+                            alert.setHeaderText(string + " shtrixkodga muvofiq tovar topilmadi");
+                            alert.setContentText("");
+                            alert.showAndWait();
+                        }
+                    }
+                }
+            }
+        });
+        return barCodeTextField;
     }
-
-    private void initBirlikComboBox() {
-        birlikComboBox.setDisable(true);
-        String style20 = "-fx-font: 20px Arial";
-        birlikComboBox.setPromptText("Birlik");
-        birlikComboBox.setStyle(style20);
-        birlikHbox = new HBox();
-        HBox.setHgrow(birlikHbox, Priority.ALWAYS);
-        HBox.setHgrow(birlikComboBox, Priority.ALWAYS);
-        birlikComboBox.setMaxWidth(2000);
-        birlikComboBox.setPrefWidth(150);
-        HBox.setHgrow(birlikComboBox, Priority.ALWAYS);
-        birlikHbox.getChildren().add(birlikComboBox);
-    }
-
     private void initYakunlaButton() {
+        xaridniYakunlaButton.setDisable(true);
         xaridniYakunlaButton.setMaxWidth(2000);
         xaridniYakunlaButton.setPrefWidth(150);
         HBox.setHgrow(xaridniYakunlaButton, Priority.ALWAYS);
@@ -963,90 +838,36 @@ public class TovarXaridi extends Application {
                 Alerts.hisoblarBirXilAlert(hisob2.getText(), hisob1.getText());
                 return;
             }
-            qaydnomaData = qaydnomaSaqlash();
-            xaridSaqlash(qaydnomaData);
-            stage.close();
+            ObservableList<HisobKitob> observableList = hisobKitobTableView.getItems();
+            for (HisobKitob hisobKitob: observableList) {
+                hisobKitob.setHisob1(hisob1.getId());
+                hisobKitob.setHisob2(hisob2.getId());
+            }
+            Tolovlar5 tolovlar = new Tolovlar5(connection, user, hisob1, hisob2, observableList, izohTextArea);
+            tolovlar.setNarhTuri(1);
+            qaydnomaData = tolovlar.display();
+            if (qaydnomaData != null) {
+                xaridniBekorQilButton.fire();
+                stage.close();
+            }
         });
     }
-
-    private QaydnomaData qaydnomaSaqlash() {
-        int hujjatInt = getQaydnomaNumber();
-        String izohString = izohTextArea.getText();
-        Double jamiDouble = getJami(hisobKitobObservableList);
-        date = getQaydDate();
-        QaydnomaData qaydnomaData = new QaydnomaData(null, amalTuri, hujjatInt, date,
-                hisob1.getId(), hisob1.getText(), hisob2.getId(), hisob2.getText(),
-                izohString, jamiDouble, 0, user.getId(), new Date());
-        qaydnomaModel.insert_data(connection, qaydnomaData);
-        return qaydnomaData;
-    }
-
-    private Date getQaydDate() {
-        Date qaydDate = null;
-        LocalDateTime localDateTime = LocalDateTime.of(qaydSanasiDatePicker.getValue(), LocalTime.parse(qaydVaqtiTextField.getText()));
-        Instant instant = Instant.from(localDateTime.atZone(ZoneId.systemDefault()));
-        qaydDate = Date.from(instant);
-        return qaydDate;
-    }
-
-    private int getQaydnomaNumber() {
-        int qaydnomaInt = 1;
-        ObservableList<QaydnomaData> qaydList = qaydnomaModel.getAnyData(connection, "amalTuri = " + amalTuri, "hujjat desc");
-        if (qaydList.size()>0) {
-            qaydnomaInt = qaydList.get(0).getHujjat() + 1;
-        }
-        return qaydnomaInt;
-    }
-
-    private void xaridSaqlash(QaydnomaData qData) {
-        for (HisobKitob hk: hisobKitobObservableList) {
-            hk.setQaydId(qData.getId());
-            hk.setHujjatId(qData.getHujjat());
-            hk.setDateTime(qData.getSana());
-        }
-        hisobKitobModels.addBatch(connection, hisobKitobObservableList);
-    }
-
-    private void initGridPane() {
-        HBox.setHgrow(gridPane, Priority.ALWAYS);
-        int rowIndex = 0;
-
-        gridPane.add(hisob1Hbox, 0, rowIndex, 1, 1);
-        GridPane.setHgrow(hisob1Hbox, Priority.ALWAYS);
-        gridPane.add(hisob2Hbox, 1, rowIndex, 1,1);
-        GridPane.setHgrow(hisob2Hbox, Priority.ALWAYS);
-
-        rowIndex++;
-        gridPane.add(hisob1BalanceLabel, 0, rowIndex, 1, 1);
-        gridPane.add(hisob2BalanceLabel, 1, rowIndex, 1, 1);
-        GridPane.setHalignment(hisob2BalanceLabel, HPos.RIGHT);
-
-        rowIndex++;
-        gridPane.add(qaydSanasiDatePicker, 0, rowIndex, 1, 1);
-        GridPane.setHgrow(qaydSanasiDatePicker, Priority.ALWAYS);
-        gridPane.add(qaydVaqtiTextField, 1, rowIndex, 1,1);
-        GridPane.setHgrow(qaydVaqtiTextField, Priority.ALWAYS);
-
-        rowIndex++;
-        gridPane.add(izohTextArea, 0, rowIndex, 2, 1);
-        GridPane.setHgrow(izohTextArea, Priority.ALWAYS);
-        GridPane.setVgrow(izohTextArea, Priority.ALWAYS);
-
-        rowIndex++;
-        gridPane.add(tovarHBox, 0, rowIndex, 1, 1);
-        GridPane.setHgrow(tovarHBox, Priority.ALWAYS);
-        gridPane.add(birlikHbox, 1, rowIndex, 1,1);
-        GridPane.setHgrow(birlikHbox, Priority.ALWAYS);
-    }
-
     private void initBorderPane() {
         borderpane.setCenter(centerPane);
+        borderpane.setRight(ongLawha);
     }
 
     private void initStage(Stage primaryStage) {
         stage = primaryStage;
+        scene = new Scene(borderpane);
+        scene.setUserAgentStylesheet("sample/Styles/caspian.css");
+        Screen screen = Screen.getPrimary();
+        Rectangle2D bounds = screen.getVisualBounds();
         stage.setTitle("Tovar Xaridi");
-        scene = new Scene(borderpane, 1200, 600);
+        stage.setX(bounds.getMinX());
+        stage.setY(bounds.getMinY());
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
         stage.setScene(scene);
     }
 
@@ -1107,7 +928,6 @@ public class TovarXaridi extends Application {
         hisobKitobTableView.scrollTo(hisobKitob);
         hisobKitobTableView.requestFocus();
         hisobKitobTableView.refresh();
-        balanceRefresh();
     }
 
     private Kurs getKurs(int valutaId, Date sana) {
@@ -1133,7 +953,7 @@ public class TovarXaridi extends Application {
             @Override
             public void handle(KeyEvent event) {
                 if (event.getCode() == KeyCode.ENTER) {
-                    hisobKitobTableView.requestFocus();
+//                    hisobKitobTableView.requestFocus();
                     String string = stringBuffer.toString().trim();
                     stringBuffer.delete(0, stringBuffer.length());
                     if (!string.isEmpty()) {
@@ -1158,55 +978,12 @@ public class TovarXaridi extends Application {
             }
         });
 
-        barCodeTextField.setOnKeyPressed(new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent event) {
-                if (event.getCode()== KeyCode.ENTER) {
-                    stringBuffer.delete(0, stringBuffer.length());
-                    String string = barCodeTextField.getText().trim();
-                    if (!string.isEmpty()) {
-                        BarCode barCode = GetDbData.getBarCode(string);
-                        if (barCode != null) {
-                            Standart tovar = getStandart(barCode.getTovar(), tovarObservableList, "Tovar");
-                            if (tovar != null) {
-                                barCodeTextField.setText("");
-                                tovarTextField.setText("");
-                                birlikComboBox.setItems(null);
-                                addTovar(barCode);
-                            }
-                        } else {
-                            Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                            alert.setTitle("Diqqat!!!");
-                            alert.setHeaderText(string + " shtrixkodga muvofiq tovar topilmadi");
-                            alert.setContentText("");
-                            alert.showAndWait();
-                        }
-                    }
-                }
-            }
-        });
     }
 
     private void barCodeOff() {
         scene.setOnKeyPressed(null);
         scene.setOnKeyReleased(null);
         barCodeTextField.setOnKeyPressed(null);
-    }
-
-    private Double getJami(ObservableList<HisobKitob> hisobKitobs) {
-        Double jamiDouble = .0;
-        for (HisobKitob hk: hisobKitobs) {
-            jamiDouble += hk.getDona()*hk.getNarh()/hk.getKurs();
-        }
-        return jamiDouble;
-    }
-
-    public QaydnomaData getQaydnomaData() {
-        return qaydnomaData;
-    }
-
-    public void setQaydnomaData(QaydnomaData qaydnomaData) {
-        this.qaydnomaData = qaydnomaData;
     }
 
     public Standart getStandart(int id, ObservableList<Standart> standartObservableList, String tableName) {
@@ -1224,15 +1001,6 @@ public class TovarXaridi extends Application {
             standartObservableList.add(standart);
         }
         return standart;
-    }
-    private Narh xaridNarhi(Integer tovarId) {
-        NarhModels narhModels = new NarhModels();
-        Narh xaridNarhi = null;
-        ObservableList<Narh> list = narhModels.getDate(connection, tovarId, new Date(), "sana desc");
-        if (list.size()>0) {
-            xaridNarhi = list.get(0);
-        }
-        return xaridNarhi;
     }
     private double tovarDonasi(BarCode barCode) {
         double dona = 1.0;
@@ -1252,20 +1020,6 @@ public class TovarXaridi extends Application {
         }
         return dona;
     }
-
-    private void balanceRefresh() {
-        Double yangiDouble = 0d;
-        hisob1BalanceLabel.setText(decimalFormat.format(hisob1BalanceDouble));
-        hisob2BalanceLabel.setText(decimalFormat.format(hisob2BalanceDouble));
-
-
-        for (HisobKitob hk: hisobKitobObservableList) {
-            yangiDouble += hk.getNarh()*hk.getDona()/hk.getKurs();
-        }
-        hisob1NewBalanceLabel.setText(decimalFormat.format(hisob1BalanceDouble - yangiDouble));
-        hisob2NewBalanceLabel.setText(decimalFormat.format(hisob2BalanceDouble + yangiDouble));
-    }
-
     public Standart6 narhOl(int tovarId) {
         Standart6 s6 = null;
         Standart6Models standart6Models = new Standart6Models("TGuruh1");
@@ -1283,7 +1037,7 @@ public class TovarXaridi extends Application {
         TovarNarhi tovarNarhi = null;
         TovarNarhiModels tovarNarhiModels = new TovarNarhiModels();
         ObservableList<TovarNarhi> observableList = tovarNarhiModels.getAnyData(
-                connection, "tovar = " + tovarId + " AND narhTuri = " + narhTuri, "sana desc"
+                connection, "tovar = " + tovarId + " AND narhTuri = " + narhTuri, "id desc"
         );
         if (observableList.size()>0) {
             tovarNarhi = observableList.get(0);
@@ -1331,5 +1085,260 @@ public class TovarXaridi extends Application {
             );
             tovarNarhiModels.insert_data(connection, tovarNarhi);
         }
+    }
+    private void setDisable(Boolean disable) {
+        ObservableList<TreeItem<Butoq>> butoqlar = treeView.getTreeItem(0).getChildren();
+        hisob2Box.setDisable(disable);
+        qaydSanasiDatePicker.setDisable(disable);
+        qaydVaqtiTextField.setDisable(disable);
+        tovarBox.setDisable(disable);
+        izohTextArea.setDisable(disable);
+        hisobKitobTableView.setDisable(disable);
+        xaridniYakunlaButton.setDisable(disable);
+    }
+
+    private TreeView<Butoq> initTreeView() {
+        TreeView<Butoq> treeView = new TreeView<>();
+        treeView.setMinWidth(230);
+        SetHVGrow.VerticalHorizontal(treeView);
+        TreeItem<Butoq> rootTreeItem = new TreeItem(getRootTreeItem());
+        rootTreeItem.getChildren().addAll(
+                getHisoblarTreeItem(),
+                sanaVaqtButoq(),
+                getTovarTreeItem(),
+                izohButoq()
+        );
+
+        treeView.setRoot(rootTreeItem);
+        treeView.setShowRoot(false);
+        treeView.setMaxWidth(280);
+        return treeView;
+    }
+    private TreeItem<Butoq> getRootTreeItem() {
+        Standart standart = new Standart(0, "Asosiy", user.getId(), new Date());
+        Butoq butoq = new Butoq(standart);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> getHisoblarTreeItem() {
+        Butoq butoq = new Butoq(40, new Label("Hisoblar"));
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        Label label = butoq.getLabel();
+        label.setFont(font);
+        treeItem.getChildren().addAll(
+                getHisob1TreeItem(),
+                getHisob2TreeItem()
+        );
+        treeItem.setExpanded(true);
+        return treeItem;
+    }
+    private TreeItem<Butoq> getHisob1TreeItem() {
+        hisob1Box = initHisob1Box();
+        Butoq butoq = new Butoq(hisob1Box);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> getHisob2TreeItem() {
+        hisob2Box = initHisob2Box();
+        Butoq butoq = new Butoq(hisob2Box);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> sanaVaqtButoq() {
+        Butoq butoq = new Butoq(40, new Label("Sana vaqt"));
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        Label label = butoq.getLabel();
+        label.setFont(font);
+        treeItem.getChildren().addAll(
+                sanaButoq(),
+                vaqtButoq()
+        );
+        treeItem.setExpanded(true);
+        return treeItem;
+    }
+    private TreeItem<Butoq> sanaButoq() {
+        initQaydSanasiDatePicker();
+        Butoq butoq = new Butoq(qaydSanasiDatePicker);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> vaqtButoq() {
+        initQaydVaqtiTextField();
+        Butoq butoq = new Butoq(1, qaydVaqtiTextField);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> getTovarTreeItem() {
+        Butoq butoq = new Butoq(50, new Label("Tovar"));
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        Label label = butoq.getLabel();
+        label.setFont(font);
+        treeItem.getChildren().addAll(
+                getTovarNomiTreeItem(),
+                getBirlikTreeItem(),
+                getBarCodeTreeItem()
+        );
+        treeItem.setExpanded(true);
+        return treeItem;
+    }
+    private TreeItem<Butoq> getTovarNomiTreeItem() {
+        tovarBox = initTovarBox();
+        tovarTextField = tovarBox.getTextField();
+        Butoq butoq = new Butoq(51, tovarBox);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> getBirlikTreeItem() {
+        birlikComboBox = initBirlikComboBox();
+        Butoq butoq = new Butoq(52, birlikComboBox);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> getBarCodeTreeItem() {
+        barCodeTextField = initBarCodeTextField();
+        Butoq butoq = new Butoq(53, barCodeTextField);
+        barCodeTextField.setPromptText("Shtrixkod");
+        HBox.setHgrow(this.barCodeTextField, Priority.ALWAYS);
+        barCodeTextField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+            }
+        });
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+    private TreeItem<Butoq> izohButoq() {
+        Butoq butoq = new Butoq(40, new Label("Izoh"));
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        Label label = butoq.getLabel();
+        label.setFont(font);
+        treeItem.getChildren().addAll(
+                eslatmaButoq()
+        );
+        treeItem.setExpanded(true);
+        return treeItem;
+    }
+    private TreeItem<Butoq> eslatmaButoq() {
+        initIzohTextArea();
+        Butoq butoq = new Butoq(izohTextArea);
+        TreeItem<Butoq> treeItem = new TreeItem(butoq);
+        return treeItem;
+    }
+
+    private HisobBox initHisob1Box() {
+        HisobBox hisobBox = new HisobBox(connection, user);
+        TextField textField = hisobBox.getTextField();
+        textField.setPromptText("Chiqim hisobi");
+        EventHandler<AutoCompletionBinding.AutoCompletionEvent<Hisob>> bindingHandler = new EventHandler<AutoCompletionBinding.AutoCompletionEvent<Hisob>>() {
+            @Override
+            public void handle(AutoCompletionBinding.AutoCompletionEvent<Hisob> event) {
+                Hisob newHisob = event.getCompletion();
+                if (newHisob != null) {
+                    hisob1 = newHisob;
+                }
+                hisob2Box.setDisable(false);
+                hisob2Box.getTextField().requestFocus();
+            }
+        };
+        AutoCompletionBinding<Hisob> hisobBinding = hisobBox.getHisobBinding();
+        hisobBinding.setOnAutoCompleted(bindingHandler);
+        Button addButton = hisobBox.getPlusButton();
+        addButton.setOnAction(event -> {
+            Hisob newHisob = addHisob();
+            if (newHisob != null) {
+                hisob1 = newHisob;
+                hisob1TextField.setText(hisob1.getText());
+                hisob2Box.setDisable(false);
+                hisob2Box.getTextField().requestFocus();
+            }
+        });
+        return hisobBox;
+    }
+    private HisobBox initHisob2Box() {
+        HisobBox hisobBox = new HisobBox(connection, user);
+        TextField textField = hisobBox.getTextField();
+        textField.setPromptText("Kirim hisobi");
+        EventHandler<AutoCompletionBinding.AutoCompletionEvent<Hisob>> bindingHandler = new EventHandler<AutoCompletionBinding.AutoCompletionEvent<Hisob>>() {
+            @Override
+            public void handle(AutoCompletionBinding.AutoCompletionEvent<Hisob> event) {
+                Hisob newHisob = event.getCompletion();
+                if (newHisob != null) {
+                    hisob2 = newHisob;
+                    qaydSanasiDatePicker.setDisable(false);
+                    qaydVaqtiTextField.setDisable(false);
+                    tovarBox.setDisable(false);
+                    birlikComboBox.setDisable(false);
+                    barCodeTextField.setDisable(false);
+                    hisobKitobTableView.setDisable(false);
+                    izohTextArea.setDisable(false);
+                    barCodeOn();
+                }
+            }
+        };
+        AutoCompletionBinding<Hisob> hisobBinding = hisobBox.getHisobBinding();
+        hisobBinding.setOnAutoCompleted(bindingHandler);
+        Button addButton = hisobBox.getPlusButton();
+        addButton.setOnAction(event -> {
+            Hisob newHisob = addHisob();
+            if (newHisob != null) {
+                hisob2 = newHisob;
+                qaydSanasiDatePicker.setDisable(false);
+                qaydVaqtiTextField.setDisable(false);
+                tovarBox.setDisable(false);
+                birlikComboBox.setDisable(false);
+                barCodeTextField.setDisable(false);
+                hisobKitobTableView.setDisable(false);
+                izohTextArea.setDisable(false);
+                hisob2TextField.setText(hisob2.getText());
+                barCodeOn();
+            }
+        });
+        return hisobBox;
+    }
+    private TovarBox initTovarBox() {
+        standartModels.setTABLENAME("Tovar");
+        ObservableList<Standart> tovarObservableList=standartModels.get_data(connection);
+        TovarBox tovarBox = new TovarBox(tovarObservableList, user);
+        TextField textField = tovarBox.getTextField();
+        textField.setPromptText("Tovar nomi");
+        EventHandler<AutoCompletionBinding.AutoCompletionEvent<Standart>> bindingHandler = new EventHandler<AutoCompletionBinding.AutoCompletionEvent<Standart>>() {
+            @Override
+            public void handle(AutoCompletionBinding.AutoCompletionEvent<Standart> event) {
+                tovar = event.getCompletion();
+                if (tovar != null) {
+                    barCodeAction();
+                }
+            }
+        };
+        AutoCompletionBinding<Standart> tovarBinding = tovarBox.getTovarBinding();
+        tovarBinding.setOnAutoCompleted(bindingHandler);
+        Button addButton = tovarBox.getPlusButton();
+        addButton.setOnAction(event -> {
+            barCodeOff();
+            TovarController tovarController = new TovarController(connection, user);
+            tovar = tovarController.display();
+            barCodeOn();
+            if (tovar != null) {
+                tovarTextField.setText(tovar.getText());
+                barCodeAction();
+            }
+        });
+        return tovarBox;
+    }
+    private ComboBox<Standart> initBirlikComboBox() {
+        ComboBox<Standart> birlikComboBox = new ComboBox<>();
+        standartModels.setTABLENAME("Birlik");
+        ObservableList<Standart> birlikObservableList = FXCollections.observableArrayList();
+        birlikComboBox.setMaxWidth(2000);
+        birlikComboBox.setPrefWidth(150);
+        SetHVGrow.VerticalHorizontal(birlikComboBox);
+        birlikComboBox.setItems(birlikObservableList);
+        if (birlikObservableList.size()>0) {
+            birlikComboBox.getSelectionModel().selectFirst();
+        }
+        birlikComboBox.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+            }
+        });
+        return  birlikComboBox;
     }
 }

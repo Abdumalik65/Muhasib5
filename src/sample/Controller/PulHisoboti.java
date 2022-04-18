@@ -3,37 +3,29 @@ package sample.Controller;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
-import sample.Model.BarCodeModels;
 import sample.Model.HisobKitobModels;
-import sample.Temp.Hisobot2;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
-import sample.Tools.GetTableView2;
-import sample.Tools.SetHVGrow;
+import sample.Tools.TableViewAndoza;
+import sample.Tools.Hisobot2;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 public class PulHisoboti extends Application {
     Stage stage;
@@ -56,7 +48,7 @@ public class PulHisoboti extends Application {
     }
 
     public PulHisoboti() {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -65,6 +57,8 @@ public class PulHisoboti extends Application {
     public PulHisoboti(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
@@ -121,11 +115,11 @@ public class PulHisoboti extends Application {
         HBox.setHgrow(pulTable, Priority.ALWAYS);
         VBox.setVgrow(pulTable, Priority.ALWAYS);
         pulTable.setPadding(new Insets(padding));
-        GetTableView2 getTableView2 = new GetTableView2();
-        TableColumn<HisobKitob, Integer> valutaColumn = getTableView2.getValutaColumn();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
+        TableColumn<HisobKitob, Integer> valutaColumn = tableViewAndoza.getValutaColumn();
         valutaColumn.setMinWidth(150);
         valutaColumn.setStyle( "-fx-alignment: CENTER_LEFT;");
-        TableColumn<HisobKitob, Double> narhColumn = getTableView2.getNarhColumn();
+        TableColumn<HisobKitob, Double> narhColumn = tableViewAndoza.getNarhColumn();
         narhColumn.setMinWidth(80);
         pulTable.getColumns().addAll(valutaColumn, narhColumn);
         pulTable.setItems(pulList);
@@ -135,11 +129,11 @@ public class PulHisoboti extends Application {
         HBox.setHgrow(pulTable2, Priority.ALWAYS);
         VBox.setVgrow(pulTable2, Priority.ALWAYS);
         pulTable2.setPadding(new Insets(padding));
-        GetTableView2 getTableView2 = new GetTableView2();
-        TableColumn<Hisob, String> valutaColumn = getTableView2.getHisobTextColumn();
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
+        TableColumn<Hisob, String> valutaColumn = tableViewAndoza.getHisobTextColumn();
         valutaColumn.setMinWidth(150);
         valutaColumn.setStyle( "-fx-alignment: CENTER_LEFT;");
-        TableColumn<Hisob, Double> balansColumn = getTableView2.getHisobBalansColumn();
+        TableColumn<Hisob, Double> balansColumn = tableViewAndoza.getHisobBalansColumn();
         balansColumn.setMinWidth(80);
         pulTable2.getColumns().addAll(valutaColumn, balansColumn);
         pulTable2.setItems(pulList2);

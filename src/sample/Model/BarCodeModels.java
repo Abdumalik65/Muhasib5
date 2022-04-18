@@ -2,6 +2,11 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.event.Event;
+import javafx.event.EventHandler;
+import javafx.scene.input.KeyEvent;
+import sample.Config.MySqlStatus;
 import sample.Data.BarCode;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
@@ -26,6 +31,7 @@ public class BarCodeModels {
     QueryHelper queryHelper;
 
     public ObservableList<BarCode> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<BarCode> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -58,6 +64,7 @@ public class BarCodeModels {
     }
 
     public ObservableList<BarCode> getDistinct(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<BarCode> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT DISTINCT "+BARCODE+" FROM " + TABLENAME;
@@ -90,6 +97,7 @@ public class BarCodeModels {
     }
 
     public ObservableList<BarCode> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy){
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<BarCode> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -123,6 +131,7 @@ public class BarCodeModels {
     }
 
     public BarCode getBarCode(Connection connection, String barCodeString){
+        MySqlStatus.checkMyConnection(connection);
         BarCode barCode = null;
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE UPPER(" + BARCODE + ") = ?";
@@ -156,6 +165,7 @@ public class BarCodeModels {
     }
 
     public BarCode getBarCode(Connection connection, Integer barCodeId){
+        MySqlStatus.checkMyConnection(connection);
         BarCode barCode = null;
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE UPPER(" + BARCODE + ") = ?";
@@ -189,6 +199,7 @@ public class BarCodeModels {
     }
 
     public Integer getRecordsCount(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         Integer recordsCount = 0;
         ResultSet rs = null;
         String select = "SELECT COUNT(*) FROM " + TABLENAME;
@@ -209,6 +220,7 @@ public class BarCodeModels {
 
 
     public Integer insert_data(Connection connection, BarCode barCode) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -248,6 +260,7 @@ public class BarCodeModels {
     }
 
     public Integer insert_data2(Connection connection, BarCode barCode) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -289,6 +302,7 @@ public class BarCodeModels {
     }
 
     public void copyDataBatch(Connection connection, ObservableList<BarCode> barcodeList) {
+        MySqlStatus.checkMyConnection(connection);
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
                 + ID_FIELD + ", "
@@ -327,6 +341,7 @@ public class BarCodeModels {
     }
 
     public void delete_data(Connection connection, BarCode barCode) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {

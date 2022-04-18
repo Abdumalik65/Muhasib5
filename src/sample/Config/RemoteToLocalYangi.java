@@ -245,7 +245,8 @@ public class RemoteToLocalYangi {
         DatabaseMetaData md = null;
         try {
             md = (DatabaseMetaData) connection.getMetaData();
-            ResultSet rs = md.getTables("Muhasib", "Muhasib", "%", null);
+            String databaseName = connection.getCatalog();
+            ResultSet rs = md.getTables(databaseName, databaseName, "%", null);
 
             while (rs.next()) {
                 tableName = rs.getString(3);

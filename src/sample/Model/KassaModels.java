@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Kassa;
 import sample.Tools.Alerts;
 import sample.Tools.QueryHelper;
@@ -28,6 +29,7 @@ public class KassaModels {
     QueryHelper queryHelper;
 
     public ObservableList<Kassa> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Kassa> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -62,6 +64,7 @@ public class KassaModels {
     }
 
     public ObservableList<Kassa> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Kassa> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -97,6 +100,7 @@ public class KassaModels {
     }
 
     public Integer insert_data(Connection connection, Kassa kassa) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -138,7 +142,9 @@ public class KassaModels {
         }
         return insertedID;
     }
+
     public void copyDataBatch(Connection connection, ObservableList<Kassa> kassaList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -181,6 +187,7 @@ public class KassaModels {
     }
 
     public void delete_data(Connection connection, Kassa kassa){
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -193,6 +200,7 @@ public class KassaModels {
         }
     }
     public void update_data(Connection connection, Kassa kassa) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + KASSANOMI + " = ?,"
                 + PULHISOBI + " = ?,"
@@ -225,4 +233,41 @@ public class KassaModels {
            Alerts.losted();
         }
     }
+
+    public Kassa getKassa(Connection connection, String serialNumber) {
+        MySqlStatus.checkMyConnection(connection);
+        Kassa kassa = null;
+        ResultSet rs = null;
+        String select = "SELECT * FROM " + TABLENAME + " WHERE " + SERIALNUMBER + " = ?";
+        PreparedStatement prSt = null;
+        try {
+            prSt = connection.prepareStatement(select);
+            prSt.setString(1, serialNumber);
+            rs = prSt.executeQuery();
+            if (rs.next()) {
+                kassa = new Kassa(
+                        rs.getInt(1),
+                        rs.getString(2),
+                        rs.getInt(3),
+                        rs.getInt(4),
+                        rs.getInt(5),
+                        rs.getInt(6),
+                        rs.getInt(7),
+                        rs.getString(8),
+                        rs.getInt(9),
+                        rs.getInt(10),
+                        rs.getInt(11),
+                        sdf.parse(rs.getString(12))
+                );
+            }
+            rs.close();
+            prSt.close();
+        } catch (SQLException e) {
+            Alerts.losted();
+        } catch (ParseException e) {
+            Alerts.parseError();
+        }
+        return kassa;
+    }
+
 }

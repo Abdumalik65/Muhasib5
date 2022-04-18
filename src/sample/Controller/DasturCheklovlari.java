@@ -20,7 +20,6 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import javafx.util.StringConverter;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
@@ -30,7 +29,6 @@ import sample.Tools.*;
 import java.sql.Connection;
 import java.text.DecimalFormat;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Optional;
 
@@ -44,16 +42,16 @@ public class DasturCheklovlari extends Application {
 
     TableView<Standart> leftTableView = new TableView<>();
     TableView<Standart3> rightTableView = new TableView<>();
-    TableView<Hisob> hisobTableView = new TableView<>();
+    TableView<Standart> dasturTableView = new TableView<>();
     HBox hisobButtonsPane = new HBox();
     Button qaydEtButton;
     Button cancelButton = new Button("<<");
     DatePicker datePicker;
     LocalDate localDate;
-    ObservableList<Standart> guruhlarNomi;
-    ObservableList<Standart3> guruhTarkibi;
-    ObservableList<Hisob> hisobObservableList;
-    ObservableList<Hisob> hisobTableList = FXCollections.observableArrayList();
+    ObservableList<Standart> userList;
+    ObservableList<Standart3> cheklanganDasturJadvali;
+    ObservableList<Standart> dasturObservableList;
+    ObservableList<Standart> dasturJadvali = FXCollections.observableArrayList();
     ObservableList<Balans> balansList = FXCollections.observableArrayList();
 
 
@@ -80,7 +78,7 @@ public class DasturCheklovlari extends Application {
     }
 
     public DasturCheklovlari() {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
     }
@@ -88,16 +86,12 @@ public class DasturCheklovlari extends Application {
     public DasturCheklovlari(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     private void ibtido() {
         initData();
-        initLeftTableView();
-        initLeftPane();
-        initRightButtons();
-        initRightTableView();
-        initHisobButtonsPane();
-        initHisobTableView();
         initRightPane();
         initCenterPane();
         initBorderPane();
@@ -129,123 +123,47 @@ public class DasturCheklovlari extends Application {
     }
 
     private void initData() {
-        initDatePicker();
         standartModels.setTABLENAME("HisobGuruhlarNomi");
-        guruhlarNomi = userList();
-        if (guruhlarNomi.size()>0) {
-            Standart standart = guruhlarNomi.get(0);
-            standart3Models.setTABLENAME("CheklanganHisobTarkibi");
-            hisobObservableList = hisobModels.get_data1(connection);
-            for (Hisob h: hisobObservableList) {
-                hisobTableList.add(h);
+        userList = userList();
+        if (userList.size()>0) {
+            Standart standart = userList.get(0);
+            standart3Models.setTABLENAME("CheklanganDasturTarkibi");
+            standartModels.setTABLENAME("Dasturlar");
+            dasturObservableList = standartModels.get_data(connection);
+            for (Standart s: dasturObservableList) {
+                dasturJadvali.add(s);
             }
-            guruhTarkibi = standart3Models.getAnyData(connection, "id2 = " + standart.getId(), "");
-            for (Standart s: guruhlarNomi) {
+            cheklanganDasturJadvali = standart3Models.getAnyData(connection, "id2 = " + standart.getId(), "");
+            for (Standart s: userList) {
                 ObservableList<Standart3> s3List = standart3Models.getAnyData(connection, "id2 = " + s.getId(), "");
-                double summa = .0;
-                for (Standart3 s3: s3List) {
-                    Hisob h = getHisob(s3.getId3());
-                    if (h != null) {
-                        summa = summa + h.getBalans();
-                    }
-                }
-                Balans b = new Balans(s.getId(), .0, .0, .0, summa);
-                balansList.add(b);
             }
         }
     }
 
-    private Hisob getHisob(int id) {
-        Hisob hisob = null;
-        for (Hisob h: hisobObservableList) {
-            if (h.getId().equals(id)) {
-                hisob = h;
+    private Standart getHisob(int id) {
+        Standart standart = null;
+        for (Standart s: dasturObservableList) {
+            if (s.getId().equals(id)) {
+                standart = s;
                 break;
             }
         }
-        return hisob;
-    }
-
-    private void initDatePicker() {
-        // Converter
-        StringConverter<LocalDate> converter = new StringConverter<LocalDate>() {
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd.MM.yyyy");
-
-            @Override
-            public String toString(LocalDate date) {
-                if (date != null) {
-                    return dateFormatter.format(date);
-                } else {
-                    return "";
-                }
-            }
-            @Override
-            public LocalDate fromString(String string) {
-                if (string != null && !string.isEmpty()) {
-                    return LocalDate.parse(string, dateFormatter);
-                } else {
-                    return null;
-                }
-            }
-        };
-        localDate = localDate.now();
-        datePicker =  new DatePicker(localDate);
-
-        datePicker.setConverter(converter);
-        datePicker.setMaxWidth(2000);
-        datePicker.setPrefWidth(150);
-        HBox.setHgrow(datePicker, Priority.ALWAYS);
-
-        datePicker.setOnAction(event -> {
-            LocalDate newDate = datePicker.getValue();
-            if (newDate != null) {
-                localDate = newDate;
-                Date date = null;
-                LocalDateTime localDateTime = LocalDateTime.of(localDate, LocalTime.of(23,59,59));
-                Instant instant = Instant.from(localDateTime.atZone(ZoneId.systemDefault()));
-                date = Date.from(instant);
-                hisobObservableList = hisobModels.get_data1(connection, date);
-                refreshBalance();
-                rightTableView.refresh();
-                leftTableView.refresh();
-            }
-        });
-    }
-
-    private void refreshBalance() {
-        for (Standart s: guruhlarNomi) {
-            ObservableList<Standart3> s3List = standart3Models.getAnyData(connection, "id2 = " + s.getId(), "");
-            double summa = .0;
-            for (Standart3 s3: s3List) {
-                Hisob h = getHisob(s3.getId3());
-                if (h != null) {
-                    summa = summa + h.getBalans();
-                }
-            }
-            for (Balans b: balansList){
-                if (b.getId().equals(s.getId())) {
-                    b.setBalans(summa);
-                    break;
-                }
-            }
-        }
+        return standart;
     }
 
     private void initLeftTableView() {
         HBox.setHgrow(leftTableView, Priority.ALWAYS);
         VBox.setVgrow(leftTableView, Priority.ALWAYS);
-        ContextMenu contextMenu = initContextMenu();
         leftTableView.getColumns().addAll(getGuruhColumn());
-        leftTableView.setItems(guruhlarNomi);
+        leftTableView.setItems(userList);
         leftTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 guruhCursor = newValue;
-                guruhTarkibi = standart3Models.getAnyData(connection, "id2 = " + guruhCursor.getId(), "");
-                rightTableView.setItems(guruhTarkibi);
+                cheklanganDasturJadvali = standart3Models.getAnyData(connection, "id2 = " + guruhCursor.getId(), "");
+                rightTableView.setItems(cheklanganDasturJadvali);
                 rightTableView.refresh();
             }
         });
-        leftTableView.setContextMenu(contextMenu);
     }
 
     private TableColumn<Standart, Integer> getIdColumn() {
@@ -322,12 +240,14 @@ public class DasturCheklovlari extends Application {
         leftPane.setPadding(new Insets(padding));
         HBox.setHgrow(leftPane, Priority.ALWAYS);
         VBox.setVgrow(leftPane, Priority.ALWAYS);
+        initLeftTableView();
         leftPane.getChildren().addAll(leftTableView);
     }
 
     private void initCenterPane() {
         HBox.setHgrow(centerPane, Priority.ALWAYS);
         VBox.setVgrow(centerPane, Priority.ALWAYS);
+        initLeftPane();
         centerPane.getItems().addAll(leftPane, rightPane);
     }
 
@@ -345,14 +265,14 @@ public class DasturCheklovlari extends Application {
                 leftPane.setDisable(true);
                 rightPane.getChildren().removeAll(rightPane.getChildren());
                 hisobButtonsPane.getChildren().removeAll(hisobButtonsPane.getChildren());
-                rightPane.getChildren().addAll(hisobTableView, hisobButtonsPane);
+                rightPane.getChildren().addAll(dasturTableView, hisobButtonsPane);
                 qaydEtButton = new Tugmachalar().getAdd();
                 initHBoxButtons();
                 hisobButtonsPane.getChildren().addAll(cancelButton, qaydEtButton);
-                guruhToHisob();
+                standart3ToStandart();
 
                 qaydEtButton.setOnAction(event1 -> {
-                    hisobToGuruh();
+                    standartToStandart3();
                     cancelButton.fire();
                 });
 
@@ -380,26 +300,39 @@ public class DasturCheklovlari extends Application {
                 ButtonType buttonType = option.get();
                 if (okButton.equals(buttonType)) {
                     standart3Models.delete_data(connection, standart3);
-                    guruhTarkibi.remove(standart3);
-                    rightTableView.setItems(guruhTarkibi);
+                    cheklanganDasturJadvali.remove(standart3);
+                    rightTableView.setItems(cheklanganDasturJadvali);
                     rightTableView.refresh();
                 }
             }
         });
 
         rightButtons.getExcel().setOnAction(event -> {
-            ObservableList<Hisob> h2List = FXCollections.observableArrayList();
-            for (Standart3 s3: guruhTarkibi) {
-                Hisob hisob = GetDbData.hisobniTop(s3.getId3(), hisobObservableList);
-                if (hisob != null) {
-                    h2List.add(hisob);
+            ObservableList<Standart> standarts = FXCollections.observableArrayList();
+            for (Standart3 s3: cheklanganDasturJadvali) {
+                Standart standart = dasturniTop(s3.getId3(), dasturObservableList);
+                if (standart != null) {
+                    standarts.add(standart);
                 }
             }
-            if (h2List.size()>0) {
+/*
+            if (standarts.size()>0) {
                 ExportToExcel exportToExcel = new ExportToExcel();
-                exportToExcel.hisoblar(h2List);
+                exportToExcel.hisoblar(standarts);
             }
+*/
         });
+    }
+
+    private Standart dasturniTop(Integer id, ObservableList<Standart> observableList) {
+        Standart standart = null;
+        for (Standart s: observableList) {
+            if (s.getId().equals(id)) {
+                standart = s;
+                break;
+            }
+        }
+        return  standart;
     }
 
     private void initHBoxButtons() {
@@ -414,7 +347,7 @@ public class DasturCheklovlari extends Application {
     private void initRightTableView() {
         HBox.setHgrow(rightTableView, Priority.ALWAYS);
         VBox.setVgrow(rightTableView, Priority.ALWAYS);
-        rightTableView.setItems(guruhTarkibi);
+        rightTableView.setItems(cheklanganDasturJadvali);
         rightTableView.getColumns().addAll(getHisobColumn());
     }
 
@@ -431,7 +364,7 @@ public class DasturCheklovlari extends Application {
                         setText(null);
                     }
                     else {
-                        setText(GetDbData.hisobniTop(item, hisobObservableList).getText());
+                        setText(dasturniTop(item, dasturObservableList).getText());
                     }
                 }
             };
@@ -440,50 +373,49 @@ public class DasturCheklovlari extends Application {
         return idColumn;
     }
 
-    private TableColumn<Standart3, Hisob> getHisobColumn() {
-        TableColumn<Standart3, Hisob> hisobColumn = new TableColumn<>("Hisob nomi");
+    private TableColumn<Standart3, Standart> getHisobColumn() {
+        TableColumn<Standart3, Standart> hisobColumn = new TableColumn<>("Hisob nomi");
         hisobColumn.setMinWidth(180);
-        hisobColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Standart3, Hisob>, ObservableValue<Hisob>>() {
+        hisobColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<Standart3, Standart>, ObservableValue<Standart>>() {
 
             @Override
-            public ObservableValue<Hisob> call(TableColumn.CellDataFeatures<Standart3, Hisob> param) {
+            public ObservableValue<Standart> call(TableColumn.CellDataFeatures<Standart3, Standart> param) {
                 Standart3 standart3 = param.getValue();
-                Hisob hisob = GetDbData.hisobniTop(standart3.getId3(), hisobObservableList);
-                return new SimpleObjectProperty<Hisob>(hisob);
+                Standart standart = dasturniTop(standart3.getId3(), dasturObservableList);
+                return new SimpleObjectProperty<Standart>(standart);
             }
         });
 
-        hisobColumn.setCellFactory(ComboBoxTableCell.forTableColumn(hisobObservableList));
+        hisobColumn.setCellFactory(ComboBoxTableCell.forTableColumn(dasturObservableList));
         hisobColumn.setStyle( "-fx-alignment: CENTER_LEFT;");
         return hisobColumn;
     }
 
-    private TableColumn<Standart3, Hisob> getHisobBalansColumn() {
-        TableColumn<Standart3, Hisob> balansColumn = new TableColumn<>("Balans");
+    private TableColumn<Standart3, Standart> getHisobBalansColumn() {
+        TableColumn<Standart3, Standart> balansColumn = new TableColumn<>("Balans");
         balansColumn.setMinWidth(100);
         balansColumn.setCellFactory(column -> {
-            TableCell<Standart3, Hisob> cell = new TableCell<Standart3, Hisob>() {
+            TableCell<Standart3, Standart> cell = new TableCell<Standart3, Standart>() {
                 @Override
-                protected void updateItem(Hisob item, boolean empty) {
+                protected void updateItem(Standart item, boolean empty) {
                     super.updateItem(item, empty);
                     if(empty) {
                         setText(null);
                     }
                     else {
                         if (item != null) {
-                            setText(decimalFormat.format(item.getBalans()));
                         }
                     }
                 }
             };
             return cell;
         });
-        Callback balansCellValueFactory = new Callback<TableColumn.CellDataFeatures<Standart3, Hisob>, ObservableValue<Hisob>>() {
+        Callback balansCellValueFactory = new Callback<TableColumn.CellDataFeatures<Standart3, Standart>, ObservableValue<Standart>>() {
             @Override
-            public ObservableValue<Hisob> call(TableColumn.CellDataFeatures<Standart3, Hisob> param) {
+            public ObservableValue<Standart> call(TableColumn.CellDataFeatures<Standart3, Standart> param) {
                 Standart3 standart3 = param.getValue();
-                Hisob h = GetDbData.hisobniTop(standart3.getId3(), hisobObservableList);
-                return new SimpleObjectProperty<Hisob>(h);
+                Standart standart = dasturniTop(standart3.getId3(), dasturObservableList);
+                return new SimpleObjectProperty<Standart>(standart);
             }
         };
         balansColumn.setCellValueFactory(balansCellValueFactory);
@@ -492,15 +424,15 @@ public class DasturCheklovlari extends Application {
     }
 
     private void initHisobTableView() {
-        HBox.setHgrow(hisobTableView, Priority.ALWAYS);
-        VBox.setVgrow(hisobTableView, Priority.ALWAYS);
-        hisobTableView.setItems(hisobTableList);
-        hisobTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        hisobTableView.getColumns().addAll(getHisobNomiColumn(), getBalansHisobColumn());
+        HBox.setHgrow(dasturTableView, Priority.ALWAYS);
+        VBox.setVgrow(dasturTableView, Priority.ALWAYS);
+        dasturTableView.setItems(dasturJadvali);
+        dasturTableView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        dasturTableView.getColumns().addAll(getHisobNomiColumn());
     }
 
-    private TableColumn<Hisob, String> getHisobNomiColumn() {
-        TableColumn<Hisob, String> hisobNomi = new TableColumn<>("Hisob");
+    private TableColumn<Standart, String> getHisobNomiColumn() {
+        TableColumn<Standart, String> hisobNomi = new TableColumn<>("Hisob");
         hisobNomi.setMinWidth(200);
         hisobNomi.setCellValueFactory(new PropertyValueFactory<>("text"));
         return hisobNomi;
@@ -535,6 +467,10 @@ public class DasturCheklovlari extends Application {
         rightPane.setPadding(new Insets(padding));
         HBox.setHgrow(rightPane, Priority.ALWAYS);
         VBox.setVgrow(rightPane, Priority.ALWAYS);
+        initRightButtons();
+        initRightTableView();
+        initHisobButtonsPane();
+        initHisobTableView();
         rightPane.getChildren().addAll(rightButtons, rightTableView);
     }
 
@@ -613,35 +549,35 @@ public class DasturCheklovlari extends Application {
         return hisob;
     }
 
-    private void guruhToHisob() {
-        hisobTableList.removeAll(hisobTableList);
-        hisobTableList.addAll(hisobObservableList);
-        for (Standart3 s3: guruhTarkibi) {
-            Hisob h = GetDbData.hisobniTop(s3.getId3(), hisobObservableList);
-            hisobTableList.remove(h);
+    private void standart3ToStandart() {
+        dasturJadvali.removeAll(dasturJadvali);
+        dasturJadvali.addAll(dasturObservableList);
+        for (Standart3 s3: cheklanganDasturJadvali) {
+            Standart s = dasturniTop(s3.getId3(), dasturObservableList);
+            dasturJadvali.remove(s);
         }
     }
 
-    private ObservableList<Standart3> hisobToGuruh() {
-        ObservableList<Hisob> hList = hisobTableView.getSelectionModel().getSelectedItems();
+    private ObservableList<Standart3> standartToStandart3() {
+        ObservableList<Standart> standartObservableList = dasturTableView.getSelectionModel().getSelectedItems();
         ObservableList<Standart3> guruh = FXCollections.observableArrayList();
         standart3Models.setTABLENAME("CheklanganHisobTarkibi");
-        for (Hisob h: hList) {
-            if (!getGuruh(h.getId())) {
-                Standart3 s3 = new Standart3(null, guruhCursor.getId(), h.getId(), h.getText(), user.getId(), null);
+        for (Standart standart: standartObservableList) {
+            if (!getGuruh(standart.getId())) {
+                Standart3 s3 = new Standart3(null, guruhCursor.getId(), standart.getId(), standart.getText(), user.getId(), null);
                 guruh.add(s3);
                 standart3Models.insert_data(connection, s3);
             }
         }
-        guruhTarkibi.addAll(guruh);
-        rightTableView.setItems(guruhTarkibi);
+        cheklanganDasturJadvali.addAll(guruh);
+        rightTableView.setItems(cheklanganDasturJadvali);
         rightTableView.refresh();
         return guruh;
     }
 
     private boolean getGuruh(int hisobId) {
         boolean bormi = false;
-        for (Standart3 s3: guruhTarkibi) {
+        for (Standart3 s3: cheklanganDasturJadvali) {
             if (s3.getId3().equals(hisobId)) {
                 bormi = true;
                 break;
@@ -665,13 +601,8 @@ public class DasturCheklovlari extends Application {
         imageView = new PathToImageView("/sample/images/Icons/edit.png").getImageView();
         MenuItem editMenu = new MenuItem("O`zgartir", imageView);
 
-        imageView = new PathToImageView("/sample/images/png/chart.png", 24,24).getImageView();
-        MenuItem grafikDiagramma = new MenuItem("Grafik diagramma", imageView);
-
-
         contextMenu.getItems().add(addMenu);
         contextMenu.getItems().add(deleteMenu);
-        contextMenu.getItems().add(grafikDiagramma);
 
         addMenu.setOnAction(event -> {
         });
@@ -682,11 +613,6 @@ public class DasturCheklovlari extends Application {
         editMenu.setOnAction(event -> {
         });
 
-        grafikDiagramma.setOnAction(event -> {
-            MyChart myChart = new MyChart(connection, user);
-            myChart.display(localDate, guruhCursor, guruhTarkibi);
-        });
-
         return contextMenu;
     }
 
@@ -695,10 +621,10 @@ public class DasturCheklovlari extends Application {
         newValue = newValue.toLowerCase();
 
         if ( oldValue != null && (newValue.length() < oldValue.length()) ) {
-            rightTableView.setItems(guruhTarkibi);
+            rightTableView.setItems(cheklanganDasturJadvali);
         }
 
-        for ( Standart3 s3: guruhTarkibi ) {
+        for ( Standart3 s3: cheklanganDasturJadvali) {
             if (s3.getText().toLowerCase().contains(newValue)) {
                 subentries.add(s3);
             }

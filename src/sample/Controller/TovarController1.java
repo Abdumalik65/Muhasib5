@@ -37,14 +37,11 @@ import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import org.controlsfx.control.textfield.AutoCompletionBinding;
-import org.controlsfx.control.textfield.TextFields;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
+import sample.Excel.ExportToExcel;
 import sample.Model.*;
-import sample.Temp.YangiTovarGuruhi;
 import sample.Tools.*;
 
 import javax.imageio.ImageIO;

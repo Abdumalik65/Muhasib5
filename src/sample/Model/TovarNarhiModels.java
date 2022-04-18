@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.*;
 import sample.Tools.Alerts;
 import sample.Tools.GetDbData;
@@ -27,6 +28,7 @@ public class TovarNarhiModels {
     QueryHelper queryHelper;
 
     public ObservableList<TovarNarhi> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<TovarNarhi> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -58,6 +60,7 @@ public class TovarNarhiModels {
     }
 
     public ObservableList<TovarNarhi> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<TovarNarhi> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -90,6 +93,7 @@ public class TovarNarhiModels {
     }
 
     public ObservableList<TovarNarhi> getDate(Connection connection, Integer tovarId, Date date) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<TovarNarhi> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE tovar = ? AND sana = ?";
@@ -123,6 +127,7 @@ public class TovarNarhiModels {
     }
 
     public ObservableList<TovarNarhi> getDate2(Connection connection, Integer tovarId, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<TovarNarhi> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE tovar = ? AND sana <= ?  ORDER BY " + sqlOrderBy;
@@ -156,6 +161,7 @@ public class TovarNarhiModels {
     }
 
     public ObservableList<TovarNarhi> getDate3(Connection connection, Integer tovarId, Integer narhTuri, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<TovarNarhi> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE tovar = ? AND  narhTuri = ? AND sana <= ?  ORDER BY " + sqlOrderBy;
@@ -189,6 +195,7 @@ public class TovarNarhiModels {
         return books;
     }
     public Integer insert_data(Connection connection, TovarNarhi tovarNarhi) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -220,12 +227,14 @@ public class TovarNarhiModels {
             rs.close();
             prSt.close();
         } catch (SQLException e) {
+            e.printStackTrace();
             Alerts.losted();;
         }
         return insertedID;
     }
 
     public Integer addBath(Connection connection, ObservableList<TovarNarhi> tovarNarhiObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -258,6 +267,7 @@ public class TovarNarhiModels {
         return insertedID;
     }
     public void copyDataBatch(Connection connection, ObservableList<TovarNarhi> tovarNarhiObservableList) {
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -294,6 +304,7 @@ public class TovarNarhiModels {
     }
 
     public void delete_data(Connection connection, TovarNarhi tovarNarhi) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -306,6 +317,7 @@ public class TovarNarhiModels {
         }
     }
     public void update_data(Connection connection, TovarNarhi tovarNarhi) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + SANA + " = ?, "
                 + TOVAR + " = ?, "
@@ -332,6 +344,7 @@ public class TovarNarhiModels {
     }
 
     public Double tovarNarhiniOl(Connection connection, BarCode barCode, Integer narhTuri) {
+        MySqlStatus.checkMyConnection(connection);
         Double tovarNarhiDouble = null;
         if (barCode != null) {
             Standart3Models standart3Models = new Standart3Models();
@@ -379,9 +392,10 @@ public class TovarNarhiModels {
     }
 
     private TovarNarhi yakkaTovarNarhi(Connection connection, int tovarId, int narhTuri) {
+        MySqlStatus.checkMyConnection(connection);
         TovarNarhi tovarNarhi = null;
         ObservableList<TovarNarhi> observableList = getAnyData(
-                connection, "tovar = " + tovarId + " AND narhTuri = " + narhTuri, "sana desc"
+                connection, "tovar = " + tovarId + " AND narhTuri = " + narhTuri, "id desc"
         );
         if (observableList.size()>0) {
             tovarNarhi = observableList.get(0);

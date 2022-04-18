@@ -12,6 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
@@ -25,6 +26,8 @@ import org.controlsfx.control.textfield.TextFields;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
+import sample.Excel.HisoblarExcel;
+import sample.Excel.SochmaHisobotExcel;
 import sample.Model.HisobKitobModels;
 import sample.Model.HisobModels;
 import sample.Model.QaydnomaModel;
@@ -55,7 +58,7 @@ public class HisobotSochma2 extends Application {
 
     TableView<Hisob> hisobTableView = new TableView<>();
     TableView<HisobKitob> hisobKitobTableView = new TableView<>();
-    GetTableView2 getTableView2 = new GetTableView2();
+    TableViewAndoza tableViewAndoza = new TableViewAndoza();
 
     ObservableList<Hisob> hisobObservableList;
     ObservableList<Hisob> hisobListForTable = FXCollections.observableArrayList();
@@ -77,8 +80,10 @@ public class HisobotSochma2 extends Application {
     Font font = Font.font("Arial", FontWeight.BOLD,20);
     Button hisoblarToExcelButton = new Button("");
     Button hisobToExcelButton = new Button("");
-    DatePicker datePicker;
-    LocalDate localDate;
+    Button qaydEtButton = new Tugmachalar().getAdd();
+    Button backButton = new Button("<<");
+    LocalDate localDate = LocalDate.now();
+    DatePicker datePicker = new DatePicker(localDate);
 
 
     public static void main(String[] args) {
@@ -86,7 +91,7 @@ public class HisobotSochma2 extends Application {
     }
 
     public HisobotSochma2() {
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
+        connection = new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
         GetDbData.initData(connection);
         user = GetDbData.getUser(1);
         ibtido();
@@ -96,12 +101,14 @@ public class HisobotSochma2 extends Application {
         this.connection = connection;
         this.user = user;
         this.localDate = LocalDate.now();
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
     private void ibtido() {
         initDataYangi();
-        getTableView2.initTableViews();
+        tableViewAndoza.initTableViews();
         initHisobTableView();
         initButtons();
         initTextFields();
@@ -119,7 +126,6 @@ public class HisobotSochma2 extends Application {
 
     private void hisoblarniYangila2(LocalDate localDate) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        String localDateString = localDate.format(formatter);
         HisobModels hisobModels = new HisobModels();
         hisobObservableList = hisobModels.get_data(connection);
         Standart3Models standart3Models = new Standart3Models();
@@ -147,7 +153,13 @@ public class HisobotSochma2 extends Application {
                 Integer id = rs1.getInt(1);
                 Double balance = rs1.getDouble(2);
                 Hisob hisob = GetDbData.getHisob(id);
-                hisobObservableList.add(new Hisob(id, hisob.getText(), 0d, 0d, balance));
+                if (hisob == null) {
+                    System.out.println(id);
+                }
+                if (balance==null) {
+                    System.out.println(balance);
+                }
+                hisobObservableList.add(new Hisob(id, hisob.getText(), 0d, balance, 0d));
             }
             rs1.close();
         } catch (SQLException e) {
@@ -162,10 +174,10 @@ public class HisobotSochma2 extends Application {
                 Double balance = rs2.getDouble(2);
                 Hisob hisob = GetDbData.hisobniTop(id, hisobObservableList);
                 if (hisob != null) {
-                    hisob.setBalans(hisob.getBalans() - balance);
+                    hisob.setChiqim(balance);
                 } else {
                     Hisob h = GetDbData.getHisob(id);
-                    hisobObservableList.add(new Hisob(id, h.getText(), 0d, 0d, -balance));
+                    hisobObservableList.add(new Hisob(id, h.getText(), balance, 0d, 0d));
                 }
             }
             rs2.close();
@@ -173,18 +185,14 @@ public class HisobotSochma2 extends Application {
             e.printStackTrace();
         }
         if (hisobObservableList.size()>0) {
+            hisobObservableList.forEach(hisob -> {
+                hisob.setBalans(hisob.getKirim() - hisob.getChiqim());
+            });
             Comparator<Hisob> comparator = Comparator.comparing(Hisob::getId);
             Collections.sort(hisobObservableList, comparator);
         }
-        hisobObservableList.removeIf(hisob -> yahlitla(hisob.getBalans(), 2) == 0d);
+//        hisobObservableList.removeIf(hisob -> StringNumberUtils.yaxlitla(hisob.getBalans(), -2) == 0d);
         return hisobObservableList;
-    }
-    private double yahlitla(double son, int daraja) {
-        double darajalanganSon = Math.pow(10, daraja);
-        double natija = son/darajalanganSon;
-        double roundNatija = Math.round(natija)*darajalanganSon;
-//        System.out.println(new MoneyShow().format(roundNatija));
-        return roundNatija;
     }
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -204,23 +212,25 @@ public class HisobotSochma2 extends Application {
         hisobToExcelButton.setGraphic(new PathToImageView("/sample/images/Icons/excel.png").getImageView());
 
         hisoblarToExcelButton.setOnAction(event -> {
-            ExportToExcel exportToExcel = new ExportToExcel();
-            exportToExcel.hisobMufassal(connection);
+            HisoblarExcel hisoblarExcel = new HisoblarExcel();
+            hisoblarExcel.hisoblar(hisobListForTable);
         });
 
         hisobToExcelButton.setOnAction(event -> {
-            ExportToExcel exportToExcel = new ExportToExcel();
-            exportToExcel.hisob(hisob.getId(), rightObservableList);
+            SochmaHisobotExcel sochmaHisobotExcel = new SochmaHisobotExcel();
+            sochmaHisobotExcel.hisob(hisob.getId(), rightObservableList);
         });
     }
 
     private void initTextFields() {
         HBox.setHgrow(qidirTextField, Priority.ALWAYS);
-        TextFields.bindAutoCompletion(qidirTextField, hisobObservableList).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
+        TextFields.bindAutoCompletion(qidirTextField, hisobListForTable).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
             Hisob hisob = autoCompletionEvent.getCompletion();
-            hisobTableView.getSelectionModel().select(hisob);
-            hisobTableView.scrollTo(hisob);
-            hisobTableView.requestFocus();
+            if (hisob != null) {
+                hisobTableView.getSelectionModel().select(hisob);
+                hisobTableView.scrollTo(hisob);
+                hisobTableView.requestFocus();
+            }
         });
     }
 
@@ -243,21 +253,19 @@ public class HisobotSochma2 extends Application {
     }
 
     private void initHisobTableView() {
-        hisobTableView = getTableView2.getHisobTableView();
+        hisobTableView = tableViewAndoza.getHisobTableView();
         HBox.setHgrow(hisobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobTableView, Priority.ALWAYS);
-        hisobTableView.getColumns().get(1).setMinWidth(150);
-        hisobTableView.getColumns().get(1).setMaxWidth(150);
         hisobTableView.setItems(hisobListForTable);
         if (hisobListForTable.size()>0) {
             hisob = hisobListForTable.get(0);
-            refreshHisobKitobTableYangi(hisob);
+            refreshHisobKitobTable(hisob);
             hisobTableView.getSelectionModel().selectFirst();
         }
         hisobTableView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 hisob = newValue;
-                refreshHisobKitobTableYangi(hisob);
+                refreshHisobKitobTable(hisob);
             }
         });
     }
@@ -297,17 +305,23 @@ public class HisobotSochma2 extends Application {
             LocalDate newDate = datePicker.getValue();
             if (newDate != null) {
                 localDate = newDate;
-                for (Hisob h: hisobObservableList) {
-                }
+                hisoblarniYangila2(localDate);
+                hisobTableView.setItems(hisobListForTable);
+                hisobTableView.refresh();
             }
         });
     }
 
     private void refreshHisobKitobTable(Hisob hisob) {
+        localDate = datePicker.getValue();
+        DecimalFormat decimalFormat = new MoneyShow();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        String localDateString = localDate.format(formatter);
         ObservableList<HisobKitob> balansList = FXCollections.observableArrayList();
+        qaydnomaDataObservableList = qaydnomaModel.getAnyData(connection, "chiqimId=" + hisob.getId() + " or kirimId=" +hisob.getId() + " and dateTime<='" + localDateString + " 23:59:59'", "");
         rightObservableList.removeAll(rightObservableList);
         if (hisob != null) {
-            rightObservableList.addAll(hisobKitobModels.getAnyData(connection, "hisob1 = " + hisob.getId() + " OR hisob2 = " + hisob.getId(), "id asc"));
+            rightObservableList.addAll(hisobKitobModels.getAnyData(connection, "hisob1 = " + hisob.getId() + " OR hisob2 = " + hisob.getId() + " and dateTime<='" + localDateString + " 23:59:59'", "id asc"));
             setDateTime();
             Comparator<HisobKitob> comparator = Comparator.comparing(HisobKitob::getDateTime);
             Collections.sort(rightObservableList, comparator);
@@ -338,14 +352,13 @@ public class HisobotSochma2 extends Application {
     }
 
     private void setDateTime() {
-        for (HisobKitob hk: rightObservableList) {
-            hk.setDateTime(getQaydDate(hk.getQaydId()));
-            if (hk.getDateTime()==null) {
-                System.out.println("NULL  " + hk.getIzoh() + " | " + hk.getQaydId() + " | " + hk.getId());
-    //            hisobKitobModels.update_data(connection, hk);
-            }
+        for (HisobKitob hk : rightObservableList) {
+            Date date = getQaydDate(hk.getQaydId());
+            if (date!=null)
+                hk.setDateTime(getQaydDate(hk.getQaydId()));
         }
     }
+
 
     private Date getQaydDate(Integer qaydId) {
         Date qaydDate = null;
@@ -355,21 +368,27 @@ public class HisobotSochma2 extends Application {
                 break;
             }
         }
+        if (qaydDate == null) {
+            System.out.println(qaydId);
+        }
         return qaydDate;
     }
 
     private void initHisobKitobTable() {
-        getTableView2.getAdadColumn().setMinWidth(80);
-        TableColumn<HisobKitob, Integer> amalColumn = getTableView2.getAmalColumn();
+        tableViewAndoza.getAdadColumn().setMinWidth(80);
+        TableColumn<HisobKitob, Integer> amalColumn = tableViewAndoza.getAmalColumn();
         amalColumn.setStyle( "-fx-alignment: CENTER;");
 
-        TableColumn<HisobKitob, Integer> valutaColumn = getTableView2.getValutaColumn();
+        TableColumn<HisobKitob, Integer> valutaColumn = tableViewAndoza.getValutaColumn();
         valutaColumn.setStyle( "-fx-alignment: CENTER;");
 
-        hisobKitobTableView.getColumns().addAll(getTableView2.getDateTimeColumn(), getCustom2Column(), amalColumn,
-                getTableView2.getIzoh2Column(), valutaColumn, getTableView2.getKursColumn(),
-                getTableView2.getAdadColumn(), getTableView2.getNarhColumn(), getTableView2.getSummaColumn(),
-                getTableView2.getBalans2Column());
+        hisobKitobTableView.getColumns().addAll(
+                tableViewAndoza.getDateTimeColumn(),
+                hisob1Hisob2(),
+                amalHujjat(),
+                tableViewAndoza.getIzoh2Column(), valutaKurs(),
+                adadNarh(), tableViewAndoza.getSummaColumn(),
+                tableViewAndoza.getBalans2Column());
         HBox.setHgrow(hisobKitobTableView, Priority.ALWAYS);
         VBox.setVgrow(hisobKitobTableView, Priority.ALWAYS);
         hisobKitobTableView.setItems(rightObservableList);
@@ -378,8 +397,248 @@ public class HisobotSochma2 extends Application {
                 hisobKitob = newValue;
             }
         });
+        hisobKitobTableView.setRowFactory(tv -> new TableRow<HisobKitob>() {
+            @Override
+            protected void updateItem(HisobKitob hisobKitob, boolean empty) {
+                super.updateItem(hisobKitob, empty);
+                if (hisobKitob == null || hisobKitob.getId() == null)
+                    setStyle("");
+                else if (hisobKitob.getId() == 2)
+                    setStyle("-fx-background-color: white;");
+                else if (hisobKitob.getId() == 1)
+                    setStyle("-fx-background-color: #baffba;");
+                else
+                    setStyle("");
+            }
+        });
     }
 
+    private TableColumn<HisobKitob, DoubleTextBox> valutaKurs() {
+        TableColumn<HisobKitob, DoubleTextBox> valutaKurs = new TableColumn<>("Valyuta/Kurs");
+        valutaKurs.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
+
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                DecimalFormat decimalFormat = new MoneyShow();
+                HisobKitob hisobKitob = param.getValue();
+                Valuta valuta = GetDbData.getValuta(hisobKitob.getValuta());
+                Text text1 = new Text(valuta.getValuta());
+                text1.setFill(Color.GREEN);
+                Text text2 = new Text(decimalFormat.format(hisobKitob.getKurs()));
+                text2.setFill(Color.BLACK);
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                b.setAlignment(Pos.CENTER);
+                b.setMaxWidth(2000);
+                b.setPrefWidth(150);
+                b.setMaxHeight(2000);
+                b.setPrefHeight(20);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        valutaKurs.setCellFactory(column -> {
+            TableCell<HisobKitob, DoubleTextBox> cell = new TableCell<HisobKitob, DoubleTextBox>() {
+                @Override
+                protected void updateItem(DoubleTextBox item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if(empty) {
+                        setText(null);
+                    } else {
+                        setText(null);
+                        setGraphic(item);
+                    }
+                }
+            };
+            cell.setAlignment(Pos.CENTER);
+            return cell;
+        });
+        valutaKurs.setMinWidth(20);
+        valutaKurs.setMinWidth(100);
+        valutaKurs.setStyle( "-fx-alignment: CENTER;");
+        return valutaKurs;
+    }
+    private TableColumn<HisobKitob, DoubleTextBox> adadNarh() {
+        TableColumn<HisobKitob, DoubleTextBox> valutaKurs = new TableColumn<>("Dona/Narh");
+        valutaKurs.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
+
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                DecimalFormat decimalFormat = new MoneyShow();
+                HisobKitob hisobKitob = param.getValue();
+                Text text1 = new Text(decimalFormat.format(hisobKitob.getDona()));
+                Text text2 = new Text(decimalFormat.format(hisobKitob.getNarh()));
+                text1.setFill(Color.GREEN);
+                text2.setFill(Color.BLUE);
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                b.setAlignment(Pos.CENTER);
+                b.setMaxWidth(2000);
+                b.setPrefWidth(150);
+                b.setMaxHeight(2000);
+                b.setPrefHeight(20);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        valutaKurs.setMinWidth(20);
+        valutaKurs.setMinWidth(100);
+        valutaKurs.setStyle( "-fx-alignment: CENTER;");
+        return valutaKurs;
+    }
+    private TableColumn<HisobKitob, DoubleTextBox> hisob1Hisob2() {
+        TableColumn<HisobKitob, DoubleTextBox> hisoblar = new TableColumn<>("Chiqim/Kirim");
+        hisoblar.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
+
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                HisobKitob hisobKitob = param.getValue();
+                Hisob hisob1= GetDbData.getHisob(hisobKitob.getHisob1());
+                Hisob hisob2= GetDbData.getHisob(hisobKitob.getHisob2());
+                Text text1 = new Text(hisob1.getText());
+                text1.setFill(Color.GREEN);
+                text1.setStyle("-fx-text-alignment:justify;");
+                text1.wrappingWidthProperty().bind(param.getTableColumn().widthProperty().subtract(2));
+
+                Text text2 = new Text(hisob2.getText());
+                text2.setFill(Color.BLUE);
+                text2.setStyle("-fx-text-alignment:justify;");
+                text2.wrappingWidthProperty().bind(param.getTableColumn().widthProperty().subtract(2));
+
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                b.setMaxWidth(2000);
+                b.setPrefWidth(150);
+                b.setMaxHeight(2000);
+                b.setPrefHeight(20);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        hisoblar.setMinWidth(20);
+        hisoblar.setMaxWidth(150);
+        hisoblar.setStyle( "-fx-alignment: CENTER;");
+        return hisoblar;
+    }
+    private TableColumn<HisobKitob, DoubleTextBox> amalHujjat() {
+        TableColumn<HisobKitob, DoubleTextBox> hisoblar = new TableColumn<>("Amal/Hujjat");
+        hisoblar.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
+
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                HisobKitob hisobKitob = param.getValue();
+                Standart standart= GetDbData.getAmal(hisobKitob.getAmal());
+                Integer hujjatId= hisobKitob.getHujjatId();
+                Text text1 = new Text(standart.getText());
+                text1.setFill(Color.GREEN);
+                Text text2 = new Text("№ "+hujjatId);
+                text2.setFill(Color.BLUE);
+                text2.setOnMouseClicked(event -> {
+                    VBox vBox = new VBox();
+                    Button ibtolEtButton = new Button("<<");
+                    ibtolEtButton.setMaxWidth(2000);
+                    ibtolEtButton.setPrefWidth(168);
+                    ibtolEtButton.setOnAction(event1 -> {
+                        centerPane.getItems().remove(1);
+                        centerPane.getItems().addAll(rightPane);
+                        leftPane.setDisable(false);
+                    });
+                    if (event.getClickCount() == 2 && (!text2.getText().isEmpty())) {
+                        System.out.println("Bismillah");
+                        QaydnomaData qaydnomaData = qaydnomaModel.getQaydnoma(connection, hisobKitob.getQaydId());
+                        switch (qaydnomaData.getAmalTuri()) {
+                            case 1:
+                                PulOldiBerdi pulOldiBerdi = new PulOldiBerdi(connection, user);
+                                vBox = pulOldiBerdi.display(qaydnomaData);
+                                centerPane.getItems().remove(1);
+                                vBox.getChildren().add(ibtolEtButton);
+                                centerPane.getItems().add(vBox);
+                                leftPane.setDisable(true);
+                                break;
+                            case 2:
+                                TovarOldiBerdi tovarOldiBerdi = new TovarOldiBerdi(connection, user);
+                                vBox = tovarOldiBerdi.display(qaydnomaData);
+                                centerPane.getItems().remove(1);
+                                vBox.getChildren().add(ibtolEtButton);
+                                centerPane.getItems().add(vBox);
+                                leftPane.setDisable(true);
+                                break;
+                            case 3:
+                                TovarNaqliyotlari tovarNaqliyotlari = new TovarNaqliyotlari(connection, user);
+                                vBox = tovarNaqliyotlari.display(qaydnomaData);
+                                centerPane.getItems().remove(1);
+                                vBox.getChildren().add(ibtolEtButton);
+                                centerPane.getItems().add(vBox);
+                                leftPane.setDisable(true);
+                                break;
+                            case 4:
+                                XaridlarJadvali xaridlarJadvali = new XaridlarJadvali(connection, user);
+                                vBox = xaridlarJadvali.display(qaydnomaData);
+                                centerPane.getItems().remove(1);
+                                vBox.getChildren().add(ibtolEtButton);
+                                centerPane.getItems().add(vBox);
+                                leftPane.setDisable(true);
+                                break;
+                            case 16:
+                                PulAyriboshlash pulAyriboshlash = new PulAyriboshlash(connection, user);
+                                vBox = pulAyriboshlash.display(qaydnomaData);
+                                centerPane.getItems().remove(1);
+                                vBox.getChildren().add(ibtolEtButton);
+                                centerPane.getItems().add(vBox);
+                                leftPane.setDisable(true);
+                                break;
+                            case 19:
+                                ImportController importController = new ImportController(connection, user);
+                                vBox = importController.display(qaydnomaData);
+                                centerPane.getItems().remove(1);
+                                vBox.getChildren().add(ibtolEtButton);
+                                centerPane.getItems().add(vBox);
+                                leftPane.setDisable(true);
+                                break;
+                        }
+                    }
+                });
+
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                b.setAlignment(Pos.CENTER);
+                b.setMaxWidth(2000);
+                b.setPrefWidth(150);
+                b.setMaxHeight(2000);
+                b.setPrefHeight(20);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        hisoblar.setMinWidth(20);
+        hisoblar.setMaxWidth(150);
+        hisoblar.setStyle( "-fx-alignment: CENTER;");
+        return hisoblar;
+    }
     public TableColumn<HisobKitob, Integer> getQaydIdColumn() {
         TableColumn<HisobKitob, Integer> qaydId = new TableColumn<>("Sana");
         qaydId.setMinWidth(100);
@@ -537,11 +796,18 @@ public class HisobotSochma2 extends Application {
             } else {
                 hk.setId(2);
             }
+            Integer tovarId = hk.getTovar();
+            Double dona = 0d;
+            if (tovarId > 0) {
+                dona = hk.getDona();
+            } else {
+                dona = 1d;
+            }
 
             if (hk.getId() == 1) {
-                yigindi -= hk.getSummaCol();
+                yigindi -= dona * hk.getNarh() / hk.getKurs();
             } else {
-                yigindi += hk.getSummaCol();
+                yigindi += dona * hk.getNarh() / hk.getKurs();
             }
             hk.setBalans(yigindi);
         }

@@ -13,6 +13,7 @@ public class HBoxComboBoxPlusButton extends  HBox{
     ComboBox comboBox = new ComboBox<>();
     Button plusButton = new Button();
     ObservableList comboData = FXCollections.observableArrayList();
+    Integer objectId;
 
     public HBoxComboBoxPlusButton() {
         ibtido();
@@ -69,5 +70,13 @@ public class HBoxComboBoxPlusButton extends  HBox{
     public void setComboData(ObservableList<?> comboData) {
         this.comboData = comboData;
         comboBox.setItems(comboData);
+    }
+
+    public Integer getObjectId() {
+        return objectId;
+    }
+
+    public void setObjectId(Integer objectId) {
+        this.objectId = objectId;
     }
 }

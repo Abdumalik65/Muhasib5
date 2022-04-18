@@ -15,6 +15,15 @@ public class Balans {
         id = 0;
     }
 
+    public Balans(Integer id) {
+        this.id = id;
+        kirim = .0;
+        chiqim = .0;
+        jami = .0;
+        balans = .0;
+        id = 0;
+    }
+
     public Balans(Integer id, Double kirim, Double chiqim, Double jami, Double balans) {
         this.kirim = kirim;
         this.chiqim = chiqim;

@@ -14,7 +14,9 @@ import javafx.stage.Stage;
 import sample.Config.SqliteDB;
 import sample.Config.SqliteDBRemote;
 import sample.Data.Aloqa;
+import sample.Data.User;
 import sample.Model.AloqaModels;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.Encryptor;
 
 import java.sql.Connection;
@@ -42,7 +44,7 @@ public class ServerRemoteController extends Application {
     AloqaModels aloqaModels = new AloqaModels();
     Aloqa aloqa;
 
-
+    User user;
     Connection connection;
     int padding = 3;
 
@@ -53,6 +55,13 @@ public class ServerRemoteController extends Application {
 
     public ServerRemoteController() {
         ibtido();
+    }
+
+    public ServerRemoteController(Connection connection, User user) {
+        this.user = user;
+        this.connection = connection;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     private void ibtido() {
@@ -96,7 +105,7 @@ public class ServerRemoteController extends Application {
     private void initStage(Stage primaryStage) {
         stage = primaryStage;
         stage.setTitle("REMOTE CONNECTION");
-        scene = new Scene(borderpane, 300, 240);
+        scene = new Scene(borderpane, 300, 270);
         stage.setScene(scene);
     }
     private void initTopPane() {
@@ -194,7 +203,8 @@ public class ServerRemoteController extends Application {
                 aloqa.setDbPrefix(dbPrefixTextField.getText().trim());
                 aloqaModels.update_data(connection, aloqa);
             } else {
-                aloqa = new Aloqa(null,
+                aloqa = new Aloqa(
+                        2,
                         enCryptString,
                         dbHostTextField.getText().trim(),
                         dbPortTextField.getText().trim(),

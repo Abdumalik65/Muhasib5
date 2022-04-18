@@ -2,6 +2,7 @@ package sample.Model;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import sample.Config.MySqlStatus;
 import sample.Data.Kurs;
 import sample.Data.Valuta;
 import sample.Tools.Alerts;
@@ -25,6 +26,7 @@ public class KursModels {
     QueryHelper queryHelper;
 
     public ObservableList<Kurs> get_data(Connection connection) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Kurs> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME;
@@ -52,6 +54,7 @@ public class KursModels {
     }
 
     public ObservableList<Kurs> getAnyData(Connection connection, String sqlWhere, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Kurs> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         queryHelper = new QueryHelper(sqlWhere, sqlOrderBy);
@@ -80,6 +83,7 @@ public class KursModels {
     }
 
     public ObservableList<Kurs> getDate(Connection connection, Integer valuta, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Kurs> books = FXCollections.observableArrayList();
         ResultSet rs = null;
         String select = "SELECT * FROM " + TABLENAME + " WHERE valuta = ? AND sana <= ? ORDER BY " + sqlOrderBy;
@@ -109,6 +113,7 @@ public class KursModels {
     }
 
     public Kurs getKurs(Connection connection, Integer valuta, Date date, String sqlOrderBy) {
+        MySqlStatus.checkMyConnection(connection);
         ObservableList<Kurs> books = FXCollections.observableArrayList();
         Kurs kurs = null;
         Valuta v1 = GetDbData.getValuta(valuta);
@@ -150,6 +155,7 @@ public class KursModels {
     }
 
     public Integer insert_data(Connection connection, Kurs kurs){
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         ResultSet rs = null;
         String insert = "INSERT INTO "
@@ -180,6 +186,7 @@ public class KursModels {
         return insertedID;
     }
     public void copyDataBatch(Connection connection, ObservableList<Kurs> kurslar){
+        MySqlStatus.checkMyConnection(connection);
         Integer insertedID = -1;
         String insert = "INSERT INTO "
                 + TABLENAME + " ("
@@ -209,6 +216,7 @@ public class KursModels {
         }
     }
     public void delete_data(Connection connection, Kurs kurs) {
+        MySqlStatus.checkMyConnection(connection);
         String delete = "DELETE FROM " + TABLENAME + " WHERE " + ID_FIELD + " = ?";
         PreparedStatement prSt = null;
         try {
@@ -221,6 +229,7 @@ public class KursModels {
         }
     }
     public void update_data(Connection connection, Kurs kurs) {
+        MySqlStatus.checkMyConnection(connection);
         String replace = "UPDATE " + TABLENAME + " SET "
                 + SANA + " = ?, "
                 + VALUTA + " = ?, "

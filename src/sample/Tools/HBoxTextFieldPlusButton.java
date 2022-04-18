@@ -1,6 +1,5 @@
 package sample.Tools;
 
-import javafx.collections.ObservableList;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
@@ -10,6 +9,7 @@ public class HBoxTextFieldPlusButton extends HBox {
     TextField textField = new TextField();
     Button plusButton = new Button();
     String imageNameString = "/sample/images/Icons/add.png";
+    Integer objectId;
 
     public HBoxTextFieldPlusButton() {
         ibtido();
@@ -52,5 +52,13 @@ public class HBoxTextFieldPlusButton extends HBox {
 
     public void setPlusButton(Button plusButton) {
         this.plusButton = plusButton;
+    }
+
+    public Integer getObjectId() {
+        return objectId;
+    }
+
+    public void setObjectId(Integer objectId) {
+        this.objectId = objectId;
     }
 }

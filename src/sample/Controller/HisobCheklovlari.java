@@ -21,10 +21,10 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
-import sample.Config.MySqlDB;
 import sample.Config.MySqlDBGeneral;
 import sample.Data.*;
 import sample.Enums.ServerType;
+import sample.Excel.ExportToExcel;
 import sample.Model.*;
 import sample.Tools.*;
 
@@ -89,6 +89,8 @@ public class HisobCheklovlari extends Application {
     public HisobCheklovlari(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
     }
 
     private void ibtido() {
@@ -665,13 +667,8 @@ public class HisobCheklovlari extends Application {
         imageView = new PathToImageView("/sample/images/Icons/edit.png").getImageView();
         MenuItem editMenu = new MenuItem("O`zgartir", imageView);
 
-        imageView = new PathToImageView("/sample/images/png/chart.png", 24,24).getImageView();
-        MenuItem grafikDiagramma = new MenuItem("Grafik diagramma", imageView);
-
-
         contextMenu.getItems().add(addMenu);
         contextMenu.getItems().add(deleteMenu);
-        contextMenu.getItems().add(grafikDiagramma);
 
         addMenu.setOnAction(event -> {
         });
@@ -680,11 +677,6 @@ public class HisobCheklovlari extends Application {
         });
 
         editMenu.setOnAction(event -> {
-        });
-
-        grafikDiagramma.setOnAction(event -> {
-            MyChart myChart = new MyChart(connection, user);
-            myChart.display(localDate, guruhCursor, guruhTarkibi);
         });
 
         return contextMenu;

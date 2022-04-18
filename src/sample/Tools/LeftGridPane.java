@@ -81,31 +81,38 @@ public class LeftGridPane {
         beruvchiButton.setGraphic(new PathToImageView("/sample/images/Icons/add.png").getImageView());
 
         TextFields.bindAutoCompletion(beruvchiTextField, hisoblar).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
-            Hisob hisob = autoCompletionEvent.getCompletion();
-            System.out.println(hisob.getId());
-            qaydnomaData.setChiqimId(hisob.getId());
-            qaydnomaData.setChiqimNomi(hisob.getText());
-            hisob1Id = hisob.getId();
+            Hisob newValue = autoCompletionEvent.getCompletion();
+            if (newValue != null) {
+                Hisob hisob = newValue;
+                System.out.println(hisob.getId());
+                qaydnomaData.setChiqimId(hisob.getId());
+                qaydnomaData.setChiqimNomi(hisob.getText());
+                hisob1Id = hisob.getId();
+            }
         });
 
         TextFields.bindAutoCompletion(oluvchiTextField, hisoblar).setOnAutoCompleted((AutoCompletionBinding.AutoCompletionEvent<Hisob> autoCompletionEvent) -> {
-            Hisob hisob = autoCompletionEvent.getCompletion();
-            System.out.println(hisob.getId());
-            qaydnomaData.setKirimId(hisob.getId());
-            qaydnomaData.setKirimNomi(hisob.getText());
-            hisob2Id = hisob.getId();
+            Hisob newValue = autoCompletionEvent.getCompletion();
+            if (newValue != null) {
+                Hisob hisob = newValue;
+                System.out.println(hisob.getId());
+                qaydnomaData.setKirimId(hisob.getId());
+                qaydnomaData.setKirimNomi(hisob.getText());
+                hisob2Id = hisob.getId();
+            }
         });
 
         beruvchiButton.setOnAction(event -> {
-            HisobController hisobController = new HisobController();
+            HisobController hisobController = new HisobController(connection, user);
                 hisobController.display(connection, user);
                 if (hisobController.getDoubleClick()) {
                     Hisob newValue = hisobController.getDoubleClickedRow();
                     if (newValue != null) {
-                        beruvchiTextField  .setText(newValue.getText());
+                        beruvchiTextField.setText(newValue.getText());
                         qaydnomaData.setChiqimNomi(newValue.getText());
                         qaydnomaData.setChiqimId(newValue.getId());
                         hisob1Id = newValue.getId();
+                        hisobController.getStage().close();
                     }
                 }
         });
@@ -284,3 +291,4 @@ public class LeftGridPane {
         return oluvchiTextField;
     }
 }
+

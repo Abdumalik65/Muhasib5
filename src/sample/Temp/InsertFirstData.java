@@ -7,6 +7,7 @@ import sample.Config.MySqlDBGeneral;
 import sample.Data.Hisob;
 import sample.Data.Standart;
 import sample.Data.User;
+import sample.Enums.ServerType;
 import sample.Model.HisobModels;
 import sample.Model.StandartModels;
 import sample.Model.UserModels;
@@ -16,7 +17,7 @@ import java.util.Date;
 
 public class InsertFirstData {
     public static void main(String[] args) {
-        Connection connection = new MySqlDB().getDbConnection();
+        Connection connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
 
         HisobModels hisobModels = new HisobModels();
         ObservableList<Hisob> hisobObservableList = FXCollections.observableArrayList();
@@ -56,6 +57,7 @@ public class InsertFirstData {
         standarts.add(new Standart(null, "Plastik kartadan pul yechish xarajati", 1, null));
         standarts.add(new Standart(null, "Bank hisobidan to`lov", 1, null));
         standarts.add(new Standart(null, "Konvertatsiya", 1, null));
+        standarts.add(new Standart(null, "Kurs tafovuti", 1, null));
         standartModels.addBatch(connection, standarts);
 
         standarts.removeAll(standarts);

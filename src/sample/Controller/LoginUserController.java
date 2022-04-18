@@ -3,17 +3,20 @@ package sample.Controller;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import sample.Data.Kassa;
-import sample.Data.User;
+import sample.Data.*;
 import sample.Model.KassaModels;
 import sample.Model.UserModels;
 import sample.Tools.ConnectionType;
+import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
 import sample.Tools.Shake;
 
@@ -21,6 +24,7 @@ import java.sql.Connection;
 
 public class LoginUserController extends Application {
     Stage stage;
+    Scene scene;
     BorderPane borderpane = new BorderPane();
     VBox centerPane = new VBox();
     GridPane gridPane = new GridPane();
@@ -33,6 +37,7 @@ public class LoginUserController extends Application {
     int padding = 3;
     Boolean logged = false;
     User user;
+    StringBuffer stringBuffer = new StringBuffer();
 
     Connection connection;
 
@@ -42,6 +47,11 @@ public class LoginUserController extends Application {
 
     public LoginUserController(Connection connection) {
         this.connection = connection;
+    }
+
+    public LoginUserController(Connection connection, User user) {
+        this.connection = connection;
+        this.user = user;
     }
 
     private void ibtido() {
@@ -163,10 +173,15 @@ public class LoginUserController extends Application {
         stage = primaryStage;
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.setTitle("Kirish");
-        Scene scene = new Scene(borderpane, 213, 87);
+        scene = new Scene(borderpane, 250, 110);
+        barCodeOn();
         stage.setOnCloseRequest(event -> {
             user =  null;
             logged = false;
+            barCodeOff();
+            Platform.exit();
+            System.exit(0);
+            stage.close();
         });
         stage.setScene(scene);
     }
@@ -202,5 +217,77 @@ public class LoginUserController extends Application {
         }
         return buKassami;
     }
+    private void barCodeOn() {
+        scene.setOnKeyPressed(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent event) {
+                stringBuffer.append(event.getText());
+            }
+        });
 
+        scene.setOnKeyReleased(new EventHandler<KeyEvent>() {
+            @Override
+            public void handle(KeyEvent event) {
+                if (event.getCode() == KeyCode.ENTER) {
+                    String string = stringBuffer.toString().trim();
+                    stringBuffer.delete(0, stringBuffer.length());
+                    if (!string.isEmpty()) {
+                        String [] strings = string.split("||");
+                        String login = strings[0];
+                        String password = strings[1];
+                        userNameTextField.setText(login);
+                        passwordField.setText(password);
+                        loginButton.fire();
+                    }
+                }
+            }
+        });
+    }
+
+    private void barCodeOff() {
+        scene.setOnKeyPressed(null);
+        scene.setOnKeyReleased(null);
+    }
+
+    public User login() {
+        LoginUserController loginUserController = new LoginUserController(connection);
+        if (!loginUserController.display()) {
+            Platform.exit();
+            System.exit(0);
+        } else {
+            user = loginUserController.getUser();
+            String serialNumber = ConnectionType.getAloqa().getText().trim();
+            Kassa kassa = getKassaData(serialNumber);
+            if (kassa != null) {
+                user.setPulHisobi(kassa.getPulHisobi());
+                user.setTovarHisobi(kassa.getTovarHisobi());
+                user.setXaridorHisobi(kassa.getXaridorHisobi());
+                user.setValuta(kassa.getValuta());
+            }
+        }
+        return user;
+    }
+
+    public void logOut() {
+        UserModels userModels = new UserModels();
+        user.setOnline(0);
+        userModels.changeUser(connection, user);
+    }
+
+    public static String getSerialNumber() {
+        String serialNumber = ConnectionType.getAloqa().getText().trim();
+        return serialNumber;
+    }
+
+    public Kassa getKassaData(String serialNumber) {
+        Kassa kassa = null;
+        ObservableList<Kassa> kassaObservableList = null;
+        KassaModels kassaModels = new KassaModels();
+        kassa = null;
+        kassaObservableList = kassaModels.getAnyData(connection, "serialNumber = '" + serialNumber + "'", "");
+        if (kassaObservableList.size() > 0) {
+            kassa = kassaObservableList.get(0);
+        }
+        return kassa;
+    }
 }

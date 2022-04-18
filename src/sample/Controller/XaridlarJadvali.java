@@ -5,49 +5,47 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.geometry.HPos;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.Node;
+import javafx.geometry.*;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldTableCell;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.FontWeight;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
+import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import javafx.util.StringConverter;
 import sample.Config.MySqlDBGeneral;
-import sample.Config.MySqlDBGeneral;
 import sample.Config.SqliteDB;
-import sample.Config.SqliteDBPrinters;
 import sample.Data.*;
 import sample.Enums.ServerType;
+import sample.Excel.ExportToExcel;
+import sample.Excel.XaridChiptasiExcel;
 import sample.Model.HisobKitobModels;
 import sample.Model.QaydnomaModel;
 import sample.Model.StandartModels;
+import sample.Printer.SavdoChiptasiniChopEtish;
 import sample.Tools.*;
 
 import java.sql.Connection;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
-import java.util.Collection;
-import java.util.Date;
 
 public class XaridlarJadvali extends Application {
     Stage stage;
     Scene scene;
     BorderPane borderpane = new BorderPane();
-    GridPane gridPane = new GridPane();
-    GridPane gridPane1 = new GridPane();
     VBox rightPane = new VBox();
     VBox centerPane = new VBox();
     TableView<QaydnomaData> xaridlarTableView = new TableView();
     TableView<HisobKitob> tovarTableView = new TableView();
+    TableView<HisobKitob> tolovJadvali;
     Tugmachalar tugmachalar = new Tugmachalar();
     HBox taftishHBox = new HBox();
     Button xaridChiptasiButton = new Button("Xarid chiptasi");
@@ -66,23 +64,8 @@ public class XaridlarJadvali extends Application {
     int amalTuri = 4;
 
     Double jamiMablag = 0.0;
-    Double kassagaDouble = 0.0;
-    Double chegirmaDouble = 0.0;
-    Double naqdUsdDouble = 0.0;
-    Double naqdMilliyDouble = 0.0;
-    Double plasticDouble = 0.0;
-    Double balansDouble = 0.0;
-    Double qaytimDouble = 0.0;
-
     Label jamiMablagLabel = new Label();
-    Label chegirmaLabel = new Label();
-    Label kassagaLabel = new Label();
-    Label naqdUSDLabel = new Label();
-    Label naqdMilliyLabel = new Label();
-    Label plasticLabel = new Label();
-    Label balansLabel = new Label();
-    Label qaytimLabel = new Label();
-    Font font = Font.font("Arial",20);
+    Font font = Font.font("Arial", FontWeight.BOLD,24);
 
     public static void main(String[] args) {
         launch(args);
@@ -98,17 +81,17 @@ public class XaridlarJadvali extends Application {
     public XaridlarJadvali(Connection connection, User user) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         ibtido();
     }
 
     private void ibtido() {
         initTopPane();
-        initLeftPane();
         initCenterPane();
         initRightPane();
         initBorderPane();
         initBottomPane();
-        initLabelFont();
     }
 
     @Override
@@ -127,21 +110,24 @@ public class XaridlarJadvali extends Application {
     private void initTopPane() {}
 
     private void initLeftPane() {
-        initGridPane();
     }
 
     private void initCenterPane() {
         SetHVGrow.VerticalHorizontal(centerPane);
         centerPane.setPadding(new Insets(padding));
-        centerPane.getChildren().addAll(tugmachalar, tovarTableView, gridPane1);
+        initTovarTable();
+        initTugmachalar();
+        HBox hBox = yangiJamiPane();
+        tolovJadvali = yangiTolovJadvali();
+        centerPane.getChildren().addAll(tugmachalar, tovarTableView, tolovJadvali, hBox);
     }
 
     private void initRightPane() {
         initTaftishHBox();
-        initGridPane2();
         initXaridChiptasiTableView();
         initXaridChiptasiButton();
         SetHVGrow.VerticalHorizontal(rightPane);
+        rightPane.setMinWidth(281);
         rightPane.getChildren().addAll(taftishHBox, xaridlarTableView);
     }
 
@@ -155,11 +141,28 @@ public class XaridlarJadvali extends Application {
     }
 
     private void initStage(Stage primaryStage) {
-        scene = new Scene(borderpane, 1135, 700);
-        scene.setUserAgentStylesheet("sample/Styles/caspian.css");
+        scene = new Scene(borderpane);
+        Screen screen = Screen.getPrimary();
+        Rectangle2D bounds = screen.getVisualBounds();
         stage = primaryStage;
+        stage.setX(bounds.getMinX());
+        stage.setY(bounds.getMinY());
+        stage.setWidth(bounds.getWidth());
+        stage.setHeight(bounds.getHeight());
+        scene.setUserAgentStylesheet("sample/Styles/caspian.css");
         stage.setTitle("Xaridlar jadvali");
         stage.setScene(scene);
+    }
+
+    private HBox yangiJamiPane() {
+        HBox hBox = new HBox();
+        Pane pane = new Pane();
+        Pane pane1 = new Pane();
+        jamiMablagLabel.setFont(font);
+        HBox.setHgrow(pane, Priority.ALWAYS);
+        HBox.setHgrow(pane1, Priority.ALWAYS);
+        hBox.getChildren().addAll(pane, jamiMablagLabel, pane1);
+        return hBox;
     }
 
     private void initXaridChiptasiTableView() {
@@ -176,13 +179,14 @@ public class XaridlarJadvali extends Application {
             refreshData(qaydnomaData);
             tovarTableView.refresh();
         }
-        GetTableView2 getTableView2 = new GetTableView2();
-        TableColumn<QaydnomaData, Integer> hujjatColumn = getTableView2.getHujjatColumn();
-        hujjatColumn.setMinWidth(73);
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
+        TableColumn<QaydnomaData, DoubleTextBox> hujjatColumn = tableViewAndoza.idHujjatQaydnoma();
+        hujjatColumn.setMinWidth(70);
+        hujjatColumn.setMaxWidth(70);
         xaridlarTableView.getColumns().addAll(
-                getTableView2.getSanaColumn(),
+                tableViewAndoza.getSanaColumn(),
                 hujjatColumn,
-                getTableView2.getKirimNomiColumn()
+                tableViewAndoza.hisob1Hisob2Qaydnoma()
         );
         xaridlarTableView.setItems(qaydnomaDataObservableList);
 
@@ -210,11 +214,13 @@ public class XaridlarJadvali extends Application {
             ObservableList<HisobKitob> hkList = tovarTableView.getItems();
             if (qaydnomaData1 != null) {
                 if (hkList != null) {
-                    String printerNomi = printerim().toLowerCase();
+                    ObservableList<HisobKitob> hisobKitobObservableList = hisobKitobModels.getAnyData(connection, "qaydId = " + qaydnomaData.getId(), "amal asc");
+                    SavdoChiptasiniChopEtish xaridChiptasi = new SavdoChiptasiniChopEtish(user, qaydnomaData1, hisobKitobObservableList);
+                    String printerNomi = xaridChiptasi.printerim().toLowerCase();
                     if (printerNomi.contains("POS-58".toLowerCase())) {
-                        tolovChiptasiniBer("POS-58");
+                        xaridChiptasi.tolovChiptasiniBerPos58(printerNomi);
                     } else if (printerNomi.contains("XP-80C".toLowerCase())) {
-                        tolovChiptasiniBerXP80("XP-80C");
+                        xaridChiptasi.tolovChiptasiniBerXP80(printerNomi);
                     }
                 }
             }
@@ -238,6 +244,7 @@ public class XaridlarJadvali extends Application {
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
             Taftish(oldValue, newValue,comboBox.getSelectionModel().getSelectedIndex());
         });
+
         taftishHBox.getChildren().addAll(comboBox, textField);
     }
 
@@ -276,11 +283,6 @@ public class XaridlarJadvali extends Application {
         xaridlarTableView.setItems(subentries);
     }
 
-    private ObservableList<QaydnomaData> tovarNomidanTop(String string) {
-        ObservableList<QaydnomaData> qaydnomaDataObservableList = null;
-        ObservableList<HisobKitob> hisobKitobObservableList = hisobKitobModels.getAnyData(connection,"","");
-        return qaydnomaDataObservableList;
-    }
     private String printerim() {
         Connection printersConnection = new SqliteDB().getDbConnection();
         StandartModels printerModels = new StandartModels("Printers");
@@ -294,19 +296,11 @@ public class XaridlarJadvali extends Application {
         return printerNomi;
     }
 
-    private TableColumn<QaydnomaData, Integer> getHujjatColumn() {
-        TableColumn<QaydnomaData, Integer>  chipta = new TableColumn<>("Xarid raqami");
-        chipta.setMinWidth(100);
-        chipta.setMaxWidth(100);
-        chipta.setCellValueFactory(new PropertyValueFactory<>("hujjat"));
-        chipta.setStyle( "-fx-alignment: CENTER;");
-        return chipta;
-    }
-
     private void initTovarTable() {
         SetHVGrow.VerticalHorizontal(tovarTableView);
         tovarTableView.setPadding(new Insets(padding));
         tovarTableView.getColumns().addAll(
+                getAmalColumn(),
                 getTovarColumn(),
                 getTaqdimColumn(),
                 getAdadColumn(),
@@ -326,16 +320,22 @@ public class XaridlarJadvali extends Application {
         chiptaButton.setText("Xarid chiptasi");
         tugmachalar.getChildren().add(0, chiptaButton);
         chiptaButton.setOnAction(event -> {
-            String printerNomi = printerim().toLowerCase();
-            if (printerNomi.contains("POS-58".toLowerCase())) {
-                tolovChiptasiniBer(printerNomi);
-            } else if (printerNomi.contains("XP-80C".toLowerCase())) {
-                tolovChiptasiniBerXP80(printerNomi);
+            QaydnomaData qaydnomaData = xaridlarTableView.getSelectionModel().getSelectedItem();
+            if (qaydnomaData != null) {
+                ObservableList<HisobKitob> hisobKitobObservableList = hisobKitobModels.getAnyData(connection, "qaydId = " + qaydnomaData.getId(), "amal asc");
+                SavdoChiptasiniChopEtish xaridChiptasi = new SavdoChiptasiniChopEtish(user, qaydnomaData, hisobKitobObservableList);
+                String printerNomi = xaridChiptasi.printerim().toLowerCase();
+                if (printerNomi.contains("POS-58".toLowerCase())) {
+                    xaridChiptasi.tolovChiptasiniBerPos58(printerNomi);
+                } else if (printerNomi.contains("XP-80C".toLowerCase())) {
+                    xaridChiptasi.tolovChiptasiniBerXP80(printerNomi);
+                }
             }
         });
 
         Button deleteButton = tugmachalar.getDelete();
         deleteButton.setOnAction(event -> {
+            qaydnomaData = xaridlarTableView.getSelectionModel().getSelectedItem();
             if (Alerts.xaridniOchir(qaydnomaData)) {
                 xaridniOchir();
             }
@@ -343,16 +343,20 @@ public class XaridlarJadvali extends Application {
 
         Button excelButton = tugmachalar.getExcel();
         excelButton.setOnAction(event -> {
-            String printerim = printerim();
-            ExportToExcel exportToExcel = new ExportToExcel(printerim);
-            User user1 = GetDbData.getUser(qaydnomaData.getUserId());
-            user1.setTovarHisobi(user.getTovarHisobi());
-            exportToExcel.savdoChiptasi(qaydnomaData, connection, user1);
+            QaydnomaData qaydnomaData = xaridlarTableView.getSelectionModel().getSelectedItem();
+            if (qaydnomaData != null) {
+                XaridChiptasiExcel xaridChiptasiExcel = new XaridChiptasiExcel(connection, user);
+                User user1 = GetDbData.getUser(qaydnomaData.getUserId());
+                user1.setTovarHisobi(user.getTovarHisobi());
+
+                xaridChiptasiExcel.savdoChiptasi(qaydnomaData, user1);
+            }
         });
     }
 
     private void xaridniOchir() {
         QaydnomaModel qaydnomaModel = new QaydnomaModel();
+        qaydnomaData = xaridlarTableView.getSelectionModel().getSelectedItem();
         int qaydId = qaydnomaData.getId();
         hisobKitobModels.deleteWhere(connection, "qaydId = " + qaydId);
         tableObservableList.removeAll(tableObservableList);
@@ -363,6 +367,37 @@ public class XaridlarJadvali extends Application {
         System.out.println("Xaridni o`chir");
     }
 
+    private TableColumn<HisobKitob, Integer> getAmalColumn() {
+        TableColumn<HisobKitob, Integer>  amalColumn = new TableColumn<>("Amal");
+        amalColumn.setMinWidth(50);
+        amalColumn.setMaxWidth(50);
+        amalColumn.setCellValueFactory(new PropertyValueFactory<>("amal"));
+
+        amalColumn.setCellFactory(column -> {
+            TableCell<HisobKitob, Integer> cell = new TableCell<HisobKitob, Integer>() {
+                @Override
+                protected void updateItem(Integer item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if(empty) {
+                        setText(null);
+                    }
+                    else {
+                        ImageView imageView = null;
+                        if (item == 4) {
+                            imageView = new PathToImageView("/sample/images/Icons/chiqim.png", 32, 32).getImageView();
+                        } else {
+                            imageView = new PathToImageView("/sample/images/Icons/kirim.png", 32, 32).getImageView();
+
+                        }
+                        setGraphic(imageView);
+                    }
+                    setAlignment(Pos.CENTER_LEFT);
+                }
+            };
+            return cell;
+        });
+        return amalColumn;
+    }
     private TableColumn<HisobKitob, Integer> getTovarColumn() {
         TableColumn<HisobKitob, Integer>  tovarColumn = new TableColumn<>("Tovar");
         tovarColumn.setMinWidth(200);
@@ -377,10 +412,12 @@ public class XaridlarJadvali extends Application {
                         setText(null);
                     }
                     else {
-                        Text text = new Text(GetDbData.getTovar(item).getText());
-                        text.setStyle("-fx-text-alignment:justify;");
-                        text.wrappingWidthProperty().bind(getTableColumn().widthProperty().subtract(35));
-                        setGraphic(text);
+                        if (!item.equals(0)) {
+                            Text text = new Text(GetDbData.getTovar(item).getText());
+                            text.setStyle("-fx-text-alignment:justify;");
+                            text.wrappingWidthProperty().bind(getTableColumn().widthProperty().subtract(35));
+                            setGraphic(text);
+                        }
                     }
                     setAlignment(Pos.CENTER_LEFT);
                 }
@@ -389,8 +426,7 @@ public class XaridlarJadvali extends Application {
         });
         return tovarColumn;
     }
-
-    private  TableColumn<HisobKitob, Double> getAdadColumn() {
+    private TableColumn<HisobKitob, Double> getAdadColumn() {
         TableColumn<HisobKitob, Double>  adad = new TableColumn<>("Adad");
         adad.setMinWidth(80);
         adad.setMaxWidth(80);
@@ -422,12 +458,10 @@ public class XaridlarJadvali extends Application {
                 Alerts.showKamomat(tovar, event.getNewValue(), hisobKitob.getBarCode(), barCodeCount);
             }
             tovarTableView.refresh();
-            jamiHisob(tableObservableList);
         });
         adad.setStyle( "-fx-alignment: CENTER;");
         return adad;
     }
-
     private TableColumn<HisobKitob, Double> getNarhColumn() {
         TableColumn<HisobKitob, Double>  narh = new TableColumn<>("Narh");
         narh.setMinWidth(100);
@@ -460,11 +494,9 @@ public class XaridlarJadvali extends Application {
             event.getTableView().refresh();
 
             hisobKitob.setNarh(newValue);
-            jamiHisob(event.getTableView().getItems());
         });
         return narh;
     }
-
     private TableColumn<HisobKitob, String> getSummaColumn() {
         TableColumn<HisobKitob, String>  summaCol = new TableColumn<>("Jami");
         summaCol.setMinWidth(150);
@@ -482,7 +514,6 @@ public class XaridlarJadvali extends Application {
         });
         return summaCol;
     }
-
     private TableColumn<HisobKitob, String> getTaqdimColumn() {
         TableColumn<HisobKitob, String> taqdimColumn = new TableColumn<>("Birlik");
         taqdimColumn.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, String>, ObservableValue<String>>() {
@@ -491,8 +522,11 @@ public class XaridlarJadvali extends Application {
             public ObservableValue<String> call(TableColumn.CellDataFeatures<HisobKitob, String> param) {
                 HisobKitob hisobKitob = param.getValue();
                 BarCode barCode = GetDbData.getBarCode(hisobKitob.getBarCode());
-                Standart birlikStandart = GetDbData.getBirlik(barCode.getBirlik());
-                String birlikString = birlikStandart.getText();
+                String birlikString = "??? " + hisobKitob.getBarCode() + " ??";
+                if (barCode != null) {
+                    Standart birlikStandart = GetDbData.getBirlik(barCode.getBirlik());
+                    birlikString = birlikStandart.getText();
+                }
                 return new SimpleObjectProperty<>(birlikString);
             }
         });
@@ -500,408 +534,274 @@ public class XaridlarJadvali extends Application {
         taqdimColumn.setMinWidth(120);
         return taqdimColumn;
     }
+    private TableColumn<HisobKitob, DoubleTextBox> narhKurs() {
+        TableColumn<HisobKitob, DoubleTextBox> valutaKurs = new TableColumn<>("Narh/Kurs");
+        valutaKurs.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
 
-    private void jamiHisob(ObservableList<HisobKitob> hisobKitobViewObservableList) {
-        jamiMablag = 0.0;
-        for (HisobKitob hk : hisobKitobViewObservableList) {
-            jamiMablag += hk.getDona() * hk.getNarh();
-        }
-        jamiMablagLabel.setText(decimalFormat.format(jamiMablag));
-        kassagaDouble = jamiMablag - chegirmaDouble;
-        kassagaLabel.setText(decimalFormat.format(kassagaDouble));
-        Double aDouble = (naqdUsdDouble + plasticDouble) - (jamiMablag - chegirmaDouble);
-        if (aDouble > 0) {
-            qaytimDouble = (aDouble);
-        } else {
-            qaytimDouble = 0.0;
-        }
-        qaytimLabel.setText(decimalFormat.format(qaytimDouble));
-        balansDouble = (naqdUsdDouble + plasticDouble - qaytimDouble) - (jamiMablag - chegirmaDouble);
-        balansLabel.setText(decimalFormat.format(balansDouble));
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                DecimalFormat decimalFormat = new MoneyShow();
+                HisobKitob hisobKitob = param.getValue();
+                Double narhKurs = hisobKitob.getTovar() > 0 ? hisobKitob.getDona()*hisobKitob.getNarh() : hisobKitob.getNarh();
+                Text text1 = new Text(decimalFormat.format(narhKurs));
+                Text text2 = new Text(decimalFormat.format(hisobKitob.getKurs()));
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                b.setAlignment(Pos.CENTER);
+                b.setMaxWidth(2000);
+                b.setPrefWidth(150);
+                b.setMaxHeight(2000);
+                b.setPrefHeight(20);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        valutaKurs.setCellFactory(column -> {
+            TableCell<HisobKitob, DoubleTextBox> cell = new TableCell<HisobKitob, DoubleTextBox>() {
+                @Override
+                protected void updateItem(DoubleTextBox item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if(empty) {
+                        setText(null);
+                    } else {
+                        setText(null);
+                        setGraphic(item);
+                    }
+                }
+            };
+            cell.setAlignment(Pos.CENTER);
+            return cell;
+        });
+        valutaKurs.setMinWidth(100);
+        valutaKurs.setStyle( "-fx-alignment: CENTER;");
+        return valutaKurs;
+    }
+    private TableColumn<HisobKitob, DoubleTextBox> adadNarh() {
+        TableColumn<HisobKitob, DoubleTextBox> valutaKurs = new TableColumn<>("Dona/Narh");
+        valutaKurs.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
+
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                DecimalFormat decimalFormat = new MoneyShow();
+                HisobKitob hisobKitob = param.getValue();
+                Text text1 = new Text(decimalFormat.format(hisobKitob.getDona()));
+                Text text2 = new Text(decimalFormat.format(hisobKitob.getNarh()));
+                text1.setFill(Color.RED);
+                text2.setFill(Color.BLUE);
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                b.setMaxWidth(2000);
+                b.setPrefWidth(150);
+                b.setMaxHeight(2000);
+                b.setPrefHeight(20);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        valutaKurs.setMinWidth(20);
+        valutaKurs.setMinWidth(150);
+        valutaKurs.setStyle( "-fx-alignment: CENTER;");
+        return valutaKurs;
+    }
+    private TableColumn<HisobKitob, DoubleTextBox> hisob1Hisob2() {
+        TableColumn<HisobKitob, DoubleTextBox> hisoblar = new TableColumn<>("Chiqim/Kirim");
+        hisoblar.setCellValueFactory(new Callback<TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox>, ObservableValue<DoubleTextBox>>() {
+
+            @Override
+            public ObservableValue<DoubleTextBox> call(TableColumn.CellDataFeatures<HisobKitob, DoubleTextBox> param) {
+                HisobKitob hisobKitob = param.getValue();
+                Hisob hisob1= GetDbData.getHisob(hisobKitob.getHisob1());
+                Hisob hisob2= GetDbData.getHisob(hisobKitob.getHisob2());
+                Text text1 = new Text(hisob1.getText());
+                text1.setFill(Color.RED);
+                text1.setStyle("-fx-text-alignment:justify;");
+                text1.wrappingWidthProperty().bind(param.getTableColumn().widthProperty().subtract(2));
+                Text text2 = new Text(hisob2.getText());
+                text2.setFill(Color.BLUE);
+                text2.setStyle("-fx-text-alignment:justify;");
+                text2.wrappingWidthProperty().bind(param.getTableColumn().widthProperty().subtract(2));
+                DoubleTextBox b = new DoubleTextBox(text1, text2);
+                HBox.setHgrow(text1, Priority.ALWAYS);
+                VBox.setVgrow(text1, Priority.ALWAYS);
+                HBox.setHgrow(text2, Priority.ALWAYS);
+                VBox.setVgrow(text2, Priority.ALWAYS);
+                HBox.setHgrow(b, Priority.ALWAYS);
+                VBox.setVgrow(b, Priority.ALWAYS);
+
+                return new SimpleObjectProperty<DoubleTextBox>(b);
+            }
+        });
+
+        hisoblar.setMinWidth(150);
+        hisoblar.setStyle( "-fx-alignment: CENTER;");
+        return hisoblar;
     }
 
-    private void initGridPane() {
-        initTugmachalar();
-        initTovarTable();
-        SetHVGrow.VerticalHorizontal(gridPane);
-        gridPane.setPadding(new Insets(padding));
-
-        int rowIndex = 0;
-        gridPane.add(tovarTableView, 0, rowIndex, 1, 1);
-        GridPane.setHgrow(tovarTableView, Priority.ALWAYS);
-        GridPane.setVgrow(tovarTableView, Priority.ALWAYS);
+    private Double jami(ObservableList<HisobKitob> observableList) {
+        Double jami = 0d;
+        for (HisobKitob hk: observableList) {
+            if (hk.getAmal().equals(4)) {
+                if (hk.getTovar() == 0) {
+                    jami += hk.getNarh();
+                } else {
+                    jami += hk.getDona() * hk.getNarh();
+                }
+            } else if (hk.getAmal().equals(2)) {
+                if (hk.getTovar() == 0) {
+                    jami -= hk.getNarh();
+                } else {
+                    jami -= hk.getDona() * hk.getNarh();
+                }
+            }
+        }
+        return jami;
     }
 
-    private void initGridPane2() {
-        HBox.setHgrow(gridPane1, Priority.ALWAYS);
-        VBox.setVgrow(gridPane1, Priority.NEVER);
-        gridPane1.setGridLinesVisible(true);
+    private TableView<HisobKitob> yangiTolovJadvali() {
+        TableView<HisobKitob> tableView = new TableView<>();
+        SetHVGrow.VerticalHorizontal(tableView);
+        TableViewAndoza tableViewAndoza = new TableViewAndoza();
+        TableColumn<HisobKitob, Integer> amalColumn = tableViewAndoza.getAmalColumn();
+        TableColumn<HisobKitob, Double> summaColumn = tableViewAndoza.getSummaColumn();
+        TableColumn<HisobKitob, Double> balanceColumn = tableViewAndoza.getBalans2Column();
+        amalColumn.setStyle( "-fx-alignment: CENTER;");
+        TableColumn<HisobKitob, Integer> valutaColumn = tableViewAndoza.getValutaColumn();
+        valutaColumn.setMinWidth(60);
+        summaColumn.setMinWidth(100);
+        balanceColumn.setMinWidth(100);
+        valutaColumn.setStyle( "-fx-alignment: CENTER;");
 
-        int rowIndex = 0;
-        Label label1 = new Label("Xarid narhi");
-        label1.setFont(font);
-        HBox.setHgrow(label1, Priority.ALWAYS);
-        GridPane.setHgrow(label1, Priority.ALWAYS);
-        HBox.setHgrow(jamiMablagLabel, Priority.ALWAYS);
-        GridPane.setHgrow(jamiMablagLabel, Priority.ALWAYS);
-        gridPane1.add(label1, 0, rowIndex, 1, 1);
-        gridPane1.add(jamiMablagLabel, 1, rowIndex, 1,1);
-        GridPane.setHalignment(jamiMablagLabel, HPos.RIGHT);
+        tableView.getColumns().addAll(
+                amalColumn,
+                hisob1Hisob2(),
+                valutaColumn,
+                narhKurs(),
+                summaColumn,
+                balanceColumn
+        );
 
-        rowIndex++;
-        Label label2 = new Label("Chegirma");
-        label2.setFont(font);
-        HBox.setHgrow(label2, Priority.ALWAYS);
-        GridPane.setHgrow(label2, Priority.ALWAYS);
-        HBox.setHgrow(chegirmaLabel, Priority.ALWAYS);
-        GridPane.setHgrow(chegirmaLabel, Priority.ALWAYS);
-        gridPane1.add(label2, 0, rowIndex, 1, 1);
-        gridPane1.add(chegirmaLabel,1, rowIndex,1, 1);
-        GridPane.setHalignment(chegirmaLabel, HPos.RIGHT);
-
-        rowIndex++;
-        Label label3 = new Label("Kassaga");
-        label3.setFont(font);
-        HBox.setHgrow(label3, Priority.ALWAYS);
-        GridPane.setHgrow(label3, Priority.ALWAYS);
-        HBox.setHgrow(kassagaLabel, Priority.ALWAYS);
-        GridPane.setHgrow(kassagaLabel, Priority.ALWAYS);
-        gridPane1.add(label3, 0, rowIndex, 1, 1);
-        gridPane1.add(kassagaLabel,1, rowIndex,1, 1);
-        GridPane.setHalignment(kassagaLabel, HPos.RIGHT);
-
-        rowIndex++;
-        Valuta valutaUSD = GetDbData.getValuta(1);
-        Label label4 = new Label("Naqd " + valutaUSD.getValuta());
-        label4.setFont(font);
-        HBox.setHgrow(label4, Priority.ALWAYS);
-        GridPane.setHgrow(label4, Priority.ALWAYS);
-        HBox.setHgrow(naqdUSDLabel, Priority.ALWAYS);
-        GridPane.setHgrow(naqdUSDLabel, Priority.ALWAYS);
-        gridPane1.add(label4, 0, rowIndex, 1, 1);
-        gridPane1.add(naqdUSDLabel, 1, rowIndex, 1,1);
-        GridPane.setHalignment(naqdUSDLabel, HPos.RIGHT);
-
-        rowIndex++;
-        Valuta valutaMilliy = GetDbData.getValuta(2);
-        Label label4b = new Label("Naqd " + valutaMilliy.getValuta());
-        label4b.setFont(font);
-        HBox.setHgrow(label4b, Priority.ALWAYS);
-        GridPane.setHgrow(label4b, Priority.ALWAYS);
-        HBox.setHgrow(naqdMilliyLabel, Priority.ALWAYS);
-        GridPane.setHgrow(naqdMilliyLabel, Priority.ALWAYS);
-        gridPane1.add(label4b, 0, rowIndex, 1, 1);
-        gridPane1.add(naqdMilliyLabel, 1, rowIndex, 1,1);
-        GridPane.setHalignment(naqdMilliyLabel, HPos.RIGHT);
-
-        rowIndex++;
-        Label label5 = new Label("Plastik");
-        label5.setFont(font);
-        HBox.setHgrow(label5, Priority.ALWAYS);
-        GridPane.setHgrow(label5, Priority.ALWAYS);
-        HBox.setHgrow(plasticLabel, Priority.ALWAYS);
-        GridPane.setHgrow(plasticLabel, Priority.ALWAYS);
-        gridPane1.add(label5, 0, rowIndex, 1, 1);
-        gridPane1.add(plasticLabel,1, rowIndex,1, 1);
-        GridPane.setHalignment(plasticLabel, HPos.RIGHT);
-
-        rowIndex++;
-        Label label6 = new Label("Qaytim");
-        label6.setFont(font);
-        HBox.setHgrow(label6, Priority.ALWAYS);
-        GridPane.setHgrow(label6, Priority.ALWAYS);
-        HBox.setHgrow(qaytimLabel, Priority.ALWAYS);
-        GridPane.setHgrow(qaytimLabel, Priority.ALWAYS);
-        gridPane1.add(label6, 0, rowIndex, 1, 1);
-        gridPane1.add(qaytimLabel,1, rowIndex,1, 1);
-        GridPane.setHalignment(qaytimLabel, HPos.RIGHT);
-
-        rowIndex++;
-        Label label7 = new Label("Balans");
-        label7.setFont(font);
-        HBox.setHgrow(label7, Priority.ALWAYS);
-        GridPane.setHgrow(label7, Priority.ALWAYS);
-        HBox.setHgrow(balansLabel, Priority.ALWAYS);
-        GridPane.setHgrow(balansLabel, Priority.ALWAYS);
-        gridPane1.add(label7, 0, rowIndex, 1, 1);
-        gridPane1.add(balansLabel,1, rowIndex,1, 1);
-        GridPane.setHalignment(balansLabel, HPos.RIGHT);
+        return tableView;
     }
 
     private void refreshData(QaydnomaData qaydnomaData) {
-        ObservableList<HisobKitob> hisobKitobObservableList = hisobKitobModels.getAnyData(
-                connection, "qaydId = " + qaydnomaData.getId() + " AND " + "hujjatId = " + qaydnomaData.getHujjat(), "");
-        tableObservableList.removeAll(tableObservableList);
-        jamiMablag = 0.0;
-        chegirmaDouble = 0.0;
-        naqdUsdDouble = 0.0;
-        naqdMilliyDouble = 0.0;
-        plasticDouble = 0.0;
-        qaytimDouble = 0.0;
-        balansDouble = 0.0;
-        boolean valutaniOldim = false;
-        Valuta joriyValuta = null;
-        Double joriyValutaKurs = 1d;
-        initLabels();
-        for (HisobKitob hk: hisobKitobObservableList) {
-            if (!valutaniOldim) {
-                if (hk.getHisob2().equals(qaydnomaData.getKirimId()) && hk.getTovar()>0) {
-                    joriyValuta = GetDbData.getValuta(hk.getValuta());
-                    joriyValutaKurs = hk.getKurs();
-                    valutaniOldim = true;
-                    setLabelToGrid(gridPane1, 1, "Xarid narhi " + joriyValuta.getValuta());
-                    setLabelToGrid(gridPane1, 3, "Chergirma " + joriyValuta.getValuta());
-                    setLabelToGrid(gridPane1, 5, "Kassaga " + joriyValuta.getValuta());
-                    setLabelToGrid(gridPane1, 13, "Qaytim " + joriyValuta.getValuta());
-                    setLabelToGrid(gridPane1, 15, "Balans " + joriyValuta.getValuta());
+
+        ObservableList<HisobKitob> hisobKitobObservableList = hisobKitobModels.getAnyData(connection, "qaydId = " + qaydnomaData.getId(), "amal asc");
+        ObservableList<HisobKitob> tovarlar = tovarlar(hisobKitobObservableList, qaydnomaData);
+        ObservableList<HisobKitob> sotibOlindi = sotibOlindi(hisobKitobObservableList, qaydnomaData);
+        tovarlar.addAll(sotibOlindi);
+        ObservableList<HisobKitob> tolovlar = FXCollections.observableArrayList();
+        if (tovarlar.size()>0) {
+            Integer valutaId = tovarlar.get(0).getValuta();
+            Double kurs = tovarlar.get(0).getKurs();
+            Double jamiMablag = jami(tovarlar);
+            HisobKitob hisobKitob = new HisobKitob(
+                    0, qaydnomaData.getId(), qaydnomaData.getHujjat(), 4, qaydnomaData.getChiqimId(), qaydnomaData.getKirimId(), valutaId,
+                    0, kurs, "", 1d, jamiMablag, 0, "", 1, null
+            );
+            hisobKitob.setBalans(jamiMablag/kurs);
+            tolovlar.add(0, hisobKitob);
+            tovarTableView.setItems(tovarlar);
+            tovarTableView.refresh();
+            ObservableList<HisobKitob> tolov = amallar(hisobKitobObservableList, 7);
+            if (tolov.size()>0)
+                tolovlar.addAll(tolov);
+            ObservableList<HisobKitob> plastic = amallar(hisobKitobObservableList, 15);
+            if (plastic.size()>0)
+                tolovlar.addAll(plastic);
+
+            ObservableList<HisobKitob> qaytim = amallar(hisobKitobObservableList, 8);
+            if (qaytim.size()>0)
+                tolovlar.addAll(qaytim);
+            ObservableList<HisobKitob> chegirmalar = amallar(hisobKitobObservableList, 13);
+            if (chegirmalar.size()>0)
+                tolovlar.addAll(chegirmalar);
+            ObservableList<HisobKitob> qoshimchaDaromadlar = amallar(hisobKitobObservableList, 18);
+            if (qoshimchaDaromadlar.size()>0)
+                tolovlar.addAll(qoshimchaDaromadlar);
+            Double balansHisobi = balansHisobi(tolovlar);
+            balansHisobi = StringNumberUtils.yaxlitla(balansHisobi, -2);
+            jamiMablagLabel.setText(decimalFormat.format(balansHisobi));
+        }
+        tovarTableView.setItems(tovarlar);
+        tovarTableView.refresh();
+
+        tolovJadvali.setItems(tolovlar);
+        tolovJadvali.refresh();
+    }
+
+    private Double balansHisobi(ObservableList<HisobKitob> observableList) {
+        Double balance = 0d;
+        if (observableList.size()>0) {
+            for (HisobKitob hisobKitob: observableList) {
+                switch (hisobKitob.getAmal()) {
+                    case 2:
+                        balance += hisobKitob.getSummaCol();
+                        break;
+                    case 4:
+                        balance -= hisobKitob.getSummaCol();
+                        break;
+                    case 7: //tolov
+                        balance += hisobKitob.getSummaCol();
+                        break;
+                    case 8: //qaytim
+                        balance -= hisobKitob.getSummaCol();
+                        break;
+                    case 13: // chegirma
+                        balance += hisobKitob.getSummaCol();
+                        break;
+                    case 15: //bank tolovi
+                        balance += hisobKitob.getSummaCol();
+                        break;
+                    case 18: //qoshimcha daromad
+                        balance -= hisobKitob.getSummaCol();
+                        break;
                 }
-            }
-            switch (hk.getAmal()) {
-                case 4: //Tovar
-                    if (hk.getHisob2().equals(qaydnomaData.getKirimId())) {
-                        tableObservableList.add(hk);
-                        jamiMablag += hk.getNarh() * hk.getDona();
-                    }
-                    break;
-                case 7: //To`lov naqd
-                    if (hk.getValuta().equals(1)) {
-                        if (joriyValuta.getId().equals(1)) {
-                            naqdUsdDouble = hk.getNarh();
-                        } else if (joriyValuta.getId().equals(2)) {
-                            naqdUsdDouble = hk.getNarh() * joriyValutaKurs;
-                            Valuta v = GetDbData.getValuta(hk.getValuta());
-                            String labelText = "Naqd " + hk.getNarh() + " " + v.getValuta() + " * " + joriyValutaKurs + " " + joriyValuta.getValuta();
-                            setLabelToGrid(gridPane1, 7, labelText);
-                        }
-                    } else if (hk.getValuta().equals(2)) {
-                        if (joriyValuta.getId().equals(1)) {
-                            naqdMilliyDouble = hk.getNarh() / hk.getKurs();
-                            Valuta v = GetDbData.getValuta(hk.getValuta());
-                            String labelText = "Naqd " + hk.getNarh() + " " + v.getValuta() + " / " + hk.getKurs() + " " + v.getValuta();
-                            setLabelToGrid(gridPane1, 9, labelText);
-                        } else if (joriyValuta.getId().equals(2)) {
-                            naqdMilliyDouble = hk.getNarh();
-                        }
-                    }
-                    break;
-                case 8: //Qaytim
-                    qaytimDouble = hk.getNarh();
-                    setLabelToGrid(gridPane1, 13, "Qaytim " + joriyValuta.getValuta());
-                    break;
-                case 13:    //Chegirma
-                    chegirmaDouble = hk.getNarh();
-                    setLabelToGrid(gridPane1, 3, "Chegirma " + joriyValuta.getValuta());
-                    break;
-                case 15:    //To`lov plastic
-                    if (joriyValuta.getId().equals(1)) {
-                        Valuta vm = GetDbData.getValuta(2);
-                        plasticDouble = hk.getNarh() / hk.getKurs();
-                        setLabelToGrid(gridPane1, 11, "Plastic " + joriyValuta.getValuta() + " " + decimalFormat.format(hk.getNarh()) + " " + vm.getValuta() + "/" + decimalFormat.format(hk.getKurs()));
-                    } else if (joriyValuta.getId().equals(2)) {
-                        plasticDouble = hk.getNarh();
-                    }
-                    break;
+                hisobKitob.setBalans(balance);
             }
         }
-        kassagaDouble = jamiMablag - chegirmaDouble;
-        double tolovDouble = naqdUsdDouble + naqdMilliyDouble + plasticDouble;
-        balansDouble = tolovDouble - kassagaDouble - qaytimDouble;
-
-        jamiMablagLabel.setText(decimalFormat.format(jamiMablag));
-        chegirmaLabel.setText(decimalFormat.format(chegirmaDouble));
-        kassagaLabel.setText(decimalFormat.format(kassagaDouble));
-        naqdUSDLabel.setText(decimalFormat.format(naqdUsdDouble));
-        naqdMilliyLabel.setText(decimalFormat.format(naqdMilliyDouble));
-        plasticLabel.setText(decimalFormat.format(plasticDouble));
-        qaytimLabel.setText(decimalFormat.format(qaytimDouble));
-        balansLabel.setText(decimalFormat.format(balansDouble));
+        return balance;
     }
 
-    private void initLabelFont() {
-        jamiMablagLabel.setFont(font);
-        chegirmaLabel.setFont(font);
-        kassagaLabel.setFont(font);
-        naqdUSDLabel.setFont(font);
-        naqdMilliyLabel.setFont(font);
-        plasticLabel.setFont(font);
-        qaytimLabel.setFont(font);
-        balansLabel.setFont(font);
+    private  ObservableList<HisobKitob> tovarlar(ObservableList<HisobKitob> hisobKitobObservableList, QaydnomaData qaydnomaData) {
+        ObservableList<HisobKitob> observableList = FXCollections.observableArrayList();
+        for (HisobKitob hisobKitob: hisobKitobObservableList) {
+            if (hisobKitob.getTovar()>0 && hisobKitob.getHisob2().equals(qaydnomaData.getKirimId())) {
+                observableList.add(hisobKitob);
+            }
+        }
+        return observableList;
     }
 
-    private void initLabels() {
-        Valuta v1 = GetDbData.getValuta(1);
-        Valuta v2 = GetDbData.getValuta(2);
-        Label labelXaridNarhi = getLabelFromGrid(gridPane1, 1);
-        labelXaridNarhi.setText("Xarid narhi");
-        Label labelChrgirma = getLabelFromGrid(gridPane1, 3);
-        labelChrgirma.setText("Chegirma");
-        Label labelKassaga = getLabelFromGrid(gridPane1, 5);
-        labelKassaga.setText("Kassaga");
-        Label labelNaqdUSD = getLabelFromGrid(gridPane1, 7);
-        labelNaqdUSD.setText("Naqd " + v1.getValuta());
-        Label labelNaqdMilliy = getLabelFromGrid(gridPane1, 9);
-        labelNaqdMilliy.setText("Naqd " + v2.getValuta());
-        Label labelPlastic = getLabelFromGrid(gridPane1, 11);
-        labelPlastic.setText("Plastic " + v2.getValuta());
-        Label labelQaytim = getLabelFromGrid(gridPane1, 13);
-        labelQaytim.setText("Qaytim");
-        Label labelBalance = getLabelFromGrid(gridPane1, 15);
-        labelBalance.setText("Balans");
+    private  ObservableList<HisobKitob> sotibOlindi(ObservableList<HisobKitob> hisobKitobObservableList, QaydnomaData qaydnomaData) {
+        ObservableList<HisobKitob> observableList = FXCollections.observableArrayList();
+        for (HisobKitob hisobKitob: hisobKitobObservableList) {
+            if (hisobKitob.getTovar()>0 && hisobKitob.getAmal().equals(2) && hisobKitob.getHisob2().equals(qaydnomaData.getChiqimId()) && hisobKitob.getHisob1().equals(qaydnomaData.getKirimId())) {
+                observableList.add(hisobKitob);
+            }
+        }
+        return observableList;
     }
 
-    public static Label getLabelFromGrid(GridPane gridPane, Integer labelId) {
-        Label label = null;
-        label = (Label) gridPane.getChildren().get(labelId);
-        return label;
-    }
-
-    public static void setLabelToGrid(GridPane gridPane, Integer labelId, String labelText) {
-        Label label = getLabelFromGrid(gridPane, labelId);
-        label.setText(labelText);
-    }
-
-    private void tolovChiptasiniBer(String printerNomi) {
-        StringBuffer printStringBuffer = new StringBuffer();
-        String lineB = String.format("%.50s\n", "--------------------------------");
-        SimpleDateFormat sana = new SimpleDateFormat("dd.MM.yyyy");
-        SimpleDateFormat vaqt = new SimpleDateFormat("HH:mm:ss");
-        Date date = new Date();
-        String sanaString = sana.format(date);
-        String vaqtString = vaqt.format(date);
-        printStringBuffer.append(lineB);
-        String shirkatNomi = GetDbData.getHisob(user.getTovarHisobi()).getText();
-        printStringBuffer.append(String.format("%23s\n", shirkatNomi));
-        printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%-15s %16s\n", "Telefon", user.getPhone()));
-        String lineT = String.format("%32s\n", user.getPhone());
-        printStringBuffer.append(lineT);
-        printStringBuffer.append(String.format("%-11s %20s\n", "Telegram", "t.me/best_perfumery"));
-        printStringBuffer.append(String.format("%-15s %16s\n", "Sana", sanaString));
-        printStringBuffer.append(String.format("%-15s %16s\n", "Vaqt", vaqtString));
-        printStringBuffer.append(String.format("%-15s %16s\n", "Sotuvchi", user.getIsm()));
-        printStringBuffer.append(String.format("%-15s %16s\n", "Oluvchi", qaydnomaData.getKirimNomi()));
-        printStringBuffer.append(String.format("%-15s %16s\n", "Chipta N", qaydnomaData.getHujjat()));
-        printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%-15s %5s %10s\n", "Mahsulot", "Dona", "Narh"));
-        printStringBuffer.append(lineB);
-
-        String space = "                    ";
-        for (HisobKitob hk: tableObservableList) {
-            Double dona = hk.getDona();
-            Double narh = hk.getDona() * hk.getNarh();
-            String line = String.format("%.15s %5s %10s\n", hk.getIzoh() + space, decimalFormat.format(dona), decimalFormat.format(hk.getNarh()));
-            printStringBuffer.append(line);
-            String lineS = String.format("%32s\n", decimalFormat.format(narh));
-            printStringBuffer.append(lineS);
-            printStringBuffer.append(lineB);
+    private  ObservableList<HisobKitob> amallar(ObservableList<HisobKitob> hisobKitobObservableList, Integer amal) {
+        ObservableList<HisobKitob> observableList = FXCollections.observableArrayList();
+        for (HisobKitob hisobKitob: hisobKitobObservableList) {
+            if (hisobKitob.getAmal().equals(amal)) {
+                observableList.add(hisobKitob);
+            }
         }
-
-
-        if (jamiMablag > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Xarid jami", " ", decimalFormat.format(jamiMablag));
-            printStringBuffer.append(line);
-        }
-        if (chegirmaDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Chegirma", " ", decimalFormat.format(chegirmaDouble));
-            printStringBuffer.append(line);
-        }
-
-        if (naqdUsdDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdUsdDouble));
-            printStringBuffer.append(line);
-        }
-        if (plasticDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Plastik", " ", decimalFormat.format(plasticDouble));
-            printStringBuffer.append(line);
-        }
-        if (qaytimDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Qaytim", " ", decimalFormat.format(qaytimDouble));
-            printStringBuffer.append(line);
-        }
-        String line = String.format("%-15s %5s %10s\n", "Balans", " ", decimalFormat.format(balansDouble));
-        printStringBuffer.append(line);
-        printStringBuffer.append(lineB);
-
-        printStringBuffer.append(String.format("%29" +
-                "s\n", "XARIDINGIZ UCHUN TASHAKKUR"));
-        printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%s\n\n\n\n", ""));
-
-        String chipta = printStringBuffer.toString().trim();
-        System.out.println(chipta);
-
-        PrinterService printerService = new PrinterService();
-        printerService.printString(printerNomi, chipta);
-
-    }
-
-    private void tolovChiptasiniBerXP80(String printerNomi) {
-        StringBuffer printStringBuffer = new StringBuffer();
-        String lineB = String.format("%.63s\n", "---------------------------------------------");
-        SimpleDateFormat sana = new SimpleDateFormat("dd.MM.yyyy");
-        SimpleDateFormat vaqt = new SimpleDateFormat("HH:mm:ss");
-        Date date = new Date();
-        String sanaString = sana.format(date);
-        String vaqtString = vaqt.format(date);
-        printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%29s\n", "O`RIKZOR 1/40"));
-        printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%-15s %29s\n", "Telefon", user.getPhone()));
-        printStringBuffer.append(String.format("%-15s %29s\n", "Sana", sanaString));
-        printStringBuffer.append(String.format("%-15s %29s\n", "Vaqt", vaqtString));
-        printStringBuffer.append(String.format("%-15s %29s\n", "Sotuvchi", user.getIsm()));
-        printStringBuffer.append(String.format("%-15s %29s\n", "Oluvchi", qaydnomaData.getKirimNomi()));
-        printStringBuffer.append(String.format("%-15s %29s\n", "Chipta N", qaydnomaData.getHujjat()));
-        printStringBuffer.append("\n" + lineB);
-        printStringBuffer.append(String.format("%-15s %5s %10s %12s\n", "Mahsulot", "Dona", "Narh", "Jami"));
-        printStringBuffer.append(lineB);
-
-        String space = "                    ";
-        for (HisobKitob hk: tableObservableList) {
-            Double dona = hk.getDona();
-            Double narh = hk.getDona() * hk.getNarh();
-            String line = String.format("%.15s %5s %10s %12s\n", hk.getIzoh() + space, decimalFormat.format(dona), decimalFormat.format(hk.getNarh()), decimalFormat.format(narh));
-            printStringBuffer.append(line);
-        }
-
-        printStringBuffer.append(lineB);
-
-        if (jamiMablag > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Xarid jami", " ", decimalFormat.format(jamiMablag));
-            printStringBuffer.append(line);
-        }
-        if (chegirmaDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Chegirma", " ", decimalFormat.format(chegirmaDouble));
-            printStringBuffer.append(line);
-        }
-
-        if (naqdUsdDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Naqd", " ", decimalFormat.format(naqdUsdDouble));
-            printStringBuffer.append(line);
-        }
-        if (plasticDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Plastik", " ", decimalFormat.format(plasticDouble));
-            printStringBuffer.append(line);
-        }
-        if (qaytimDouble > 0) {
-            String line = String.format("%-15s %5s %10s\n", "Qaytim", " ", decimalFormat.format(qaytimDouble));
-            printStringBuffer.append(line);
-        }
-        String line = String.format("%-15s %5s %10s\n", "Balans", " ", decimalFormat.format(balansDouble));
-        printStringBuffer.append(line);
-        printStringBuffer.append(lineB);
-
-        printStringBuffer.append(String.format("%29" +
-                "s\n", "XARIDINGIZ UCHUN TASHAKKUR"));
-        printStringBuffer.append(lineB);
-        printStringBuffer.append(String.format("%s\n\n\n\n\n\n\n\n", ""));
-
-        String chipta = printStringBuffer.toString().trim();
-        System.out.println(chipta);
-
-        PrinterService printerService = new PrinterService();
-        printerService.printString(printerNomi, chipta);
-
+        return observableList;
     }
 
     private void initContextMenu() {
@@ -976,4 +876,11 @@ public class XaridlarJadvali extends Application {
             }
         });
     }
+
+    public VBox display(QaydnomaData qaydnomaData) {
+        this.qaydnomaData = qaydnomaData;
+        refreshData(qaydnomaData);
+        return centerPane;
+    }
+
 }

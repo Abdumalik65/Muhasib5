@@ -87,6 +87,8 @@ public class HKCont {
     public HKCont(Connection connection, User user, Integer amalTuri) {
         this.connection = connection;
         this.user = user;
+        String classSimpleName = getClass().getSimpleName();
+        DasturlarRoyxati.dastur(connection, user, classSimpleName);
         this.amalTuri = amalTuri;
 //        initData(connection);
         switch (amalTuri) {
@@ -109,7 +111,11 @@ public class HKCont {
                 stage.getIcons().add(new Image("/sample/images/Icons/data_transport.png"));
                 break;
         }
-        qaydnomaDataObservableList = qaydnomaModel.getAnyData(connection,"amalTuri = " + amalTuri, "sana desc");
+        if (user.getStatus().equals(99)) {
+            qaydnomaDataObservableList = qaydnomaModel.getAnyData(connection, "amalTuri = " + amalTuri, "sana desc");
+        } else {
+            qaydnomaDataObservableList = qaydnomaModel.getAnyData(connection, "amalTuri = " + amalTuri + " and userId=" + user.getId(), "sana desc");
+        }
         qaydnomaJami = new QaydnomaJami(connection);
 //        qaydnomaJami.refresh(amalTuri, qaydnomaDataObservableList);
         leftPaneTableView.setItems(qaydnomaDataObservableList);
@@ -130,10 +136,6 @@ public class HKCont {
             leftPaneButtons.setEnableAll();
             rightPaneButtons.getAdd().setDisable(false);
             hisobKitobObservableList.addAll(hisobKitobModels.getAnyData(connection, "qaydId = " + qaydnomaData.getId() + " AND amal = " + amalTuri, ""));
-            for (HisobKitob hk: hisobKitobObservableList) {
-                int ishora = qaydnomaData.getChiqimId().equals(hk.getHisob1()) ? 1 : -1;
-                hk.setNarh(ishora*hk.getNarh());
-            }
         } else {
             leftPaneButtons.getAdd().setDisable(false);
         }
@@ -209,7 +211,7 @@ public class HKCont {
             cell.setAlignment(Pos.CENTER);
             return cell;
         });
-        leftPaneTableView.getColumns().addAll(hisobKitobRaqami, hisobKitobSanasi, beruvchi, oluvchi, jami, getStatusColumn());
+        leftPaneTableView.getColumns().addAll(hisobKitobRaqami, hisobKitobSanasi, beruvchi, oluvchi, getStatusColumn());
         leftPaneTableView.setEditable(true);
 
         textField.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -223,10 +225,12 @@ public class HKCont {
                     hisobKitobObservableList.removeAll(hisobKitobObservableList);
                     hisobKitobObservableList.addAll(hisobKitobModels.getAnyData(connection, "qaydId = " + newValue.getId()  + " AND amal = " + newValue.getAmalTuri(), ""));
                     if (hisobKitobObservableList.size()>0) {
+/*
                         for (HisobKitob hk: hisobKitobObservableList) {
                             int ishora = qaydnomaData.getChiqimId().equals(hk.getHisob1()) ? 1 : -1;
                             hk.setNarh(ishora * hk.getNarh());
                         }
+*/
                         qaydnomaJami.getJami(newValue, hisobKitobObservableList);
                         rightPaneTableView.getSelectionModel().selectFirst();
                         qaydnomaJami.getJamiFromGrid(newValue, hisobKitobObservableList);
@@ -290,6 +294,7 @@ public class HKCont {
                 leftPaneTableView.setItems(qaydnomaDataObservableList);
                 leftPaneTableView.getSelectionModel().select(qaydnomaData);
                 leftPaneTableView.scrollTo(qaydnomaData);
+                leftPaneTableView.refresh();
             }
         });
 

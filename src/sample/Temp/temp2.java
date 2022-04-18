@@ -1,80 +1,61 @@
 package sample.Temp;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import sample.Config.MySqlDBGeneral;
-import sample.Data.BarCode;
 import sample.Data.HisobKitob;
-import sample.Data.User;
+import sample.Data.Standart;
 import sample.Enums.ServerType;
 import sample.Model.HisobKitobModels;
+import sample.Tools.Alerts;
 import sample.Tools.GetDbData;
 
-import java.sql.Connection;
+import java.sql.*;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class temp2 {
-    static Connection  connection;
-    static User user = new User(1, "admin", "", "admin");
-    public static void main(String[] args) {
-
-        connection = new MySqlDBGeneral(ServerType.LOCAL).getDbConnection();
-        HisobKitob hisobKitob = new HisobKitob(
-                2,
-                1,
-                1,
-                5,
-                13,
-                3,
-                1,
-                569,
-                1.0,
-                "8993379284466",
-                1.0,
-                0.3,
-                0,
-                "",
-                1,new Date()
-        );
-        Mayda mayda = new Mayda(connection, user);
-        GetDbData.initData(connection);
-        BarCode barCode = GetDbData.getBarCode(hisobKitob.getBarCode());
-//        mayda.maydala(barCode, hisobKitob, 1.0);
+    public static void main(String[] args) throws ParseException {
+        Connection connection =
+                new MySqlDBGeneral(ServerType.REMOTE).getDbConnection();
+        Map<Integer, Integer> yillar = new HashMap<>();
+        Map<Integer, Integer> oylar = new HashMap<>();
+        Map<Integer, Integer> kunlar = new HashMap<>();
         HisobKitobModels hisobKitobModels = new HisobKitobModels();
-        Boolean maydalandi = false;
-        ObservableList<HisobKitob> hkList = hisobKitobModels.getBarCodeQoldiq(connection, 13, barCode, hisobKitob.getDateTime());
-        double hkQoldiq = .0;
-        double talab = 2.0;
-        Integer barCodeId = barCode.getId();
-        for (HisobKitob hk: hkList) {
-            System.out.println(hk.getDona());
-            hkQoldiq += hk.getDona();
-        }
-        if (hkQoldiq == 0.0) {
-            System.out.println("Tovar yo`q");
-            ObservableList<BarCode> bcList = GetDbData.getBarCodeList(barCode.getTovar());
-            if (bcList.size()>1) {
-                bcList.removeIf(item -> item.getId().equals(barCodeId));
-                for (BarCode bc: bcList) {
-                    if (bc.getTarkib().equals(barCodeId)) {
-                        System.out.println(bc.getTarkib() + " = " + barCodeId);
-                        hkList = hisobKitobModels.getBarCodeQoldiq(connection, 13, bc, hisobKitob.getDateTime());
-                        for (HisobKitob hk: hkList) {
-                            System.out.println(bc.getBarCode());
-                            hkQoldiq += hk.getDona();
-                            System.out.println(hkQoldiq);
-                            if (hkQoldiq>0) {
-                                hk.setHisob1(hk.getHisob2());
-                                hk.setHisob2(3);
-                                mayda.maydala(bc, hk, 5.0);
-                                maydalandi = true;
-                                break;
-                            }
-                        }
-                    }
-                }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String select = "select distinct date(datetime) from hisobkitob group by (datetime) order by datetime ;";
+        ResultSet rs = hisobKitobModels.getResultSet(connection, select);
+        ObservableList<Timestamp> timestampObservableList = FXCollections.observableArrayList();
+        try {
+            while (rs.next()) {
+                Timestamp timestamp = rs.getTimestamp(1);
+                timestampObservableList.add(timestamp);
             }
+            rs.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
+    public static void printHisobKitob(HisobKitob hk) {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+        System.out.println(
+                "|" +
+                        hk.getId() + "|" +
+                        GetDbData.getHisob(hk.getHisob1()) + "|" +
+                        GetDbData.getHisob(hk.getHisob2()) + "|" +
+                        GetDbData.getTovar(hk.getTovar()) + "|" +
+                        hk.getBarCode() + "|" +
+                        hk.getDona() + "|" +
+                        hk.getNarh() + "|" +
+                        hk.getManba() + "|  " +
+                        sdf.format(hk.getDateTime()) + "  |"
+        );
+    }
 
-    public static void fff() {}
 }
