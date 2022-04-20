@@ -3,14 +3,14 @@ package sample.Temp;
 import javafx.application.Application;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TableView;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.image.Image;
+import javafx.scene.layout.*;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import sample.Config.MySqlDBGeneral;
@@ -19,6 +19,8 @@ import sample.Data.User;
 import sample.Enums.ServerType;
 import sample.Tools.GetDbData;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.util.Collection;
 
@@ -64,7 +66,7 @@ public class IkkiPanel extends Application {
         initCenterPane();
         initRightPane();
         initBottomPane();
-        initBorderPane();
+        borderpane = initBorderPane();
     }
 
     @Override
@@ -102,8 +104,36 @@ public class IkkiPanel extends Application {
 
     private void initBottomPane() {}
 
-    private void initBorderPane() {
-        borderpane.setCenter(centerPane);
+    private BorderPane initBorderPane() {
+        BorderPane borderPane = new BorderPane();
+        InputStream inputStream1 = getClass().getResourceAsStream("/sample/images/Icons/borbaraka.jpg");
+        InputStream inputStream2 = getClass().getResourceAsStream("/sample/images/Icons/borbaraka.png");
+        Image image1 = new Image(inputStream1);
+        Image image2 = new Image(inputStream2);
+
+
+        BackgroundSize bSize = new BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, false, false, true, false);
+
+        Background background2 = new Background(new BackgroundImage(image2,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.CENTER,
+                bSize));
+
+        borderPane.setBackground(new Background(new BackgroundImage(image1,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundRepeat.NO_REPEAT,
+                BackgroundPosition.CENTER,
+                bSize)));
+
+        Button btn = new Button("Change Background");
+        btn.setOnAction((ActionEvent event) -> {
+            borderPane.setBackground(background2);
+        });
+
+        borderPane.setCenter(btn);
+//        borderpane.setCenter(centerPane);
+        return borderPane;
     }
 
     private void initStage(Stage primaryStage) {

@@ -377,6 +377,8 @@ public class PulOldiBerdi extends Application {
                     setStyle("-fx-background-color: white;");
             }
         });
+        CustomBackgroundImage customBackgroundImage = new CustomBackgroundImage("/sample/images/icons/borbaraka.png");
+        tableView.setBackground(customBackgroundImage.getBackground());
         return tableView;
     }
 

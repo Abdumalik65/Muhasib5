@@ -699,8 +699,13 @@ public class Tolovlar4 extends Application {
         Boolean yetarliAdad = false;
         ObservableList<HisobKitob> sotibOlishRoyxati = FXCollections.observableArrayList();
         xaridRoyxati.forEach(hisobKitob -> {
-            hisobKitob.setHisob1(hisob1.getId());
-            hisobKitob.setHisob2(hisob2.getId());
+            if (hisobKitob.getAmal().equals(4)) {
+                hisobKitob.setHisob1(hisob1.getId());
+                hisobKitob.setHisob2(hisob2.getId());
+            } else if (hisobKitob.getAmal().equals(2)) {
+                hisobKitob.setHisob1(hisob2.getId());
+                hisobKitob.setHisob2(hisob1.getId());
+            }
             hisobKitob.setQaydId(qaydnomaData.getId());
             hisobKitob.setHujjatId(qaydnomaData.getHujjat());
             hisobKitob.setUserId(user.getId());

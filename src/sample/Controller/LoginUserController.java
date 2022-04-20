@@ -3,10 +3,12 @@ package sample.Controller;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
@@ -16,16 +18,16 @@ import sample.Data.*;
 import sample.Model.KassaModels;
 import sample.Model.UserModels;
 import sample.Tools.ConnectionType;
-import sample.Tools.DasturlarRoyxati;
 import sample.Tools.GetDbData;
 import sample.Tools.Shake;
 
+import java.io.InputStream;
 import java.sql.Connection;
 
 public class LoginUserController extends Application {
     Stage stage;
     Scene scene;
-    BorderPane borderpane = new BorderPane();
+    BorderPane borderPane = new BorderPane();
     VBox centerPane = new VBox();
     GridPane gridPane = new GridPane();
     TextField userNameTextField = new TextField();
@@ -166,14 +168,14 @@ public class LoginUserController extends Application {
     }
 
     private void initBorderPane() {
-        borderpane.setCenter(centerPane);
+        borderPane.setCenter(centerPane);
     }
 
     private void initStage(Stage primaryStage) {
         stage = primaryStage;
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.setTitle("Kirish");
-        scene = new Scene(borderpane, 250, 110);
+        scene = new Scene(borderPane, 250, 110);
         barCodeOn();
         stage.setOnCloseRequest(event -> {
             user =  null;

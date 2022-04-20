@@ -29,7 +29,7 @@ public class MainController extends Application {
     BorderPane borderpane = new BorderPane();
     MenuBar mainMenu;
     FlowPane flowPane = new FlowPane();
-    FlowPane centerPane;
+    FlowPane centerPane = new FlowPane();
     Connection connection;
     ObservableList<Standart> mavqeList = FXCollections.observableArrayList();
     LoginUserController loginUserController;
@@ -182,6 +182,10 @@ public class MainController extends Application {
         SetHVGrow.VerticalHorizontal(borderpane);
         borderpane.setTop(mainMenu);
         borderpane.setLeft(null);
+/*
+        CustomBackgroundImage customBackgroundImage = new CustomBackgroundImage("/sample/images/icons/borbaraka.png");
+        centerPane.setBackground(customBackgroundImage.getBackground());
+*/
         borderpane.setCenter(centerPane);
 //        borderpane.setRight(initRightPane());
         borderpane.setBottom(flowPane);
